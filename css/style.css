@@ -10,6 +10,10 @@
   --diablo-glow: rgba(196, 30, 58, 0.3);
   --tools: #3b82f6;
   --tools-glow: rgba(59, 130, 246, 0.3);
+  --calendar: #10b981;
+  --calendar-glow: rgba(16, 185, 129, 0.3);
+  --game: #f59e0b;
+  --game-glow: rgba(245, 158, 11, 0.3);
 }
 
 *,
@@ -105,6 +109,11 @@ a {
   box-shadow: 0 8px 32px var(--diablo-glow);
 }
 
+.launcher-card.game:hover {
+  border-color: var(--game);
+  box-shadow: 0 8px 32px var(--game-glow);
+}
+
 .launcher-card.tools:hover {
   border-color: var(--tools);
   box-shadow: 0 8px 32px var(--tools-glow);
@@ -180,4 +189,95 @@ a {
   border-radius: 12px;
   padding: 3rem;
   font-size: 0.95rem;
+}
+
+/* ===== 서브 런처 (tools 등) ===== */
+.sub-home {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+  max-width: 960px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.sub-home-header {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.sub-home-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.sub-home-title h1 {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.sub-home-title .title-icon {
+  font-size: 1.6rem;
+}
+
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 190px));
+  gap: 1.25rem;
+}
+
+.tool-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  padding: 2rem 1.5rem;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  text-decoration: none;
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+
+.tool-card:hover {
+  background: var(--bg-card-hover);
+  transform: translateY(-3px);
+}
+
+.tool-card .tool-icon {
+  font-size: 2.2rem;
+  line-height: 1;
+}
+
+.tool-card .tool-label {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.tool-card .tool-desc {
+  font-size: 0.78rem;
+  color: var(--text);
+  text-align: center;
+}
+
+.tool-card.calendar:hover {
+  border-color: var(--calendar);
+  box-shadow: 0 8px 32px var(--calendar-glow);
+}
+
+.tool-card.diablo:hover {
+  border-color: var(--diablo);
+  box-shadow: 0 8px 32px var(--diablo-glow);
 }

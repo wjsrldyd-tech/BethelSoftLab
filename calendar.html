@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>달력 - BethelSoftLab</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/calendar.css" />
+  </head>
+  <body>
+    <div class="cal-wrapper">
+
+      <!-- 컨트롤 바 (인쇄 시 숨김) -->
+      <div class="cal-controls no-print">
+        <a href="tools.html" class="back-link">← 툴로</a>
+
+        <div class="cal-nav">
+          <button id="btn-prev" class="cal-nav-btn" aria-label="이전 달">&#8249;</button>
+          <span id="cal-nav-label" class="cal-nav-label"></span>
+          <button id="btn-next" class="cal-nav-btn" aria-label="다음 달">&#8250;</button>
+        </div>
+
+        <button id="btn-print" class="cal-print-btn">🖨 인쇄</button>
+      </div>
+
+      <!-- A4 가로 미리보기 시트 -->
+      <div class="cal-sheet">
+        <h1 id="cal-month-title" class="cal-month-title"></h1>
+        <div id="cal-grid" class="cal-grid"></div>
+      </div>
+
+    </div>
+    <script src="js/calendar.js"></script>
+  </body>
+</html>
