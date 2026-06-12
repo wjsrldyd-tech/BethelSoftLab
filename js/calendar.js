@@ -91,21 +91,24 @@
     // 월 제목
     document.getElementById('cal-month-title').textContent = curMonth + '월';
 
-    var grid = document.getElementById('cal-grid');
-    grid.innerHTML = '';
-
-    // 요일 헤더
-    DAY_KR.forEach(function (name, i) {
-      var el = document.createElement('div');
-      el.className = 'cal-head' + (i === 0 ? ' sun' : i === 6 ? ' sat' : '');
-      el.textContent = name;
-      grid.appendChild(el);
-    });
+    // 요일 헤더 (최초 1회만 렌더)
+    var headers = document.getElementById('cal-day-headers');
+    if (headers.children.length === 0) {
+      DAY_KR.forEach(function (name, i) {
+        var el = document.createElement('div');
+        el.className = 'cal-day-header' + (i === 0 ? ' sun' : i === 6 ? ' sat' : '');
+        el.textContent = name;
+        headers.appendChild(el);
+      });
+    }
 
     // 날짜 계산
-    var firstDow    = new Date(curYear, curMonth - 1, 1).getDay(); // 0=일
-    var lastDate    = new Date(curYear, curMonth, 0).getDate();
-    var prevLast    = new Date(curYear, curMonth - 1, 0).getDate();
+    var datesEl  = document.getElementById('cal-dates');
+    datesEl.innerHTML = '';
+
+    var firstDow = new Date(curYear, curMonth - 1, 1).getDay(); // 0=일
+    var lastDate = new Date(curYear, curMonth, 0).getDate();
+    var prevLast = new Date(curYear, curMonth - 1, 0).getDate();
 
     var cells = [];
 
@@ -152,7 +155,7 @@
         }
       }
 
-      grid.appendChild(el);
+      datesEl.appendChild(el);
     });
   }
 

@@ -1,24 +1,24 @@
 /* ===== 달력 페이지 ===== */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap');
 
-/* 전체 래퍼 */
+/* ===== 공통 래퍼 ===== */
 .cal-wrapper {
   min-height: 100svh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 2rem;
-  gap: 1.5rem;
+  padding: 1.5rem;
+  gap: 1.2rem;
   background: var(--bg);
 }
 
-/* 컨트롤 바 */
+/* ===== 컨트롤 바 ===== */
 .cal-controls {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  max-width: 960px;
+  max-width: 1000px;
   gap: 1rem;
 }
 
@@ -74,68 +74,75 @@
   background: var(--calendar-glow);
 }
 
-/* ===== A4 가로 미리보기 시트 ===== */
+/* ===== 화면용 시트 (A4 비율 미리보기) ===== */
 .cal-sheet {
   background: #ffffff;
   width: 100%;
-  max-width: 960px;
-  /* A4 가로 비율 297:210 */
-  aspect-ratio: 297 / 210;
-  padding: 5% 5% 4%;
+  max-width: 1000px;
+  aspect-ratio: 297 / 210;     /* A4 가로 비율 */
+  padding: 3.5% 4%;
   border-radius: 4px;
   box-shadow: 0 4px 48px rgba(0, 0, 0, 0.6);
+
+  /* flex column: title / headers / dates 순서로 쌓기 */
   display: flex;
   flex-direction: column;
+
   font-family: 'Noto Sans KR', 'Malgun Gothic', '맑은 고딕', sans-serif;
   color: #111;
-  /* 내부 폰트 기준 크기 */
-  font-size: clamp(10px, 1.2vw, 16px);
+  font-size: clamp(13px, 2vw, 22px);
 }
 
-/* 월 제목 */
+/* ===== 월 제목 ===== */
 .cal-month-title {
   text-align: center;
-  font-size: 4.5em;
+  font-size: 3.8em;
   font-weight: 900;
   color: #000;
-  margin: 0 0 3% 0;
+  margin: 0 0 2% 0;
   line-height: 1;
   letter-spacing: -0.02em;
+  flex-shrink: 0;
 }
 
-/* 달력 그리드 */
-.cal-grid {
-  flex: 1;
+/* ===== 요일 헤더 ===== */
+.cal-day-headers {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  align-content: start;
-  row-gap: 0;
+  border-bottom: 2.5px solid #222;
+  padding-bottom: 1%;
+  flex-shrink: 0;
 }
 
-/* 요일 헤더 */
-.cal-head {
+.cal-day-header {
   text-align: center;
   font-weight: 700;
-  font-size: 1.2em;
+  font-size: 1.25em;
   color: #222;
-  padding-bottom: 1.5%;
-  border-bottom: 2.5px solid #222;
-  margin-bottom: 2%;
 }
 
-.cal-head.sun { color: #e53935; }
-.cal-head.sat { color: #1e88e5; }
+.cal-day-header.sun { color: #e53935; }
+.cal-day-header.sat { color: #1e88e5; }
 
-/* 날짜 셀 */
+/* ===== 날짜 영역 — 남은 세로 공간을 행이 균등 분배 ===== */
+.cal-dates {
+  flex: 1;
+  min-height: 0;  /* flex 자식이 부모 높이를 초과하지 않도록 */
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: 1fr;
+}
+
+/* ===== 날짜 셀 ===== */
 .cal-cell {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 2% 0;
-  font-size: 2em;
+  justify-content: center;
+  font-size: 3em;
   font-weight: 700;
   color: #111;
-  line-height: 1.2;
+  line-height: 1;
 }
 
 .cal-cell.sun     { color: #e53935; }
@@ -143,68 +150,83 @@
 .cal-cell.holiday { color: #e53935; }
 .cal-cell.other   { color: #ccc; font-weight: 400; }
 
-/* 공휴일 이름 */
+/* ===== 공휴일 이름 ===== */
 .h-name {
   display: block;
-  font-size: 0.32em;
+  font-size: 0.28em;
   font-weight: 400;
   color: #e53935;
   white-space: nowrap;
-  margin-top: 1px;
-  line-height: 1.2;
+  margin-top: 2px;
+  line-height: 1.3;
 }
 
-/* ===== 인쇄 ===== */
+/* =============================================
+   인쇄
+   핵심: 화면의 flex → 인쇄는 grid로 교체
+   grid-template-rows: auto auto 1fr 으로
+   (제목 / 요일헤더 / 날짜) 높이를 명확히 배분
+   → grid-auto-rows: 1fr 이 정확히 동작
+   ============================================= */
 @media print {
-  .no-print {
-    display: none !important;
-  }
-
-  body {
-    background: #fff;
-    margin: 0;
-  }
-
-  .cal-wrapper {
-    padding: 0;
-    min-height: unset;
-    background: #fff;
-    gap: 0;
-  }
-
-  .cal-sheet {
-    aspect-ratio: unset;
-    width: 100%;
-    max-width: none;
-    height: 100%;
-    box-shadow: none;
-    border-radius: 0;
-    padding: 10mm 12mm 8mm;
-    font-size: 14pt;
-  }
-
-  .cal-month-title {
-    font-size: 42pt;
-    margin-bottom: 6mm;
-  }
-
-  .cal-head {
-    font-size: 13pt;
-    padding-bottom: 2mm;
-    margin-bottom: 2mm;
-  }
-
-  .cal-cell {
-    font-size: 19pt;
-    padding: 2mm 0;
-  }
-
-  .h-name {
-    font-size: 6pt;
-  }
+  .no-print { display: none !important; }
 
   @page {
     size: A4 landscape;
     margin: 0;
+  }
+
+  html, body {
+    width: 297mm;
+    height: 210mm;
+    margin: 0;
+    padding: 0;
+    background: #fff;
+    overflow: hidden; /* 210mm 초과 내용이 빈 2페이지를 만들지 않도록 */
+  }
+
+  .cal-wrapper {
+    display: block;
+    width: 297mm;
+    height: 210mm;
+    min-height: 0; /* 화면용 100svh 무력화 */
+    padding: 0;
+    gap: 0;
+    background: #fff;
+    overflow: hidden;
+  }
+
+  /* 화면 flex → 인쇄 grid: 행 높이 명확히 배분 */
+  .cal-sheet {
+    display: grid;
+    grid-template-rows: auto auto 1fr;  /* 제목 / 요일헤더 / 날짜 */
+
+    aspect-ratio: unset;
+    width: 297mm;
+    height: 210mm;
+    max-width: none;
+    padding: 5mm 8mm;
+    box-sizing: border-box;
+    box-shadow: none;
+    border-radius: 0;
+    overflow: hidden;
+
+    /* 화면 2vw ≈ 5.94mm → 5.5mm로 근사, em 비율 동일 유지 */
+    font-size: 5.5mm;
+  }
+
+  .cal-month-title {
+    margin-bottom: 2mm;
+  }
+
+  .cal-day-headers {
+    padding-bottom: 1.5mm;
+    border-bottom-width: 2px;
+    align-self: start;
+  }
+
+  /* grid 자식은 명확한 높이(1fr)를 받으므로 min-height: 0 필수 */
+  .cal-dates {
+    min-height: 0;
   }
 }
