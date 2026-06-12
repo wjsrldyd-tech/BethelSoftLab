@@ -20,7 +20,10 @@
           <button id="btn-next" class="cal-nav-btn" aria-label="다음 달">&#8250;</button>
         </div>
 
-        <button id="btn-print" class="cal-print-btn">🖨 인쇄</button>
+        <div class="cal-actions">
+          <button id="btn-holiday" class="cal-holiday-btn">📌 휴일</button>
+          <button id="btn-print" class="cal-print-btn">🖨 인쇄</button>
+        </div>
       </div>
 
       <!-- A4 가로 미리보기 시트 -->
@@ -31,6 +34,29 @@
       </div>
 
     </div>
+
+    <!-- 휴일 설정 패널 (인쇄 시 숨김) -->
+    <div id="holiday-overlay" class="holiday-overlay no-print"></div>
+    <aside id="holiday-panel" class="holiday-panel no-print" aria-label="휴일 설정">
+      <div class="hp-header">
+        <span class="hp-title">📌 휴일 설정</span>
+        <button id="btn-holiday-close" class="hp-close" aria-label="닫기">✕</button>
+      </div>
+      <p class="hp-desc">달력에 표시할 추가 휴일을 등록합니다.<br>인쇄 시에도 동일하게 반영됩니다.</p>
+
+      <div class="hp-form">
+        <input type="date" id="hp-date" class="hp-input" />
+        <input type="text" id="hp-name" class="hp-input" placeholder="이름 (예: 여름방학)" maxlength="20" />
+        <div class="hp-form-footer">
+          <span id="hp-msg" class="hp-msg"></span>
+          <button id="btn-hp-add" class="hp-add-btn">추가</button>
+        </div>
+      </div>
+
+      <div class="hp-divider"></div>
+      <div id="hp-list" class="hp-list"></div>
+    </aside>
+
     <script src="js/calendar.js"></script>
   </body>
 </html>
