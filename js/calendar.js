@@ -153,22 +153,22 @@
 
       if (c.other) {
         el.classList.add('other');
-        el.textContent = c.day;
+        el.innerHTML = '<span class="cal-num">' + c.day + '</span>';
       } else {
         var info = getHolidayInfo(curYear, curMonth, c.day);
         if (info) {
           el.classList.add(info.isUser ? 'holiday-user' : 'holiday');
-          el.innerHTML = c.day +
+          el.innerHTML = '<span class="cal-num">' + c.day + '</span>' +
             '<span class="h-name' + (info.isUser ? ' user' : '') + '">' +
             escapeHtml(info.name) + '</span>';
         } else if (col === 0) {
           el.classList.add('sun');
-          el.textContent = c.day;
+          el.innerHTML = '<span class="cal-num">' + c.day + '</span>';
         } else if (col === 6) {
           el.classList.add('sat');
-          el.textContent = c.day;
+          el.innerHTML = '<span class="cal-num">' + c.day + '</span>';
         } else {
-          el.textContent = c.day;
+          el.innerHTML = '<span class="cal-num">' + c.day + '</span>';
         }
       }
 
