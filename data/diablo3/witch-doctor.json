@@ -1,0 +1,165 @@
+{
+  "class": "부두술사",
+  "classEn": "Witch Doctor",
+  "skills": [
+    {
+      "name": "독침",
+      "nameEn": "Poison Dart",
+      "type": "주 기술",
+      "typeEn": "Primary"
+    },
+    {
+      "name": "시체 거미",
+      "nameEn": "Corpse Spiders",
+      "type": "주 기술",
+      "typeEn": "Primary"
+    },
+    {
+      "name": "역병 두꺼비",
+      "nameEn": "Plague of Toads",
+      "type": "주 기술",
+      "typeEn": "Primary"
+    },
+    {
+      "name": "불폭탄",
+      "nameEn": "Firebomb",
+      "type": "주 기술",
+      "typeEn": "Primary"
+    },
+    {
+      "name": "망자의 손아귀",
+      "nameEn": "Grasp of the Dead",
+      "type": "보조 기술",
+      "typeEn": "Secondary"
+    },
+    {
+      "name": "불박쥐",
+      "nameEn": "Firebats",
+      "type": "보조 기술",
+      "typeEn": "Secondary"
+    },
+    {
+      "name": "혼령 출몰",
+      "nameEn": "Haunt",
+      "type": "보조 기술",
+      "typeEn": "Secondary"
+    },
+    {
+      "name": "메뚜기 떼",
+      "nameEn": "Locust Swarm",
+      "type": "보조 기술",
+      "typeEn": "Secondary"
+    },
+    {
+      "name": "좀비 들개 소환",
+      "nameEn": "Summon Zombie Dogs",
+      "type": "방어",
+      "typeEn": "Defensive"
+    },
+    {
+      "name": "공포",
+      "nameEn": "Horrify",
+      "type": "방어",
+      "typeEn": "Defensive"
+    },
+    {
+      "name": "혼령 걸음",
+      "nameEn": "Spirit Walk",
+      "type": "방어",
+      "typeEn": "Defensive"
+    },
+    {
+      "name": "주술",
+      "nameEn": "Hex",
+      "type": "방어",
+      "typeEn": "Defensive"
+    },
+    {
+      "name": "혼령 수확",
+      "nameEn": "Soul Harvest",
+      "type": "공황",
+      "typeEn": "Terror"
+    },
+    {
+      "name": "희생",
+      "nameEn": "Sacrifice",
+      "type": "공황",
+      "typeEn": "Terror"
+    },
+    {
+      "name": "대혼란",
+      "nameEn": "Mass Confusion",
+      "type": "공황",
+      "typeEn": "Terror"
+    },
+    {
+      "name": "돌진 좀비",
+      "nameEn": "Zombie Charger",
+      "type": "부패",
+      "typeEn": "Decay"
+    },
+    {
+      "name": "혼령 공세",
+      "nameEn": "Spirit Barrage",
+      "type": "부패",
+      "typeEn": "Decay"
+    },
+    {
+      "name": "산성 구름",
+      "nameEn": "Acid Cloud",
+      "type": "부패",
+      "typeEn": "Decay"
+    },
+    {
+      "name": "죽음의 벽",
+      "nameEn": "Wall of Death",
+      "type": "부패",
+      "typeEn": "Decay"
+    },
+    {
+      "name": "피라냐",
+      "nameEn": "Piranhas",
+      "type": "부패",
+      "typeEn": "Decay"
+    },
+    {
+      "name": "덩치",
+      "nameEn": "Gargantuan",
+      "type": "부두",
+      "typeEn": "Voodoo"
+    },
+    {
+      "name": "대재앙의 부두술",
+      "nameEn": "Big Bad Voodoo",
+      "type": "부두",
+      "typeEn": "Voodoo"
+    },
+    {
+      "name": "우상족 군대",
+      "nameEn": "Fetish Army",
+      "type": "부두",
+      "typeEn": "Voodoo"
+    }
+  ],
+  "passives": [
+    { "name": "삶의 반복", "nameEn": "Circle of Life" },
+    { "name": "밀림의 용맹함", "nameEn": "Jungle Fortitude" },
+    { "name": "영적 조율", "nameEn": "Spiritual Attunement" },
+    { "name": "섬뜩한 향연", "nameEn": "Gruesome Feast" },
+    { "name": "나쁜 약", "nameEn": "Bad Medicine" },
+    { "name": "피의 의식", "nameEn": "Blood Ritual" },
+    { "name": "좀비 조련사", "nameEn": "Zombie Handler" },
+    { "name": "금기", "nameEn": "Pierce the Veil" },
+    { "name": "우상족 아첨꾼", "nameEn": "Fetish Sycophants" },
+    { "name": "혼령 그릇", "nameEn": "Spirit Vessel" },
+    { "name": "정수 쇄도", "nameEn": "Rush of Essence" },
+    { "name": "깨달음의 여행", "nameEn": "Vision Quest" },
+    { "name": "열렬한 충성", "nameEn": "Fierce Loyalty" },
+    { "name": "불공정 거래", "nameEn": "Grave Injustice" },
+    { "name": "부족 의식", "nameEn": "Tribal Rites" },
+    { "name": "자신감의 의식", "nameEn": "Confidence Ritual" },
+    { "name": "죄어오는 죽음", "nameEn": "Creeping Death" },
+    { "name": "늪지 조율", "nameEn": "Swampland Attunement" },
+    { "name": "깊은 밤의 향연", "nameEn": "Midnight Feast" }
+  ]
+}

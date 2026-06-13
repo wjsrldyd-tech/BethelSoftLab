@@ -1,0 +1,165 @@
+{
+  "class": "야만용사",
+  "classEn": "Barbarian",
+  "skills": [
+    {
+      "name": "후려치기",
+      "nameEn": "Bash",
+      "type": "주 기술",
+      "typeEn": "Primary"
+    },
+    {
+      "name": "가르기",
+      "nameEn": "Cleave",
+      "type": "주 기술",
+      "typeEn": "Primary"
+    },
+    {
+      "name": "광분",
+      "nameEn": "Frenzy",
+      "type": "주 기술",
+      "typeEn": "Primary"
+    },
+    {
+      "name": "무기 투척",
+      "nameEn": "Weapon Throw",
+      "type": "주 기술",
+      "typeEn": "Primary"
+    },
+    {
+      "name": "선조의 망치",
+      "nameEn": "Hammer of the Ancients",
+      "type": "보조 기술",
+      "typeEn": "Secondary"
+    },
+    {
+      "name": "분쇄",
+      "nameEn": "Rend",
+      "type": "보조 기술",
+      "typeEn": "Secondary"
+    },
+    {
+      "name": "대지 강타",
+      "nameEn": "Seismic Slam",
+      "type": "보조 기술",
+      "typeEn": "Secondary"
+    },
+    {
+      "name": "소용돌이",
+      "nameEn": "Whirlwind",
+      "type": "보조 기술",
+      "typeEn": "Secondary"
+    },
+    {
+      "name": "고대의 작살",
+      "nameEn": "Ancient Spear",
+      "type": "보조 기술",
+      "typeEn": "Secondary"
+    },
+    {
+      "name": "발 구르기",
+      "nameEn": "Ground Stomp",
+      "type": "방어",
+      "typeEn": "Defensive"
+    },
+    {
+      "name": "도약 공격",
+      "nameEn": "Leap",
+      "type": "방어",
+      "typeEn": "Defensive"
+    },
+    {
+      "name": "질주",
+      "nameEn": "Sprint",
+      "type": "방어",
+      "typeEn": "Defensive"
+    },
+    {
+      "name": "고통 감내",
+      "nameEn": "Ignore Pain",
+      "type": "방어",
+      "typeEn": "Defensive"
+    },
+    {
+      "name": "제압",
+      "nameEn": "Overpower",
+      "type": "무력",
+      "typeEn": "Might"
+    },
+    {
+      "name": "보복",
+      "nameEn": "Revenge",
+      "type": "무력",
+      "typeEn": "Might"
+    },
+    {
+      "name": "맹렬한 돌진",
+      "nameEn": "Furious Charge",
+      "type": "무력",
+      "typeEn": "Might"
+    },
+    {
+      "name": "산사태",
+      "nameEn": "Avalanche",
+      "type": "무력",
+      "typeEn": "Might"
+    },
+    {
+      "name": "위협의 외침",
+      "nameEn": "Threatening Shout",
+      "type": "전술",
+      "typeEn": "Tactics"
+    },
+    {
+      "name": "전투 격노",
+      "nameEn": "Battle Rage",
+      "type": "전술",
+      "typeEn": "Tactics"
+    },
+    {
+      "name": "전장의 함성",
+      "nameEn": "War Cry",
+      "type": "전술",
+      "typeEn": "Tactics"
+    },
+    {
+      "name": "지진",
+      "nameEn": "Earthquake",
+      "type": "격노",
+      "typeEn": "Rage"
+    },
+    {
+      "name": "선조의 귀환",
+      "nameEn": "Call of the Ancients",
+      "type": "격노",
+      "typeEn": "Rage"
+    },
+    {
+      "name": "광전사의 진노",
+      "nameEn": "Wrath of the Berserker",
+      "type": "격노",
+      "typeEn": "Rage"
+    }
+  ],
+  "passives": [
+    { "name": "무자비", "nameEn": "Ruthless" },
+    { "name": "요동치는 심장", "nameEn": "Pound of Flesh" },
+    { "name": "강철 신경", "nameEn": "Nerves of Steel" },
+    { "name": "무기의 달인", "nameEn": "Weapons Master" },
+    { "name": "격노한 광전사", "nameEn": "Berserker Rage" },
+    { "name": "고무적인 존재", "nameEn": "Inspiring Presence" },
+    { "name": "피의 갈증", "nameEn": "Bloodthirst" },
+    { "name": "적개심", "nameEn": "Animosity" },
+    { "name": "미신", "nameEn": "Superstition" },
+    { "name": "철갑못", "nameEn": "Tough as Nails" },
+    { "name": "탈출 불가", "nameEn": "No Escape" },
+    { "name": "근성", "nameEn": "Relentless" },
+    { "name": "싸움꾼", "nameEn": "Brawler" },
+    { "name": "괴수", "nameEn": "Juggernaut" },
+    { "name": "비정", "nameEn": "Unforgiving" },
+    { "name": "불카토스의 은총", "nameEn": "Boon of Bul-Kathos" },
+    { "name": "대지의 힘", "nameEn": "Earthen Might" },
+    { "name": "검과 방패", "nameEn": "Sword and Board" },
+    { "name": "광란", "nameEn": "Rampage" }
+  ]
+}

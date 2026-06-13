@@ -1,0 +1,154 @@
+{
+  "class": "강령술사",
+  "classEn": "Necromancer",
+  "skills": [
+    {
+      "name": "뼈 쐐기",
+      "nameEn": "Bone Spikes",
+      "type": "주 기술",
+      "typeEn": "Primary"
+    },
+    {
+      "name": "사신의 낫",
+      "nameEn": "Grim Scythe",
+      "type": "주 기술",
+      "typeEn": "Primary"
+    },
+    {
+      "name": "피 흡수",
+      "nameEn": "Siphon Blood",
+      "type": "주 기술",
+      "typeEn": "Primary"
+    },
+    {
+      "name": "뼈 창",
+      "nameEn": "Bone Spear",
+      "type": "보조 기술",
+      "typeEn": "Secondary"
+    },
+    {
+      "name": "해골 마법학자",
+      "nameEn": "Skeletal Mage",
+      "type": "보조 기술",
+      "typeEn": "Secondary"
+    },
+    {
+      "name": "죽음의 회오리",
+      "nameEn": "Death Nova",
+      "type": "보조 기술",
+      "typeEn": "Secondary"
+    },
+    {
+      "name": "시체폭발",
+      "nameEn": "Corpse Explosion",
+      "type": "시체",
+      "typeEn": "Corpses"
+    },
+    {
+      "name": "시체 창",
+      "nameEn": "Corpse Lance",
+      "type": "시체",
+      "typeEn": "Corpses"
+    },
+    {
+      "name": "포식",
+      "nameEn": "Devour",
+      "type": "시체",
+      "typeEn": "Corpses"
+    },
+    {
+      "name": "부활",
+      "nameEn": "Revive",
+      "type": "시체",
+      "typeEn": "Corpses"
+    },
+    {
+      "name": "해골 지배",
+      "nameEn": "Command Skeletons",
+      "type": "생환",
+      "typeEn": "Reanimation"
+    },
+    {
+      "name": "골렘 지배",
+      "nameEn": "Summon Golem",
+      "type": "생환",
+      "typeEn": "Reanimation"
+    },
+    {
+      "name": "망자의 군대",
+      "nameEn": "Army of the Dead",
+      "type": "생환",
+      "typeEn": "Reanimation"
+    },
+    {
+      "name": "망자의 땅",
+      "nameEn": "Land of the Dead",
+      "type": "생환",
+      "typeEn": "Reanimation"
+    },
+    {
+      "name": "노화",
+      "nameEn": "Decrepify",
+      "type": "저주",
+      "typeEn": "Curses"
+    },
+    {
+      "name": "생기 흡수",
+      "nameEn": "Leech",
+      "type": "저주",
+      "typeEn": "Curses"
+    },
+    {
+      "name": "약화",
+      "nameEn": "Frailty",
+      "type": "저주",
+      "typeEn": "Curses"
+    },
+    {
+      "name": "뼈 갑옷",
+      "nameEn": "Bone Armor",
+      "type": "피와 뼈",
+      "typeEn": "Blood and Bone"
+    },
+    {
+      "name": "뼈 영혼",
+      "nameEn": "Bone Spirit",
+      "type": "피와 뼈",
+      "typeEn": "Blood and Bone"
+    },
+    {
+      "name": "피의 질주",
+      "nameEn": "Blood Rush",
+      "type": "피와 뼈",
+      "typeEn": "Blood and Bone"
+    },
+    {
+      "name": "복제물",
+      "nameEn": "Simulacrum",
+      "type": "피와 뼈",
+      "typeEn": "Blood and Bone"
+    }
+  ],
+  "passives": [
+    { "name": "죽음의 동력", "nameEn": "Fueled by Death" },
+    { "name": "죽음의 선물", "nameEn": "Life from Death" },
+    { "name": "홀로서기", "nameEn": "Stand Alone" },
+    { "name": "뼈 감옥", "nameEn": "Bone Prison" },
+    { "name": "되살아난 망자의 사령관", "nameEn": "Commander of the Risen Dead" },
+    { "name": "빠른 수확", "nameEn": "Swift Harvesting" },
+    { "name": "길어진 섬김", "nameEn": "Extended Servitude" },
+    { "name": "사후 경직", "nameEn": "Rigor Mortis" },
+    { "name": "압도적인 정수", "nameEn": "Overwhelming Essence" },
+    { "name": "어둠의 수확", "nameEn": "Reaping" },
+    { "name": "저주 파급", "nameEn": "Spreading Malediction" },
+    { "name": "영원한 고통", "nameEn": "Eternal Torment" },
+    { "name": "최후의 섬김", "nameEn": "Final Service" },
+    { "name": "소름끼치는 공물", "nameEn": "Grisly Tribute" },
+    { "name": "생명력 흡수", "nameEn": "Draw Life" },
+    { "name": "톱니", "nameEn": "Serration" },
+    { "name": "일탈한 생환술사", "nameEn": "Aberrant Animator" },
+    { "name": "피에는 피", "nameEn": "Blood for Blood" },
+    { "name": "피는 힘이다", "nameEn": "Blood is Power" },
+    { "name": "라트마의 방패", "nameEn": "Rathma's Shield" }
+  ]
+}

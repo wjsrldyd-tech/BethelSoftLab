@@ -1,0 +1,171 @@
+{
+  "class": "악마사냥꾼",
+  "classEn": "Demon Hunter",
+  "skills": [
+    {
+      "name": "굶주린 화살",
+      "nameEn": "Hungering Arrow",
+      "type": "주 기술",
+      "typeEn": "Primary"
+    },
+    {
+      "name": "속박탄",
+      "nameEn": "Entangling Shot",
+      "type": "주 기술",
+      "typeEn": "Primary"
+    },
+    {
+      "name": "올가미",
+      "nameEn": "Bola",
+      "type": "주 기술",
+      "typeEn": "Primary"
+    },
+    {
+      "name": "회피 사격",
+      "nameEn": "Evasive Fire",
+      "type": "주 기술",
+      "typeEn": "Primary"
+    },
+    {
+      "name": "수류탄",
+      "nameEn": "Grenades",
+      "type": "주 기술",
+      "typeEn": "Primary"
+    },
+    {
+      "name": "투검",
+      "nameEn": "Impale",
+      "type": "보조 기술",
+      "typeEn": "Secondary"
+    },
+    {
+      "name": "연발 사격",
+      "nameEn": "Rapid Fire",
+      "type": "보조 기술",
+      "typeEn": "Secondary"
+    },
+    {
+      "name": "회전 표창",
+      "nameEn": "Chakram",
+      "type": "보조 기술",
+      "typeEn": "Secondary"
+    },
+    {
+      "name": "원소 화살",
+      "nameEn": "Elemental Arrow",
+      "type": "보조 기술",
+      "typeEn": "Secondary"
+    },
+    {
+      "name": "쇠못 덫",
+      "nameEn": "Caltrops",
+      "type": "방어",
+      "typeEn": "Defensive"
+    },
+    {
+      "name": "연막",
+      "nameEn": "Smoke Screen",
+      "type": "방어",
+      "typeEn": "Defensive"
+    },
+    {
+      "name": "어둠의 힘",
+      "nameEn": "Shadow Power",
+      "type": "방어",
+      "typeEn": "Defensive"
+    },
+    {
+      "name": "도약",
+      "nameEn": "Vault",
+      "type": "사냥",
+      "typeEn": "Hunting"
+    },
+    {
+      "name": "전투 준비",
+      "nameEn": "Preparation",
+      "type": "사냥",
+      "typeEn": "Hunting"
+    },
+    {
+      "name": "동료",
+      "nameEn": "Companion",
+      "type": "사냥",
+      "typeEn": "Hunting"
+    },
+    {
+      "name": "죽음의 표식",
+      "nameEn": "Marked for Death",
+      "type": "사냥",
+      "typeEn": "Hunting"
+    },
+    {
+      "name": "칼날 부채",
+      "nameEn": "Fan of Knives",
+      "type": "장치",
+      "typeEn": "Devices"
+    },
+    {
+      "name": "쐐기 덫",
+      "nameEn": "Spike Trap",
+      "type": "장치",
+      "typeEn": "Devices"
+    },
+    {
+      "name": "자동 쇠뇌",
+      "nameEn": "Sentry",
+      "type": "장치",
+      "typeEn": "Devices"
+    },
+    {
+      "name": "복수",
+      "nameEn": "Vengeance",
+      "type": "장치",
+      "typeEn": "Devices"
+    },
+    {
+      "name": "난사",
+      "nameEn": "Strafe",
+      "type": "궁술",
+      "typeEn": "Archery"
+    },
+    {
+      "name": "다발 사격",
+      "nameEn": "Multishot",
+      "type": "궁술",
+      "typeEn": "Archery"
+    },
+    {
+      "name": "확산탄",
+      "nameEn": "Cluster Arrow",
+      "type": "궁술",
+      "typeEn": "Archery"
+    },
+    {
+      "name": "복수의 비",
+      "nameEn": "Rain of Vengeance",
+      "type": "궁술",
+      "typeEn": "Archery"
+    }
+  ],
+  "passives": [
+    { "name": "사냥의 전율", "nameEn": "Thrill of the Hunt" },
+    { "name": "전술적 우위", "nameEn": "Tactical Advantage" },
+    { "name": "피의 복수", "nameEn": "Blood Vengeance" },
+    { "name": "침착한 조준", "nameEn": "Steady Aim" },
+    { "name": "약자 도태", "nameEn": "Cull the Weak" },
+    { "name": "어둠 추적자", "nameEn": "Night Stalker" },
+    { "name": "반성", "nameEn": "Brooding" },
+    { "name": "추격", "nameEn": "Hot Pursuit" },
+    { "name": "궁술", "nameEn": "Archery" },
+    { "name": "마비 덫", "nameEn": "Numbing Traps" },
+    { "name": "완벽주의자", "nameEn": "Perfectionist" },
+    { "name": "맞춤 개조", "nameEn": "Custom Engineering" },
+    { "name": "척탄병", "nameEn": "Grenadier" },
+    { "name": "명사수", "nameEn": "Sharpshooter" },
+    { "name": "탄도학", "nameEn": "Ballistics" },
+    { "name": "생기흡수", "nameEn": "Leech" },
+    { "name": "매복", "nameEn": "Ambush" },
+    { "name": "기민함", "nameEn": "Awareness" },
+    { "name": "목표 포착", "nameEn": "Single Out" }
+  ]
+}

@@ -1,0 +1,182 @@
+{
+  "class": "마법사",
+  "classEn": "Wizard",
+  "skills": [
+    {
+      "name": "마력탄",
+      "nameEn": "Magic Missile",
+      "type": "고유 주문",
+      "typeEn": "Signature"
+    },
+    {
+      "name": "전기 충격",
+      "nameEn": "Shock Pulse",
+      "type": "고유 주문",
+      "typeEn": "Signature"
+    },
+    {
+      "name": "저승의 칼날",
+      "nameEn": "Spectral Blade",
+      "type": "고유 주문",
+      "typeEn": "Signature"
+    },
+    {
+      "name": "감전",
+      "nameEn": "Electrocute",
+      "type": "고유 주문",
+      "typeEn": "Signature"
+    },
+    {
+      "name": "서리 광선",
+      "nameEn": "Ray of Frost",
+      "type": "보조 기술",
+      "typeEn": "Secondary"
+    },
+    {
+      "name": "비전 보주",
+      "nameEn": "Arcane Orb",
+      "type": "보조 기술",
+      "typeEn": "Secondary"
+    },
+    {
+      "name": "비전 격류",
+      "nameEn": "Arcane Torrent",
+      "type": "보조 기술",
+      "typeEn": "Secondary"
+    },
+    {
+      "name": "파열",
+      "nameEn": "Disintegrate",
+      "type": "보조 기술",
+      "typeEn": "Secondary"
+    },
+    {
+      "name": "서릿발",
+      "nameEn": "Frost Nova",
+      "type": "방어",
+      "typeEn": "Defensive"
+    },
+    {
+      "name": "다이아몬드 피부",
+      "nameEn": "Diamond Skin",
+      "type": "방어",
+      "typeEn": "Defensive"
+    },
+    {
+      "name": "감속 지대",
+      "nameEn": "Slow Time",
+      "type": "방어",
+      "typeEn": "Defensive"
+    },
+    {
+      "name": "순간이동",
+      "nameEn": "Teleport",
+      "type": "방어",
+      "typeEn": "Defensive"
+    },
+    {
+      "name": "힘의 파동",
+      "nameEn": "Wave of Force",
+      "type": "위력",
+      "typeEn": "Force"
+    },
+    {
+      "name": "마력 돌개바람",
+      "nameEn": "Energy Twister",
+      "type": "위력",
+      "typeEn": "Force"
+    },
+    {
+      "name": "히드라",
+      "nameEn": "Hydra",
+      "type": "위력",
+      "typeEn": "Force"
+    },
+    {
+      "name": "운석 낙하",
+      "nameEn": "Meteor",
+      "type": "위력",
+      "typeEn": "Force"
+    },
+    {
+      "name": "눈보라",
+      "nameEn": "Blizzard",
+      "type": "위력",
+      "typeEn": "Force"
+    },
+    {
+      "name": "얼음 갑옷",
+      "nameEn": "Ice Armor",
+      "type": "창조",
+      "typeEn": "Conjuration"
+    },
+    {
+      "name": "천둥 갑옷",
+      "nameEn": "Storm Armor",
+      "type": "창조",
+      "typeEn": "Conjuration"
+    },
+    {
+      "name": "마법 무기",
+      "nameEn": "Magic Weapon",
+      "type": "창조",
+      "typeEn": "Conjuration"
+    },
+    {
+      "name": "사역마",
+      "nameEn": "Familiar",
+      "type": "창조",
+      "typeEn": "Conjuration"
+    },
+    {
+      "name": "마력 갑옷",
+      "nameEn": "Energy Armor",
+      "type": "창조",
+      "typeEn": "Conjuration"
+    },
+    {
+      "name": "에너지 폭발",
+      "nameEn": "Explosive Blast",
+      "type": "통달",
+      "typeEn": "Mastery"
+    },
+    {
+      "name": "분신",
+      "nameEn": "Mirror Image",
+      "type": "통달",
+      "typeEn": "Mastery"
+    },
+    {
+      "name": "마인",
+      "nameEn": "Archon",
+      "type": "통달",
+      "typeEn": "Mastery"
+    },
+    {
+      "name": "블랙홀",
+      "nameEn": "Black Hole",
+      "type": "통달",
+      "typeEn": "Mastery"
+    }
+  ],
+  "passives": [
+    { "name": "비전력 갈구", "nameEn": "Power Hungry" },
+    { "name": "흐리기", "nameEn": "Blur" },
+    { "name": "환기", "nameEn": "Evocation" },
+    { "name": "유리 대포", "nameEn": "Glass Cannon" },
+    { "name": "영재", "nameEn": "Prodigy" },
+    { "name": "초월적 존재", "nameEn": "Astral Presence" },
+    { "name": "환영술사", "nameEn": "Illusionist" },
+    { "name": "냉혈", "nameEn": "Cold Blooded" },
+    { "name": "발화", "nameEn": "Conflagration" },
+    { "name": "마비", "nameEn": "Paralysis" },
+    { "name": "수호 강화", "nameEn": "Galvanizing Ward" },
+    { "name": "시간 유동", "nameEn": "Temporal Flux" },
+    { "name": "우월", "nameEn": "Dominance" },
+    { "name": "마력 증폭", "nameEn": "Arcane Dynamo" },
+    { "name": "불안정 변칙", "nameEn": "Unstable Anomaly" },
+    { "name": "확고한 의지", "nameEn": "Unwavering Will" },
+    { "name": "대담함", "nameEn": "Audacity" },
+    { "name": "원소 조합", "nameEn": "Elemental Exposure" }
+  ]
+}

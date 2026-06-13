@@ -1,0 +1,158 @@
+{
+  "class": "수도사",
+  "classEn": "Monk",
+  "skills": [
+    {
+      "name": "천둥주먹",
+      "nameEn": "Fists of Thunder",
+      "type": "주 기술",
+      "typeEn": "Primary"
+    },
+    {
+      "name": "연속 격파",
+      "nameEn": "Deadly Reach",
+      "type": "주 기술",
+      "typeEn": "Primary"
+    },
+    {
+      "name": "마비의 파동",
+      "nameEn": "Crippling Wave",
+      "type": "주 기술",
+      "typeEn": "Primary"
+    },
+    {
+      "name": "천지권법",
+      "nameEn": "Way of the Hundred Fists",
+      "type": "주 기술",
+      "typeEn": "Primary"
+    },
+    {
+      "name": "반달차기",
+      "nameEn": "Lashing Tail Kick",
+      "type": "보조 기술",
+      "typeEn": "Secondary"
+    },
+    {
+      "name": "폭풍 질주",
+      "nameEn": "Tempest Rush",
+      "type": "보조 기술",
+      "typeEn": "Secondary"
+    },
+    {
+      "name": "빛의 파동",
+      "nameEn": "Wave of Light",
+      "type": "보조 기술",
+      "typeEn": "Secondary"
+    },
+    {
+      "name": "눈부신 섬광",
+      "nameEn": "Blinding Flash",
+      "type": "방어",
+      "typeEn": "Defensive"
+    },
+    {
+      "name": "천상의 숨결",
+      "nameEn": "Breath of Heaven",
+      "type": "방어",
+      "typeEn": "Defensive"
+    },
+    {
+      "name": "평안",
+      "nameEn": "Serenity",
+      "type": "방어",
+      "typeEn": "Defensive"
+    },
+    {
+      "name": "내면의 안식처",
+      "nameEn": "Inner Sanctuary",
+      "type": "방어",
+      "typeEn": "Defensive"
+    },
+    {
+      "name": "진격타",
+      "nameEn": "Dashing Strike",
+      "type": "무예",
+      "typeEn": "Techniques"
+    },
+    {
+      "name": "폭발 장법",
+      "nameEn": "Exploding Palm",
+      "type": "무예",
+      "typeEn": "Techniques"
+    },
+    {
+      "name": "휘몰이",
+      "nameEn": "Sweeping Wind",
+      "type": "무예",
+      "typeEn": "Techniques"
+    },
+    {
+      "name": "용오름",
+      "nameEn": "Cyclone Strike",
+      "type": "집중",
+      "typeEn": "Focus"
+    },
+    {
+      "name": "칠면 공격",
+      "nameEn": "Seven-Sided Strike",
+      "type": "집중",
+      "typeEn": "Focus"
+    },
+    {
+      "name": "신비한 벗",
+      "nameEn": "Mystic Ally",
+      "type": "집중",
+      "typeEn": "Focus"
+    },
+    {
+      "name": "해탈",
+      "nameEn": "Epiphany",
+      "type": "집중",
+      "typeEn": "Focus"
+    },
+    {
+      "name": "구원의 진언",
+      "nameEn": "Mantra of Salvation",
+      "type": "진언",
+      "typeEn": "Mantras"
+    },
+    {
+      "name": "응보의 진언",
+      "nameEn": "Mantra of Retribution",
+      "type": "진언",
+      "typeEn": "Mantras"
+    },
+    {
+      "name": "치유의 진언",
+      "nameEn": "Mantra of Healing",
+      "type": "진언",
+      "typeEn": "Mantras"
+    },
+    {
+      "name": "신념의 진언",
+      "nameEn": "Mantra of Conviction",
+      "type": "진언",
+      "typeEn": "Mantras"
+    }
+  ],
+  "passives": [
+    { "name": "결의", "nameEn": "Resolve" },
+    { "name": "축지법", "nameEn": "Fleet Footed" },
+    { "name": "득도", "nameEn": "Exalted Soul" },
+    { "name": "초월", "nameEn": "Transcendence" },
+    { "name": "공명의 독경", "nameEn": "Chant of Resonance" },
+    { "name": "주도권", "nameEn": "Seize the Initiative" },
+    { "name": "수행자의 사명", "nameEn": "The Guardian's Path" },
+    { "name": "육감", "nameEn": "Sixth Sense" },
+    { "name": "투지", "nameEn": "Determination" },
+    { "name": "가차 없는 공격", "nameEn": "Relentless Assault" },
+    { "name": "이타르의 횃불", "nameEn": "Beacon of Ytar" },
+    { "name": "기민성", "nameEn": "Alacrity" },
+    { "name": "조화", "nameEn": "Harmony" },
+    { "name": "조합 공격", "nameEn": "Combination Strike" },
+    { "name": "임사 체험", "nameEn": "Near Death Experience" },
+    { "name": "결속", "nameEn": "Unity" },
+    { "name": "여세", "nameEn": "Momentum" },
+    { "name": "신화 속 운율", "nameEn": "Mythic Rhythm" }
+  ]
+}
