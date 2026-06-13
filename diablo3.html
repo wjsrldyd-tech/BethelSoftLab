@@ -5,17 +5,979 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>디아블로3 - BethelSoftLab</title>
     <link rel="stylesheet" href="css/style.css" />
+    <style>
+      /* ===== 레이아웃 ===== */
+      .d3-page {
+        min-height: 100svh;
+        display: flex;
+        flex-direction: column;
+        padding: 2rem;
+        max-width: 960px;
+        margin: 0 auto;
+        width: 100%;
+      }
+      .d3-header {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+        margin-bottom: 1.75rem;
+      }
+      .d3-title-row { display: flex; align-items: center; gap: 0.6rem; }
+      .d3-title-row h1 { margin: 0; font-size: 1.8rem; font-weight: 600; color: var(--text-h); }
+
+      /* ===== 스크립트 목록 ===== */
+      .script-list-section { margin-bottom: 1.25rem; }
+      .script-list-header {
+        display: flex; align-items: center;
+        justify-content: space-between; margin-bottom: 0.6rem;
+      }
+      .script-list-header h2 { margin: 0; font-size: 0.95rem; font-weight: 600; color: var(--text-h); }
+      .script-items { display: flex; flex-direction: column; gap: 0.4rem; }
+      .script-item {
+        display: flex; align-items: center; gap: 0.75rem;
+        padding: 0.65rem 1rem; border: 1px solid var(--border);
+        border-radius: 8px; background: var(--bg-card); cursor: pointer;
+        transition: border-color 0.15s, background 0.15s;
+      }
+      .script-item:hover { background: var(--bg-card-hover); border-color: var(--diablo); }
+      .script-item.active { border-color: var(--diablo); background: var(--bg-card-hover); }
+      .script-item-name { flex: 1; font-size: 0.92rem; color: var(--text-h); }
+      .script-item-meta { font-size: 0.78rem; color: var(--text); }
+
+      /* ===== 에디터 패널 ===== */
+      .script-editor {
+        border: 1px solid var(--border); border-radius: 12px;
+        background: var(--bg-card); overflow: hidden; flex: 1;
+      }
+
+      /* ===== 탭바 ===== */
+      .editor-topbar {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 0.65rem 1rem; background: #15151c;
+        border-bottom: 1px solid var(--border);
+      }
+      .editor-tabs { display: flex; }
+      .tab-btn {
+        padding: 0.4rem 1rem; font-size: 0.88rem; font-weight: 500;
+        color: var(--text); background: none; border: none; cursor: pointer;
+        border-bottom: 2px solid transparent; font-family: inherit;
+        transition: color 0.15s, border-color 0.15s;
+      }
+      .tab-btn:hover { color: var(--text-h); }
+      .tab-btn.active { color: var(--diablo); border-bottom-color: var(--diablo); }
+      .editor-right { display: flex; gap: 0.5rem; }
+
+      .tab-content { display: none; padding: 1.25rem; }
+      .tab-content.active { display: block; }
+
+      /* ===== General Settings ===== */
+      .settings-grid { display: grid; gap: 1.1rem; max-width: 460px; }
+      .field-group { display: flex; flex-direction: column; gap: 0.35rem; }
+      .field-label { font-size: 0.85rem; font-weight: 600; color: var(--text-h); }
+      .field-label .req { color: var(--diablo); margin-left: 2px; }
+      .field-hint { font-size: 0.76rem; color: var(--text); }
+      .field-input {
+        padding: 0.45rem 0.7rem; background: var(--bg); border: 1px solid var(--border);
+        border-radius: 6px; color: var(--text-h); font-size: 0.88rem; font-family: inherit;
+        width: 100%; outline: none; transition: border-color 0.15s;
+      }
+      .field-input:focus { border-color: var(--diablo); }
+      .field-input[type="number"] { max-width: 110px; }
+      .checkbox-row { display: flex; align-items: flex-start; gap: 0.5rem; }
+      .checkbox-row input[type="checkbox"] {
+        margin-top: 3px; accent-color: var(--diablo);
+        width: 14px; height: 14px; cursor: pointer; flex-shrink: 0;
+      }
+      .cb-label { display: flex; flex-direction: column; gap: 0.15rem; cursor: pointer; }
+      .cb-label .cb-name { font-size: 0.88rem; color: var(--text-h); }
+      .cb-label .cb-hint { font-size: 0.76rem; color: var(--text); }
+
+      /* ===== Actions 목록 ===== */
+      .actions-wrap { display: flex; flex-direction: column; gap: 0.75rem; }
+      .actions-list {
+        border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+      }
+      .action-row {
+        display: flex; align-items: center; gap: 0.6rem;
+        padding: 0.6rem 0.9rem; background: var(--bg);
+        border-bottom: 1px solid var(--border); transition: background 0.15s;
+      }
+      .action-row:last-child { border-bottom: none; }
+      .action-row:hover { background: var(--bg-card-hover); }
+      .drag-handle { color: var(--border); font-size: 0.95rem; cursor: grab; flex-shrink: 0; user-select: none; }
+      .action-label { flex: 1; font-size: 0.9rem; color: var(--text-h); }
+      .action-usages { display: flex; gap: 0.3rem; flex-shrink: 0; }
+      .usage-badge {
+        font-size: 0.74rem; padding: 0.1rem 0.45rem; border-radius: 3px; font-weight: 600;
+      }
+      .ub-Buff      { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+      .ub-Attack    { background: rgba(251,191,36,0.12); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+      .ub-Elite     { background: rgba(196,30,58,0.15);  color: #f87171; border: 1px solid rgba(196,30,58,0.3);  }
+      .ub-Density   { background: rgba(167,139,250,0.15);color: #a78bfa; border: 1px solid rgba(167,139,250,0.3);}
+      .ub-Whirlwind { background: rgba(52,211,153,0.12); color: #34d399; border: 1px solid rgba(52,211,153,0.3); }
+      .ub-Movement  { background: rgba(251,146,60,0.12); color: #fb923c; border: 1px solid rgba(251,146,60,0.3); }
+      .ub-None      { background: rgba(160,160,171,0.1); color: #a0a0ab; border: 1px solid rgba(160,160,171,0.3);}
+
+      .actions-empty {
+        padding: 2rem; text-align: center; font-size: 0.85rem; color: var(--text);
+        border: 1px dashed var(--border); border-radius: 8px;
+      }
+      .actions-footer { display: flex; }
+
+      /* ===== Action 편집 뷰 ===== */
+      .action-edit-view { display: none; }
+      .action-edit-view.active { display: flex; flex-direction: column; }
+
+      .action-edit-topbar {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 0.65rem 1rem; background: #15151c;
+        border-bottom: 1px solid var(--border);
+      }
+      .action-edit-topbar-left { display: flex; align-items: center; gap: 0.75rem; }
+      .action-edit-title { font-size: 0.92rem; font-weight: 600; color: var(--text-h); }
+
+      .action-title-input {
+        padding: 0.3rem 0.6rem;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--text-h);
+        font-size: 0.88rem;
+        font-family: inherit;
+        width: 220px;
+        outline: none;
+        transition: border-color 0.15s;
+      }
+      .action-title-input:focus { border-color: var(--diablo); }
+
+      .action-edit-body { padding: 0; overflow-y: auto; max-height: 62vh; }
+
+      /* ===== Ros-Bot 섹션 ===== */
+      .ros-section { border-bottom: 1px solid var(--border); }
+      .ros-section:last-child { border-bottom: none; }
+
+      .ros-section-header {
+        display: flex; align-items: center; gap: 0.5rem;
+        padding: 0.5rem 1rem; background: #1a3a60;
+        color: #7ab8f0; font-size: 0.78rem; font-weight: 700;
+        letter-spacing: 0.06em; cursor: pointer; user-select: none;
+        transition: background 0.15s;
+      }
+      .ros-section-header:hover { background: #1f4575; }
+      .ros-section-header .toggle-icon { font-size: 0.7rem; flex-shrink: 0; }
+
+      .ros-section-body { padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 0.85rem; }
+      .ros-section-body.collapsed { display: none; }
+
+      /* 스킬 셀렉트 */
+      .field-select {
+        padding: 0.45rem 2rem 0.45rem 0.7rem;
+        background: var(--bg); border: 1px solid var(--border);
+        border-radius: 6px; color: var(--text-h); font-size: 0.88rem;
+        font-family: inherit; width: 100%; outline: none; cursor: pointer;
+        transition: border-color 0.15s; appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%23a0a0ab' d='M5 7L0 2h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat; background-position: right 0.7rem center;
+        max-width: 320px;
+      }
+      .field-select:focus { border-color: var(--diablo); }
+      .field-select option { background: #1c1c22; }
+      .field-select optgroup { background: #15151c; color: var(--text); }
+
+      /* Usage 체크박스 그룹 */
+      .usage-group { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; }
+      .usage-item { display: flex; align-items: center; gap: 0.35rem; cursor: pointer; }
+      .usage-item input[type="checkbox"] { accent-color: var(--diablo); width: 14px; height: 14px; cursor: pointer; }
+      .usage-item span { font-size: 0.88rem; color: var(--text-h); }
+
+      .usage-hint {
+        font-size: 0.76rem; color: var(--text);
+        line-height: 1.7; padding: 0.6rem 0.8rem;
+        background: var(--bg); border: 1px solid var(--border);
+        border-radius: 6px;
+      }
+      .usage-hint strong { color: var(--text-h); }
+
+      /* 조건부 섹션 */
+      .cond-section { background: rgba(26,58,96,0.08); }
+      .cond-section .ros-section-header { background: #162d4a; color: #6aaae0; }
+      .cond-section .ros-section-header:hover { background: #1a3655; }
+      .cond-section .ros-section-body .field-hint {
+        padding: 0.6rem; background: var(--bg); border: 1px solid var(--border);
+        border-radius: 6px; font-size: 0.8rem; color: var(--text);
+      }
+
+      /* 인풋 그룹 */
+      .input-with-hint { display: flex; flex-direction: column; gap: 0.3rem; }
+      .input-with-hint .field-hint { margin: 0; }
+
+      /* 스크립트 없음 */
+      .no-script {
+        flex: 1; display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        gap: 1rem; padding: 4rem 2rem;
+        border: 1px dashed var(--border); border-radius: 12px;
+        text-align: center; color: var(--text);
+      }
+      .no-script p { margin: 0; font-size: 0.95rem; }
+
+      /* ===== 버튼 ===== */
+      .btn {
+        display: inline-flex; align-items: center; gap: 0.35rem;
+        padding: 0.4rem 0.85rem; border-radius: 6px;
+        font-size: 0.83rem; font-weight: 500; font-family: inherit;
+        cursor: pointer; border: 1px solid transparent;
+        transition: background 0.15s, border-color 0.15s, color 0.15s;
+        white-space: nowrap;
+      }
+      .btn-primary { background: var(--diablo); color: #fff; border-color: var(--diablo); }
+      .btn-primary:hover { background: #a51830; border-color: #a51830; }
+      .btn-ghost { background: none; color: var(--text); border-color: var(--border); }
+      .btn-ghost:hover { background: var(--bg-card-hover); color: var(--text-h); }
+      .btn-danger { background: none; color: #f87171; border-color: rgba(248,113,113,0.3); }
+      .btn-danger:hover { background: rgba(248,113,113,0.1); border-color: #f87171; }
+      .btn-sm { padding: 0.28rem 0.6rem; font-size: 0.78rem; }
+
+      /* 드래그 */
+      .action-row.dragging { opacity: 0.35; }
+      .action-row.drag-over { border-top: 2px solid var(--diablo); }
+
+      /* 스크롤바 */
+      ::-webkit-scrollbar { width: 5px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    </style>
   </head>
   <body>
-    <main class="page">
-      <nav class="page-nav">
-        <a href="game.html" class="back-link">← 게임으로</a>
-      </nav>
+    <main class="d3-page">
+      <!-- 헤더 -->
+      <div class="d3-header">
+        <nav><a href="game.html" class="back-link">← 게임으로</a></nav>
+        <div class="d3-title-row">
+          <span style="font-size:1.5rem">🔥</span>
+          <h1>디아블로3 스크립트 에디터</h1>
+        </div>
+      </div>
 
-      <h1 class="page-title">디아블로3</h1>
-      <p class="page-subtitle">D3 관련 툴이 여기에 추가됩니다.</p>
+      <!-- 스크립트 목록 -->
+      <div class="script-list-section">
+        <div class="script-list-header">
+          <h2>저장된 스크립트</h2>
+          <button class="btn btn-primary" id="btnNewScript">+ 새 스크립트</button>
+        </div>
+        <div class="script-items" id="scriptList"></div>
+      </div>
 
-      <div class="page-placeholder">준비 중...</div>
+      <!-- 에디터 패널 -->
+      <div class="script-editor" id="editorPanel" style="display:none">
+
+        <!-- ① 일반 뷰 (탭) -->
+        <div id="normalView">
+          <div class="editor-topbar">
+            <div class="editor-tabs">
+              <button class="tab-btn active" data-tab="general">General settings</button>
+              <button class="tab-btn" data-tab="actions">Actions</button>
+            </div>
+            <div class="editor-right">
+              <button class="btn btn-ghost btn-sm" id="btnCopy">Save a copy</button>
+              <button class="btn btn-primary btn-sm" id="btnSave">Save</button>
+            </div>
+          </div>
+
+          <!-- General settings -->
+          <div class="tab-content active" id="tab-general">
+            <div class="settings-grid">
+              <div class="field-group">
+                <label class="field-label" for="fTitle">Title <span class="req">*</span></label>
+                <input class="field-input" id="fTitle" type="text" placeholder="스크립트 이름" />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="fTags">Tags</label>
+                <input class="field-input" id="fTags" type="text" placeholder="쉼표로 구분" />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="fDistance">Global Monster Distance Scan</label>
+                <input class="field-input" id="fDistance" type="number" min="1" max="150" value="150" />
+                <span class="field-hint">봇이 몬스터를 인식하는 거리(야드). 150 초과 불가.</span>
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="fMinLife">Minimum life percent</label>
+                <input class="field-input" id="fMinLife" type="number" min="0" max="200" value="101" />
+                <span class="field-hint">생명력이 이 % 이하면 물약을 사용합니다.</span>
+              </div>
+              <div class="field-group">
+                <label class="field-label">Map exploring</label>
+                <label class="checkbox-row">
+                  <input type="checkbox" id="fKeepExploring" checked />
+                  <span class="cb-label">
+                    <span class="cb-name">Keep exploring</span>
+                    <span class="cb-hint">사용 가능한 스킬이 없을 때 계속 탐색합니다.</span>
+                  </span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions 목록 -->
+          <div class="tab-content" id="tab-actions">
+            <div class="actions-wrap">
+              <div id="actionsListWrap"></div>
+              <div class="actions-footer">
+                <button class="btn btn-ghost" id="btnAddAction">+ Add new Action</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ② Action 편집 뷰 -->
+        <div class="action-edit-view" id="actionEditView">
+          <div class="action-edit-topbar">
+            <div class="action-edit-topbar-left">
+              <button class="btn btn-ghost btn-sm" id="btnBackActions">← Actions</button>
+              <input class="action-title-input" id="actionEditTitle" type="text" placeholder="Action 제목 입력" />
+            </div>
+            <button class="btn btn-primary btn-sm" id="btnSaveAction">확인</button>
+          </div>
+
+          <div class="action-edit-body" id="actionEditBody">
+
+            <!-- GENERAL SETTINGS -->
+            <div class="ros-section">
+              <div class="ros-section-header" data-sec="general">
+                <span class="toggle-icon">⊙</span> GENERAL SETTINGS
+              </div>
+              <div class="ros-section-body" id="sec-general">
+                <div class="field-group">
+                  <label class="field-label">Skill <span class="req">*</span></label>
+                  <select class="field-select" id="aeSkill"></select>
+                </div>
+
+                <label class="checkbox-row">
+                  <input type="checkbox" id="aeStandStill" />
+                  <span class="cb-label">
+                    <span class="cb-name">Stand still</span>
+                    <span class="cb-hint">Check to have the bot stand still while using this skill</span>
+                  </span>
+                </label>
+                <label class="checkbox-row">
+                  <input type="checkbox" id="aeNoFastMode" />
+                  <span class="cb-label">
+                    <span class="cb-name">Do not use during fast mode</span>
+                    <span class="cb-hint">Bot will not use this skill while fast mode is active</span>
+                  </span>
+                </label>
+                <label class="checkbox-row">
+                  <input type="checkbox" id="aeForceRecast" />
+                  <span class="cb-label">
+                    <span class="cb-name">Force recast</span>
+                    <span class="cb-hint">Forces the bot to recast the skill even if it is already active</span>
+                  </span>
+                </label>
+                <label class="checkbox-row">
+                  <input type="checkbox" id="aeIgnorePos" />
+                  <span class="cb-label">
+                    <span class="cb-name">Ignore position calculation</span>
+                    <span class="cb-hint">Check for melee attack, uncheck for ranged attacks</span>
+                  </span>
+                </label>
+                <label class="checkbox-row">
+                  <input type="checkbox" id="aeMoveAround" />
+                  <span class="cb-label">
+                    <span class="cb-name">Move around</span>
+                    <span class="cb-hint">Have to bot move around if it has no action ready for casting and that this skill is still active</span>
+                  </span>
+                </label>
+                <label class="checkbox-row">
+                  <input type="checkbox" id="aeBreakItems" />
+                  <span class="cb-label">
+                    <span class="cb-name">Use to break items</span>
+                    <span class="cb-hint">Bot will use this skill to break items (barrels, doors etc...)</span>
+                  </span>
+                </label>
+
+                <div class="field-group">
+                  <label class="field-label" for="aeTimer">Timer <span class="req">*</span> (ms)</label>
+                  <input class="field-input" id="aeTimer" type="number" min="0" value="50" />
+                  <span class="field-hint">Delay before re-using an action</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- RESOURCE SETTINGS -->
+            <div class="ros-section">
+              <div class="ros-section-header" data-sec="resource">
+                <span class="toggle-icon">⊙</span> RESOURCE SETTINGS
+              </div>
+              <div class="ros-section-body" id="sec-resource">
+                <div class="field-group">
+                  <label class="field-label">Resource</label>
+                  <select class="field-select" id="aeResource">
+                    <option value="">- None -</option>
+                    <option value="Wrath">Wrath (진노)</option>
+                    <option value="Health">Health (생명력)</option>
+                  </select>
+                  <span class="field-hint">Type of resource used to cast the skill</span>
+                </div>
+                <div class="field-group">
+                  <label class="field-label" for="aeMinLifeLevel">Min life level (% of health)</label>
+                  <input class="field-input" id="aeMinLifeLevel" type="number" min="0" max="100" value="0" />
+                  <span class="field-hint">Minimum life level to cast this skill</span>
+                </div>
+                <label class="checkbox-row">
+                  <input type="checkbox" id="aeChanneling" />
+                  <span class="cb-label">
+                    <span class="cb-name">Channeling</span>
+                    <span class="cb-hint">Spell key is maintained</span>
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <!-- CONDITIONAL CASTING -->
+            <div class="ros-section">
+              <div class="ros-section-header" data-sec="conditional">
+                <span class="toggle-icon">⊙</span> CONDITIONAL CASTING
+              </div>
+              <div class="ros-section-body" id="sec-conditional">
+                <label class="checkbox-row">
+                  <input type="checkbox" id="aeUseCustom" />
+                  <span class="cb-label">
+                    <span class="cb-name">Use custom condition</span>
+                  </span>
+                </label>
+                <div class="field-group">
+                  <label class="field-label" for="aeCustomCond">Action custom condition</label>
+                  <input class="field-input" id="aeCustomCond" type="text" placeholder="조건식 입력..." />
+                </div>
+              </div>
+            </div>
+
+            <!-- USAGE SETTINGS -->
+            <div class="ros-section">
+              <div class="ros-section-header" data-sec="usage">
+                <span class="toggle-icon">⊙</span> USAGE SETTINGS
+              </div>
+              <div class="ros-section-body" id="sec-usage">
+                <div class="field-group">
+                  <label class="field-label">Usage <span class="req">*</span></label>
+                  <div class="usage-group">
+                    <label class="usage-item"><input type="checkbox" class="usage-cb" value="None" id="uNone" /><span>None</span></label>
+                    <label class="usage-item"><input type="checkbox" class="usage-cb" value="Attack" id="uAttack" /><span>Attack</span></label>
+                    <label class="usage-item"><input type="checkbox" class="usage-cb" value="Elite" id="uElite" /><span>Elite</span></label>
+                    <label class="usage-item"><input type="checkbox" class="usage-cb" value="Density" id="uDensity" /><span>Density</span></label>
+                    <label class="usage-item"><input type="checkbox" class="usage-cb" value="Whirlwind" id="uWhirlwind" /><span>Whirlwind</span></label>
+                    <label class="usage-item"><input type="checkbox" class="usage-cb" value="Buff" id="uBuff" /><span>Buff</span></label>
+                    <label class="usage-item"><input type="checkbox" class="usage-cb" value="Movement" id="uMovement" /><span>Movement</span></label>
+                  </div>
+                </div>
+                <div class="usage-hint">
+                  3 groups of possible combinations:<br>
+                  - <strong>Buff</strong>: Buff, Buff + Attack, Buff + Density, Buff + Elite<br>
+                  - <strong>Attack</strong>: Attack, Attack + Elite, Attack + Density, WW, WW + Elite, WW + Density + Elite<br>
+                  - <strong>Move</strong>: Movement cannot be combined with any other usage
+                </div>
+              </div>
+            </div>
+
+            <!-- ATTACK SETTINGS (조건부) -->
+            <div class="ros-section cond-section" id="sectionAttack" style="display:none">
+              <div class="ros-section-header" data-sec="attack">
+                <span class="toggle-icon">⊙</span> ATTACK SETTINGS
+              </div>
+              <div class="ros-section-body" id="sec-attack">
+                <div class="field-group">
+                  <label class="field-label" for="aeMinMonsters">Minimum monsters</label>
+                  <input class="field-input" id="aeMinMonsters" type="number" min="0" value="1" />
+                  <span class="field-hint">Minimum number of monsters in range to use this skill</span>
+                </div>
+                <div class="field-group">
+                  <label class="field-label" for="aeAttackRange">Attack range (yards)</label>
+                  <input class="field-input" id="aeAttackRange" type="number" min="0" max="150" value="20" />
+                  <span class="field-hint">Range within which the bot looks for monsters</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- BUFF SETTINGS (조건부) -->
+            <div class="ros-section cond-section" id="sectionBuff" style="display:none">
+              <div class="ros-section-header" data-sec="buff">
+                <span class="toggle-icon">⊙</span> BUFF SETTINGS
+              </div>
+              <div class="ros-section-body" id="sec-buff">
+                <div class="field-group">
+                  <label class="field-label">Buffed resource</label>
+                  <select class="field-select" id="aeBuffedResource">
+                    <option value="">- None -</option>
+                    <option value="Wrath">Wrath (진노)</option>
+                    <option value="Health">Health (생명력)</option>
+                  </select>
+                  <span class="field-hint">The resource the current skill is buffing</span>
+                </div>
+                <div class="field-group">
+                  <label class="field-label" for="aeMinResLevel">Minimum resource level <span class="req">*</span> <small style="font-weight:400;color:var(--text)">(% for health, absolute value for resources)</small></label>
+                  <input class="field-input" id="aeMinResLevel" type="number" min="0" value="0" />
+                  <span class="field-hint">Bot will try to buff if your selected resource level goes below this threshold</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- DENSITY SETTINGS (조건부) -->
+            <div class="ros-section cond-section" id="sectionDensity" style="display:none">
+              <div class="ros-section-header" data-sec="density">
+                <span class="toggle-icon">⊙</span> DENSITY SETTINGS
+              </div>
+              <div class="ros-section-body" id="sec-density">
+                <div class="field-group">
+                  <label class="field-label" for="aeDensityCount">Monster count</label>
+                  <input class="field-input" id="aeDensityCount" type="number" min="1" value="3" />
+                  <span class="field-hint">Minimum monsters in range required to trigger density usage</span>
+                </div>
+                <div class="field-group">
+                  <label class="field-label" for="aeDensityRange">Density range (yards)</label>
+                  <input class="field-input" id="aeDensityRange" type="number" min="0" max="150" value="20" />
+                </div>
+              </div>
+            </div>
+
+            <!-- MOVE SETTINGS (조건부) -->
+            <div class="ros-section cond-section" id="sectionMove" style="display:none">
+              <div class="ros-section-header" data-sec="move">
+                <span class="toggle-icon">⊙</span> MOVE SETTINGS
+              </div>
+              <div class="ros-section-body" id="sec-move">
+                <div class="field-hint" style="padding:0.5rem 0.75rem; background:var(--bg); border:1px solid var(--border); border-radius:6px; font-size:0.8rem;">
+                  Requires Movement usage to be checked. Movement cannot be combined with any other usage.
+                </div>
+              </div>
+            </div>
+
+          </div><!-- /action-edit-body -->
+        </div><!-- /action-edit-view -->
+
+      </div><!-- /script-editor -->
+
+      <!-- 에디터 없을 때 -->
+      <div class="no-script" id="noScriptMsg">
+        <p style="font-size:2rem">📜</p>
+        <p>새 스크립트를 만들거나 저장된 스크립트를 선택하세요.</p>
+        <button class="btn btn-primary" id="btnNewScript2">+ 새 스크립트</button>
+      </div>
     </main>
+
+    <script>
+    (function () {
+      'use strict';
+
+      let skills  = [];   // crusader.json 스킬 목록
+      let scripts = [];   // 저장된 스크립트 목록
+      let currentId      = null;
+      let editActionId   = null;  // null=추가, string=수정 중인 action.id
+
+      /* ───────── crusader.json 로드 ───────── */
+      fetch('data/diablo3/crusader.json')
+        .then(r => r.json())
+        .then(data => {
+          skills = data.skills || [];
+          buildSkillSelect();
+          boot();
+        })
+        .catch(() => { buildSkillSelect(); boot(); });
+
+      /* ───────── localStorage ───────── */
+      function boot() {
+        const raw = localStorage.getItem('d3_scripts_v2');
+        scripts = raw ? JSON.parse(raw) : [];
+        renderScriptList();
+        if (scripts.length > 0) selectScript(scripts[0].id);
+      }
+      function persist() { localStorage.setItem('d3_scripts_v2', JSON.stringify(scripts)); }
+      function uid() { return 's' + Date.now() + Math.random().toString(36).slice(2,5); }
+
+      /* ───────── 스킬 셀렉트 ───────── */
+      function buildSkillSelect() {
+        const sel = document.getElementById('aeSkill');
+        const byType = {};
+        skills.forEach(sk => {
+          if (!byType[sk.type]) byType[sk.type] = [];
+          byType[sk.type].push(sk);
+        });
+        sel.innerHTML = Object.entries(byType).map(([type, list]) =>
+          `<optgroup label="${x(type)}">${
+            list.map(sk =>
+              `<option value="${x(sk.nameEn)}" data-ko="${x(sk.name)}">[Crusader]${x(sk.nameEn)} (${x(sk.name)})</option>`
+            ).join('')
+          }</optgroup>`
+        ).join('');
+      }
+
+      /* ───────── 스크립트 목록 렌더 ───────── */
+      function renderScriptList() {
+        const el = document.getElementById('scriptList');
+        el.innerHTML = scripts.map(s => `
+          <div class="script-item ${s.id === currentId ? 'active' : ''}" data-sid="${s.id}">
+            <span class="script-item-name">${x(s.title || '(제목 없음)')}</span>
+            <span class="script-item-meta">${s.actions.length}개 액션</span>
+            <button class="btn btn-danger btn-sm" data-del="${s.id}">삭제</button>
+          </div>`).join('');
+      }
+
+      /* ───────── 스크립트 선택 ───────── */
+      function selectScript(id) {
+        currentId = id;
+        const s = scripts.find(x => x.id === id);
+        if (!s) {
+          document.getElementById('editorPanel').style.display = 'none';
+          document.getElementById('noScriptMsg').style.display = 'flex';
+          return;
+        }
+        document.getElementById('editorPanel').style.display = '';
+        document.getElementById('noScriptMsg').style.display = 'none';
+        showNormalView();
+
+        document.getElementById('fTitle').value = s.title || '';
+        document.getElementById('fTags').value  = s.tags  || '';
+        document.getElementById('fDistance').value    = s.distance    ?? 150;
+        document.getElementById('fMinLife').value     = s.minLife     ?? 101;
+        document.getElementById('fKeepExploring').checked = s.keepExploring !== false;
+
+        renderActions(s.actions);
+        renderScriptList();
+      }
+
+      function cur() { return scripts.find(s => s.id === currentId); }
+
+      /* ───────── Actions 렌더 ───────── */
+      function renderActions(actions) {
+        const wrap = document.getElementById('actionsListWrap');
+        if (!actions || actions.length === 0) {
+          wrap.innerHTML = '<div class="actions-empty">아직 Action이 없습니다.</div>';
+          return;
+        }
+        wrap.innerHTML = `<div class="actions-list" id="actionsListInner">${
+          actions.map((a, i) => {
+            const usages = (a.usage || []).map(u =>
+              `<span class="usage-badge ub-${u}">${u}</span>`).join('');
+            return `<div class="action-row" draggable="true" data-aidx="${i}">
+              <span class="drag-handle">⠿</span>
+              <span class="action-label">${a.title ? x(a.title) + ' — ' : ''}[Crusader]${x(a.skillEn)} (${x(a.skillKo)})</span>
+              <div class="action-usages">${usages}</div>
+              <button class="btn btn-ghost btn-sm" data-edit-idx="${i}">✏ Edit</button>
+              <button class="btn btn-danger btn-sm" data-rm-idx="${i}">🗑 Delete</button>
+            </div>`;
+          }).join('')
+        }</div>`;
+        initDrag();
+      }
+
+      /* ───────── 드래그&드롭 ───────── */
+      function initDrag() {
+        const inner = document.getElementById('actionsListInner');
+        if (!inner) return;
+        let fromIdx = null;
+        inner.querySelectorAll('.action-row').forEach(row => {
+          row.addEventListener('dragstart', () => { fromIdx = +row.dataset.aidx; row.classList.add('dragging'); });
+          row.addEventListener('dragend', () => {
+            row.classList.remove('dragging');
+            inner.querySelectorAll('.action-row').forEach(r => r.classList.remove('drag-over'));
+          });
+          row.addEventListener('dragover', e => {
+            e.preventDefault();
+            inner.querySelectorAll('.action-row').forEach(r => r.classList.remove('drag-over'));
+            row.classList.add('drag-over');
+          });
+          row.addEventListener('drop', () => {
+            const toIdx = +row.dataset.aidx;
+            if (fromIdx === null || fromIdx === toIdx) return;
+            const s = cur(); if (!s) return;
+            const [moved] = s.actions.splice(fromIdx, 1);
+            s.actions.splice(toIdx, 0, moved);
+            persist(); renderActions(s.actions); renderScriptList();
+          });
+        });
+      }
+
+      /* ───────── 뷰 전환 ───────── */
+      function showNormalView() {
+        document.getElementById('normalView').style.display = '';
+        document.getElementById('actionEditView').classList.remove('active');
+      }
+
+      function showEditView() {
+        document.getElementById('normalView').style.display = 'none';
+        document.getElementById('actionEditView').classList.add('active');
+      }
+
+      /* ───────── Action 편집 뷰 열기 ───────── */
+      function openActionEdit(action = null, idx = null) {
+        editActionId = idx;
+        showEditView();
+
+        const DEFAULT = {
+          skillEn: skills.length ? skills[0].nameEn : '',
+          skillKo: skills.length ? skills[0].name   : '',
+          title: '',
+          standStill: false, noFastMode: false, forceRecast: false,
+          ignorePos: false, moveAround: false, breakItems: false, timer: '',
+          resource: '', minLifeLevel: '', channeling: false,
+          useCustom: false, customCond: '',
+          usage: [],
+          buffedResource: '', minResLevel: '',
+          minMonsters: '', attackRange: '',
+          densityCount: '', densityRange: '',
+        };
+        const a = action ? Object.assign({}, DEFAULT, action) : DEFAULT;
+
+        // Title
+        document.getElementById('actionEditTitle').value = a.title || '';
+
+        // Skill
+        document.getElementById('aeSkill').value = a.skillEn;
+
+        // General
+        document.getElementById('aeStandStill').checked = !!a.standStill;
+        document.getElementById('aeNoFastMode').checked = !!a.noFastMode;
+        document.getElementById('aeForceRecast').checked = !!a.forceRecast;
+        document.getElementById('aeIgnorePos').checked = !!a.ignorePos;
+        document.getElementById('aeMoveAround').checked = !!a.moveAround;
+        document.getElementById('aeBreakItems').checked = !!a.breakItems;
+        document.getElementById('aeTimer').value = a.timer ?? '';
+
+        // Resource
+        document.getElementById('aeResource').value = a.resource || '';
+        document.getElementById('aeMinLifeLevel').value = a.minLifeLevel ?? '';
+        document.getElementById('aeChanneling').checked = !!a.channeling;
+
+        // Conditional
+        document.getElementById('aeUseCustom').checked = !!a.useCustom;
+        document.getElementById('aeCustomCond').value = a.customCond || '';
+
+        // Usage
+        document.querySelectorAll('.usage-cb').forEach(cb => {
+          cb.checked = (a.usage || []).includes(cb.value);
+        });
+
+        // Buff
+        document.getElementById('aeBuffedResource').value = a.buffedResource || '';
+        document.getElementById('aeMinResLevel').value = a.minResLevel ?? '';
+
+        // Attack
+        document.getElementById('aeMinMonsters').value = a.minMonsters ?? '';
+        document.getElementById('aeAttackRange').value = a.attackRange ?? '';
+
+        // Density
+        document.getElementById('aeDensityCount').value = a.densityCount ?? '';
+        document.getElementById('aeDensityRange').value = a.densityRange ?? '';
+
+        updateUsageSections();
+      }
+
+      /* ───────── Usage → 조건부 섹션 표시 ───────── */
+      function updateUsageSections() {
+        const u = getCheckedUsages();
+        document.getElementById('sectionBuff').style.display    = u.includes('Buff')                              ? '' : 'none';
+        document.getElementById('sectionAttack').style.display  = (u.includes('Attack') || u.includes('Whirlwind')) ? '' : 'none';
+        document.getElementById('sectionDensity').style.display = u.includes('Density')                           ? '' : 'none';
+        document.getElementById('sectionMove').style.display    = u.includes('Movement')                          ? '' : 'none';
+      }
+
+      function getCheckedUsages() {
+        return [...document.querySelectorAll('.usage-cb:checked')].map(cb => cb.value);
+      }
+
+      /* None 체크박스 상호 배제 */
+      document.getElementById('uNone').addEventListener('change', e => {
+        if (e.target.checked) {
+          document.querySelectorAll('.usage-cb').forEach(cb => {
+            if (cb.value !== 'None') cb.checked = false;
+          });
+        }
+        updateUsageSections();
+      });
+      document.querySelectorAll('.usage-cb').forEach(cb => {
+        if (cb.value === 'None') return;
+        cb.addEventListener('change', e => {
+          if (e.target.checked) document.getElementById('uNone').checked = false;
+          updateUsageSections();
+        });
+      });
+
+      /* ───────── Action 저장 ───────── */
+      function saveActionEdit() {
+        const s = cur(); if (!s) return;
+        const skillSel = document.getElementById('aeSkill');
+        const opt = skillSel.options[skillSel.selectedIndex];
+
+        const a = {
+          title: document.getElementById('actionEditTitle').value.trim(),
+          skillEn: skillSel.value,
+          skillKo: opt ? (opt.dataset.ko || '') : '',
+          standStill: document.getElementById('aeStandStill').checked,
+          noFastMode: document.getElementById('aeNoFastMode').checked,
+          forceRecast: document.getElementById('aeForceRecast').checked,
+          ignorePos: document.getElementById('aeIgnorePos').checked,
+          moveAround: document.getElementById('aeMoveAround').checked,
+          breakItems: document.getElementById('aeBreakItems').checked,
+          timer: +document.getElementById('aeTimer').value,
+          resource: document.getElementById('aeResource').value,
+          minLifeLevel: +document.getElementById('aeMinLifeLevel').value,
+          channeling: document.getElementById('aeChanneling').checked,
+          useCustom: document.getElementById('aeUseCustom').checked,
+          customCond: document.getElementById('aeCustomCond').value,
+          usage: getCheckedUsages(),
+          buffedResource: document.getElementById('aeBuffedResource').value,
+          minResLevel: +document.getElementById('aeMinResLevel').value,
+          minMonsters: +document.getElementById('aeMinMonsters').value,
+          attackRange: +document.getElementById('aeAttackRange').value,
+          densityCount: +document.getElementById('aeDensityCount').value,
+          densityRange: +document.getElementById('aeDensityRange').value,
+        };
+
+        if (editActionId !== null) {
+          s.actions[editActionId] = a;
+        } else {
+          s.actions.push(a);
+        }
+        persist();
+        renderActions(s.actions);
+        renderScriptList();
+        showNormalView();
+        // Actions 탭 활성화
+        activateTab('actions');
+      }
+
+      /* ───────── 탭 전환 ───────── */
+      function activateTab(name) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === 'tab-' + name));
+      }
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => activateTab(btn.dataset.tab));
+      });
+
+      /* ───────── 섹션 접기/펼치기 ───────── */
+      document.querySelectorAll('.ros-section-header').forEach(hdr => {
+        hdr.addEventListener('click', () => {
+          const body = document.getElementById('sec-' + hdr.dataset.sec);
+          if (!body) return;
+          body.classList.toggle('collapsed');
+          hdr.querySelector('.toggle-icon').textContent = body.classList.contains('collapsed') ? '⊕' : '⊙';
+        });
+      });
+
+      /* ───────── 스크립트 저장 ───────── */
+      function saveScript() {
+        const s = cur(); if (!s) return;
+        const title = document.getElementById('fTitle').value.trim();
+        if (!title) { alert('제목을 입력하세요.'); return; }
+        s.title = title;
+        s.tags  = document.getElementById('fTags').value.trim();
+        s.distance     = +document.getElementById('fDistance').value;
+        s.minLife      = +document.getElementById('fMinLife').value;
+        s.keepExploring = document.getElementById('fKeepExploring').checked;
+        persist();
+        renderScriptList();
+        toast('저장되었습니다.');
+      }
+
+      function copyScript() {
+        const s = cur(); if (!s) return;
+        const cp = JSON.parse(JSON.stringify(s));
+        cp.id = uid();
+        cp.title = (cp.title || '스크립트') + ' (복사본)';
+        scripts.push(cp);
+        persist();
+        renderScriptList();
+        selectScript(cp.id);
+        toast('복사본이 만들어졌습니다.');
+      }
+
+      function createScript() {
+        const s = {
+          id: uid(), title: '새 스크립트', tags: '',
+          distance: 150, minLife: 101, keepExploring: true, actions: [],
+        };
+        scripts.push(s);
+        persist();
+        renderScriptList();
+        selectScript(s.id);
+        setTimeout(() => document.getElementById('fTitle').focus(), 80);
+      }
+
+      /* ───────── 이벤트 위임 ───────── */
+      document.addEventListener('click', e => {
+        // 스크립트 선택
+        const si = e.target.closest('.script-item');
+        if (si && !e.target.dataset.del) { selectScript(si.dataset.sid); return; }
+
+        // 스크립트 삭제
+        if (e.target.dataset.del) {
+          if (!confirm('삭제할까요?')) return;
+          const delId = e.target.dataset.del;
+          scripts = scripts.filter(s => s.id !== delId);
+          if (currentId === delId) {
+            currentId = null;
+            document.getElementById('editorPanel').style.display = 'none';
+            document.getElementById('noScriptMsg').style.display = 'flex';
+          }
+          persist(); renderScriptList(); return;
+        }
+
+        // Action Edit 열기
+        if (e.target.dataset.editIdx !== undefined) {
+          const s = cur(); if (!s) return;
+          openActionEdit(s.actions[+e.target.dataset.editIdx], +e.target.dataset.editIdx);
+          return;
+        }
+
+        // Action 삭제
+        if (e.target.dataset.rmIdx !== undefined) {
+          const s = cur(); if (!s) return;
+          s.actions.splice(+e.target.dataset.rmIdx, 1);
+          persist(); renderActions(s.actions); renderScriptList(); return;
+        }
+      });
+
+      /* 버튼 바인딩 */
+      document.getElementById('btnNewScript').addEventListener('click', createScript);
+      document.getElementById('btnNewScript2').addEventListener('click', createScript);
+      document.getElementById('btnSave').addEventListener('click', saveScript);
+      document.getElementById('btnCopy').addEventListener('click', copyScript);
+      document.getElementById('btnAddAction').addEventListener('click', () => {
+        openActionEdit(null, null);
+        activateTab('actions');
+      });
+      document.getElementById('btnBackActions').addEventListener('click', () => {
+        showNormalView(); activateTab('actions');
+      });
+      document.getElementById('btnSaveAction').addEventListener('click', saveActionEdit);
+
+      /* Ctrl+S */
+      document.addEventListener('keydown', e => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveScript(); }
+      });
+
+      /* ───────── toast ───────── */
+      function toast(msg) {
+        let t = document.getElementById('_toast');
+        if (!t) {
+          t = document.createElement('div'); t.id = '_toast';
+          Object.assign(t.style, {
+            position:'fixed', bottom:'1.5rem', left:'50%', transform:'translateX(-50%)',
+            background:'#1c1c22', border:'1px solid var(--border)', color:'var(--text-h)',
+            padding:'0.55rem 1.1rem', borderRadius:'8px', fontSize:'0.85rem',
+            boxShadow:'0 4px 16px rgba(0,0,0,0.4)', zIndex:'999', transition:'opacity 0.3s',
+          });
+          document.body.appendChild(t);
+        }
+        t.textContent = msg; t.style.opacity = '1';
+        clearTimeout(t._t); t._t = setTimeout(() => { t.style.opacity = '0'; }, 2000);
+      }
+
+      /* ───────── XSS 방지 ───────── */
+      function x(s) {
+        return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+      }
+    })();
+    </script>
   </body>
 </html>
