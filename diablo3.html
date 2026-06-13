@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>디아블로3 - BethelSoftLab</title>
     <link rel="stylesheet" href="css/style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/diablo3-sync.js"></script>
     <style>
       /* ===== 레이아웃 ===== */
       .d3-page {
@@ -43,6 +46,21 @@
       .script-item.active { border-color: var(--diablo); background: var(--bg-card-hover); }
       .script-item-name { flex: 1; font-size: 0.92rem; color: var(--text-h); }
       .script-item-meta { font-size: 0.78rem; color: var(--text); }
+
+      .script-list-toolbar {
+        display: flex; align-items: center; gap: 0.75rem;
+        margin-bottom: 0.6rem; flex-wrap: wrap;
+      }
+      .script-list-toolbar label {
+        font-size: 0.82rem; color: var(--text); white-space: nowrap;
+      }
+      .class-filter-select { max-width: 180px; }
+
+      .script-class-badge {
+        font-size: 0.72rem; padding: 0.1rem 0.45rem; border-radius: 3px;
+        background: rgba(196,30,58,0.12); color: #f87171;
+        border: 1px solid rgba(196,30,58,0.25); flex-shrink: 0;
+      }
 
       /* ===== 에디터 패널 ===== */
       .script-editor {
@@ -265,6 +283,10 @@
           <h2>저장된 스크립트</h2>
           <button class="btn btn-primary" id="btnNewScript">+ 새 스크립트</button>
         </div>
+        <div class="script-list-toolbar">
+          <label for="listClassFilter">직업</label>
+          <select class="field-select class-filter-select" id="listClassFilter"></select>
+        </div>
         <div class="script-items" id="scriptList"></div>
       </div>
 
@@ -287,6 +309,10 @@
           <!-- General settings -->
           <div class="tab-content active" id="tab-general">
             <div class="settings-grid">
+              <div class="field-group">
+                <label class="field-label" for="fClass">직업 <span class="req">*</span></label>
+                <select class="field-select" id="fClass"></select>
+              </div>
               <div class="field-group">
                 <label class="field-label" for="fTitle">Title <span class="req">*</span></label>
                 <input class="field-input" id="fTitle" type="text" placeholder="스크립트 이름" />
@@ -568,34 +594,142 @@
     (function () {
       'use strict';
 
-      let skills  = [];   // crusader.json 스킬 목록
+      let skills  = [];   // 현재 직업 스킬 목록
       let scripts = [];   // 저장된 스크립트 목록
       let currentId      = null;
-      let editActionId   = null;  // null=추가, string=수정 중인 action.id
+      let editActionId   = null;
+      let listClassFilter = '전체';
 
-      /* ───────── crusader.json 로드 ───────── */
-      fetch('data/diablo3/crusader.json')
-        .then(r => r.json())
-        .then(data => {
-          skills = data.skills || [];
-          buildSkillSelect();
-          boot();
-        })
-        .catch(() => { buildSkillSelect(); boot(); });
+      const D3_CLASSES = [
+        { ko: '야만용사',   en: 'Barbarian' },
+        { ko: '성전사',     en: 'Crusader' },
+        { ko: '악마사냥꾼', en: 'Demon Hunter' },
+        { ko: '수도사',     en: 'Monk' },
+        { ko: '강령술사',   en: 'Necromancer' },
+        { ko: '마법사',     en: 'Wizard' },
+        { ko: '의원',       en: 'Witch Doctor' },
+      ];
 
-      /* ───────── localStorage ───────── */
-      function boot() {
-        const raw = localStorage.getItem('d3_scripts_v2');
-        scripts = raw ? JSON.parse(raw) : [];
-        renderScriptList();
-        if (scripts.length > 0) selectScript(scripts[0].id);
+      const CLASS_SKILL_FILES = {
+        Crusader: 'data/diablo3/crusader.json',
+      };
+
+      /* ───────── 직업 셀렉트 빌드 ───────── */
+      function buildClassSelects() {
+        const opts = D3_CLASSES.map(c =>
+          `<option value="${x(c.en)}">${x(c.ko)} (${x(c.en)})</option>`
+        ).join('');
+
+        document.getElementById('fClass').innerHTML = opts;
+
+        const filterOpts = `<option value="전체">전체</option>` + opts;
+        const filterSel = document.getElementById('listClassFilter');
+        filterSel.innerHTML = filterOpts;
+        filterSel.value = listClassFilter;
       }
-      function persist() { localStorage.setItem('d3_scripts_v2', JSON.stringify(scripts)); }
-      function uid() { return 's' + Date.now() + Math.random().toString(36).slice(2,5); }
+
+      function getClassInfo(classEn) {
+        return D3_CLASSES.find(c => c.en === classEn) || { ko: '', en: classEn || '' };
+      }
+
+      /* ───────── 직업별 스킬 로드 ───────── */
+      async function loadSkillsForClass(classEn) {
+        const path = CLASS_SKILL_FILES[classEn];
+        if (!path) {
+          skills = [];
+          buildSkillSelect(classEn);
+          return;
+        }
+        try {
+          const r = await fetch(path);
+          const data = await r.json();
+          skills = data.skills || [];
+        } catch {
+          skills = [];
+        }
+        buildSkillSelect(classEn);
+      }
+
+      /* ───────── 초기화 ───────── */
+      listClassFilter = localStorage.getItem('d3_class_filter') || '전체';
+      buildClassSelects();
+
+      loadSkillsForClass('Crusader').then(() => boot());
+
+      /* ───────── 저장소 (DB 우선, 폴백: localStorage) ───────── */
+      const sync = window.d3Sync;
+
+      async function boot() {
+        try {
+          // 처음 실행 시 로컬 → DB 마이그레이션
+          await sync.migrateFromLocalStorage();
+          await refreshScriptList();
+          const visible = getFilteredScripts();
+          if (visible.length > 0) await selectScript(visible[0].id);
+        } catch (e) {
+          console.warn('[D3] boot 오류, localStorage 폴백:', e);
+          const raw = localStorage.getItem('d3_scripts_v2');
+          scripts = raw ? JSON.parse(raw) : [];
+          scripts.forEach(s => { if (!s.classEn) { s.classEn = 'Crusader'; s.classKo = '성전사'; } });
+          renderScriptList();
+          if (scripts.length > 0) await selectScript(scripts[0].id);
+        }
+      }
+
+      // DB에서 목록 새로고침 (script 메타 + actions는 포함 안 함)
+      async function refreshScriptList() {
+        try {
+          scripts = await sync.listScripts({ classEn: listClassFilter });
+          // DB에서 온 스크립트는 actions가 없으므로 actions 빈 배열 보장
+          scripts.forEach(s => { if (!s.actions) s.actions = []; });
+        } catch (e) {
+          console.warn('[D3] listScripts 오류:', e);
+          scripts = [];
+        }
+        renderScriptList();
+      }
+
+      // DB에 메타 + Actions 저장
+      async function persist() {
+        const s = cur();
+        if (!s) return;
+        try {
+          await sync.saveScriptMeta(s);
+          await sync.saveActions(s.id, s.actions || []);
+          s.actionCount = (s.actions || []).length;
+          // localStorage도 업데이트 (오프라인 대비 캐시)
+          _cacheLocal(s);
+        } catch (e) {
+          console.warn('[D3] persist 오류, localStorage 저장:', e);
+          _saveAllLocal();
+        }
+      }
+
+      function _cacheLocal(s) {
+        try {
+          const raw = localStorage.getItem('d3_scripts_v2');
+          const all = raw ? JSON.parse(raw) : [];
+          const idx = all.findIndex(x => x.id === s.id);
+          if (idx >= 0) all[idx] = s;
+          else all.push(s);
+          localStorage.setItem('d3_scripts_v2', JSON.stringify(all));
+        } catch { /* 무시 */ }
+      }
+
+      function _saveAllLocal() {
+        try { localStorage.setItem('d3_scripts_v2', JSON.stringify(scripts)); } catch { /* 무시 */ }
+      }
+
+      function uid() { return 's' + Date.now() + Math.random().toString(36).slice(2, 5); }
 
       /* ───────── 스킬 셀렉트 ───────── */
-      function buildSkillSelect() {
+      function buildSkillSelect(classEn) {
         const sel = document.getElementById('aeSkill');
+        const prefix = classEn ? `[${classEn}]` : '[?]';
+        if (!skills.length) {
+          sel.innerHTML = `<option value="">— 스킬 데이터 없음 —</option>`;
+          return;
+        }
         const byType = {};
         skills.forEach(sk => {
           if (!byType[sk.type]) byType[sk.type] = [];
@@ -604,17 +738,32 @@
         sel.innerHTML = Object.entries(byType).map(([type, list]) =>
           `<optgroup label="${x(type)}">${
             list.map(sk =>
-              `<option value="${x(sk.nameEn)}" data-ko="${x(sk.name)}">[Crusader]${x(sk.nameEn)} (${x(sk.name)})</option>`
+              `<option value="${x(sk.nameEn)}" data-ko="${x(sk.name)}">${prefix}${x(sk.nameEn)} (${x(sk.name)})</option>`
             ).join('')
           }</optgroup>`
         ).join('');
       }
 
+      function getFilteredScripts() {
+        if (listClassFilter === '전체') return scripts;
+        return scripts.filter(s => s.classEn === listClassFilter);
+      }
+
       /* ───────── 스크립트 목록 렌더 ───────── */
       function renderScriptList() {
         const el = document.getElementById('scriptList');
-        el.innerHTML = scripts.map(s => `
+        const filtered = getFilteredScripts();
+        if (filtered.length === 0) {
+          el.innerHTML = `<div class="actions-empty">${
+            listClassFilter === '전체'
+              ? '저장된 스크립트가 없습니다.'
+              : `${x(getClassInfo(listClassFilter).ko)} 스크립트가 없습니다.`
+          }</div>`;
+          return;
+        }
+        el.innerHTML = filtered.map(s => `
           <div class="script-item ${s.id === currentId ? 'active' : ''}" data-sid="${s.id}">
+            <span class="script-class-badge">${x(s.classKo || getClassInfo(s.classEn).ko)}</span>
             <span class="script-item-name">${x(s.title || '(제목 없음)')}</span>
             <span class="script-item-meta">${s.actions.length}개 액션</span>
             <button class="btn btn-danger btn-sm" data-del="${s.id}">삭제</button>
@@ -622,33 +771,51 @@
       }
 
       /* ───────── 스크립트 선택 ───────── */
-      function selectScript(id) {
+      async function selectScript(id) {
         currentId = id;
-        const s = scripts.find(x => x.id === id);
+        let s = scripts.find(x => x.id === id);
         if (!s) {
           document.getElementById('editorPanel').style.display = 'none';
           document.getElementById('noScriptMsg').style.display = 'flex';
           return;
         }
+
+        // Actions가 아직 로드되지 않은 경우 DB에서 가져옴
+        if (!s._loaded) {
+          try {
+            const full = await sync.loadScript(id);
+            if (full) {
+              Object.assign(s, full);
+              s._loaded = true;
+            }
+          } catch (e) {
+            console.warn('[D3] loadScript 오류:', e);
+            if (!s.actions) s.actions = [];
+          }
+        }
+
         document.getElementById('editorPanel').style.display = '';
         document.getElementById('noScriptMsg').style.display = 'none';
         showNormalView();
 
+        document.getElementById('fClass').value = s.classEn || 'Crusader';
         document.getElementById('fTitle').value = s.title || '';
         document.getElementById('fTags').value  = s.tags  || '';
         document.getElementById('fDistance').value    = s.distance    ?? 150;
         document.getElementById('fMinLife').value     = s.minLife     ?? 101;
         document.getElementById('fKeepExploring').checked = s.keepExploring !== false;
 
-        renderActions(s.actions);
+        await loadSkillsForClass(s.classEn || 'Crusader');
+        renderActions(s.actions || [], s.classEn);
         renderScriptList();
       }
 
       function cur() { return scripts.find(s => s.id === currentId); }
 
       /* ───────── Actions 렌더 ───────── */
-      function renderActions(actions) {
+      function renderActions(actions, classEn) {
         const wrap = document.getElementById('actionsListWrap');
+        const prefix = classEn ? `[${classEn}]` : '[?]';
         if (!actions || actions.length === 0) {
           wrap.innerHTML = '<div class="actions-empty">아직 Action이 없습니다.</div>';
           return;
@@ -659,7 +826,7 @@
               `<span class="usage-badge ub-${u}">${u}</span>`).join('');
             return `<div class="action-row" draggable="true" data-aidx="${i}">
               <span class="drag-handle">⠿</span>
-              <span class="action-label">${a.title ? x(a.title) + ' — ' : ''}[Crusader]${x(a.skillEn)} (${x(a.skillKo)})</span>
+              <span class="action-label">${a.title ? x(a.title) + ' — ' : ''}${prefix}${x(a.skillEn)} (${x(a.skillKo)})</span>
               <div class="action-usages">${usages}</div>
               <button class="btn btn-ghost btn-sm" data-edit-idx="${i}">✏ Edit</button>
               <button class="btn btn-danger btn-sm" data-rm-idx="${i}">🗑 Delete</button>
@@ -691,7 +858,7 @@
             const s = cur(); if (!s) return;
             const [moved] = s.actions.splice(fromIdx, 1);
             s.actions.splice(toIdx, 0, moved);
-            persist(); renderActions(s.actions); renderScriptList();
+            persist().then(() => { renderActions(s.actions, s.classEn); renderScriptList(); });
           });
         });
       }
@@ -802,7 +969,7 @@
       });
 
       /* ───────── Action 저장 ───────── */
-      function saveActionEdit() {
+      async function saveActionEdit() {
         const s = cur(); if (!s) return;
         const skillSel = document.getElementById('aeSkill');
         const opt = skillSel.options[skillSel.selectedIndex];
@@ -837,13 +1004,15 @@
         } else {
           s.actions.push(a);
         }
-        persist();
-        renderActions(s.actions);
+        await persist();
+        renderActions(s.actions, s.classEn);
         renderScriptList();
         showNormalView();
         // Actions 탭 활성화
         activateTab('actions');
       }
+
+      /* Action 저장 버튼은 async 핸들러 — wrapper 제거됨 */
 
       /* ───────── 탭 전환 ───────── */
       function activateTab(name) {
@@ -865,41 +1034,69 @@
       });
 
       /* ───────── 스크립트 저장 ───────── */
-      function saveScript() {
+      async function saveScript() {
         const s = cur(); if (!s) return;
+        const classEn = document.getElementById('fClass').value;
+        const classInfo = getClassInfo(classEn);
         const title = document.getElementById('fTitle').value.trim();
+        if (!classEn) { alert('직업을 선택하세요.'); return; }
         if (!title) { alert('제목을 입력하세요.'); return; }
+        s.classEn = classEn;
+        s.classKo = classInfo.ko;
         s.title = title;
         s.tags  = document.getElementById('fTags').value.trim();
         s.distance     = +document.getElementById('fDistance').value;
         s.minLife      = +document.getElementById('fMinLife').value;
         s.keepExploring = document.getElementById('fKeepExploring').checked;
-        persist();
+        await persist();
         renderScriptList();
         toast('저장되었습니다.');
       }
 
-      function copyScript() {
+      async function copyScript() {
         const s = cur(); if (!s) return;
         const cp = JSON.parse(JSON.stringify(s));
         cp.id = uid();
         cp.title = (cp.title || '스크립트') + ' (복사본)';
+        cp._loaded = false;
+        delete cp.actions; cp.actions = JSON.parse(JSON.stringify(s.actions || []));
+        cp._loaded = true;
         scripts.push(cp);
-        persist();
+        try {
+          await sync.saveScriptMeta(cp);
+          await sync.saveActions(cp.id, cp.actions);
+          _cacheLocal(cp);
+        } catch (e) {
+          console.warn('[D3] copyScript 오류:', e);
+          _saveAllLocal();
+        }
         renderScriptList();
-        selectScript(cp.id);
+        await selectScript(cp.id);
         toast('복사본이 만들어졌습니다.');
       }
 
-      function createScript() {
+      async function createScript() {
+        const defaultClassEn = listClassFilter !== '전체' ? listClassFilter : 'Crusader';
+        const classInfo = getClassInfo(defaultClassEn);
         const s = {
-          id: uid(), title: '새 스크립트', tags: '',
+          id: uid(),
+          classEn: defaultClassEn,
+          classKo: classInfo.ko,
+          title: '',
+          tags: '',
           distance: 150, minLife: 101, keepExploring: true, actions: [],
+          _loaded: true,
         };
         scripts.push(s);
-        persist();
+        try {
+          await sync.saveScriptMeta(s);
+          _cacheLocal(s);
+        } catch (e) {
+          console.warn('[D3] createScript 오류:', e);
+          _saveAllLocal();
+        }
         renderScriptList();
-        selectScript(s.id);
+        await selectScript(s.id);
         setTimeout(() => document.getElementById('fTitle').focus(), 80);
       }
 
@@ -913,13 +1110,16 @@
         if (e.target.dataset.del) {
           if (!confirm('삭제할까요?')) return;
           const delId = e.target.dataset.del;
+          const wasActive = currentId === delId;
           scripts = scripts.filter(s => s.id !== delId);
-          if (currentId === delId) {
+          if (wasActive) {
             currentId = null;
             document.getElementById('editorPanel').style.display = 'none';
             document.getElementById('noScriptMsg').style.display = 'flex';
           }
-          persist(); renderScriptList(); return;
+          sync.deleteScript(delId).catch(err => console.warn('[D3] deleteScript 오류:', err));
+          _saveAllLocal();
+          renderScriptList(); return;
         }
 
         // Action Edit 열기
@@ -933,7 +1133,7 @@
         if (e.target.dataset.rmIdx !== undefined) {
           const s = cur(); if (!s) return;
           s.actions.splice(+e.target.dataset.rmIdx, 1);
-          persist(); renderActions(s.actions); renderScriptList(); return;
+          persist().then(() => { renderActions(s.actions, s.classEn); renderScriptList(); }); return;
         }
       });
 
@@ -950,6 +1150,28 @@
         showNormalView(); activateTab('actions');
       });
       document.getElementById('btnSaveAction').addEventListener('click', saveActionEdit);
+
+      document.getElementById('listClassFilter').addEventListener('change', async e => {
+        listClassFilter = e.target.value;
+        localStorage.setItem('d3_class_filter', listClassFilter);
+        await refreshScriptList();
+        const filtered = getFilteredScripts();
+        if (currentId && !filtered.find(s => s.id === currentId)) {
+          if (filtered.length > 0) await selectScript(filtered[0].id);
+          else {
+            currentId = null;
+            document.getElementById('editorPanel').style.display = 'none';
+            document.getElementById('noScriptMsg').style.display = 'flex';
+          }
+        }
+      });
+
+      document.getElementById('fClass').addEventListener('change', async e => {
+        const s = cur();
+        if (!s) return;
+        await loadSkillsForClass(e.target.value);
+        renderActions(s.actions, e.target.value);
+      });
 
       /* Ctrl+S */
       document.addEventListener('keydown', e => {
