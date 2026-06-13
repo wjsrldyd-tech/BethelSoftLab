@@ -63,21 +63,59 @@
     ],
   };
 
-  // ===== 사용자 추가 휴일 (localStorage) =====
-  var USER_KEY = 'CALENDAR_USER_HOLIDAYS';
+  // ===== 사용자 추가 휴일 (localStorage → Supabase 동기화) =====
+  // 벧엘CM의 SETTINGS_HOLIDAYS 키 형식({ fixed: [], custom: [] })과 호환
+  var SETTINGS_KEY = 'SETTINGS_HOLIDAYS';
   var userHolidays = [];
 
   function loadUserHolidays() {
     try {
-      var raw = localStorage.getItem(USER_KEY);
-      userHolidays = raw ? JSON.parse(raw) : [];
+      // 구버전 마이그레이션: CALENDAR_USER_HOLIDAYS → SETTINGS_HOLIDAYS.custom
+      var legacy = localStorage.getItem('CALENDAR_USER_HOLIDAYS');
+      if (legacy) {
+        var legacyArr = JSON.parse(legacy);
+        if (Array.isArray(legacyArr) && legacyArr.length > 0) {
+          var existing = loadSettingsHolidays();
+          existing.custom = mergeDedupe(existing.custom, legacyArr);
+          saveSettingsHolidays(existing);
+        }
+        localStorage.removeItem('CALENDAR_USER_HOLIDAYS');
+      }
+
+      userHolidays = loadSettingsHolidays().custom;
     } catch (e) {
       userHolidays = [];
     }
   }
 
+  function loadSettingsHolidays() {
+    try {
+      var raw = localStorage.getItem(SETTINGS_KEY);
+      var data = raw ? JSON.parse(raw) : {};
+      if (!Array.isArray(data.fixed))  data.fixed  = [];
+      if (!Array.isArray(data.custom)) data.custom = [];
+      return data;
+    } catch (e) {
+      return { fixed: [], custom: [] };
+    }
+  }
+
+  function saveSettingsHolidays(data) {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(data));
+    // supabase-sync.js가 SETTINGS_HOLIDAYS 키를 감지해 자동으로 DB에 upsert
+  }
+
   function saveUserHolidays() {
-    localStorage.setItem(USER_KEY, JSON.stringify(userHolidays));
+    var data = loadSettingsHolidays();
+    data.custom = userHolidays;
+    saveSettingsHolidays(data);
+  }
+
+  function mergeDedupe(base, additions) {
+    var map = {};
+    base.forEach(function (h) { map[h.date] = h; });
+    additions.forEach(function (h) { if (!map[h.date]) map[h.date] = h; });
+    return Object.values(map);
   }
 
   // ===== 공휴일 조회 =====
@@ -264,7 +302,15 @@
 
   // ===== 초기화 =====
   function init() {
-    loadUserHolidays();
+    // Supabase 동기화가 완료된 뒤에 휴일 데이터 로드
+    var ready = window.supabaseSyncReady || Promise.resolve();
+    ready.then(function () {
+      loadUserHolidays();
+      renderAfterLoad();
+    });
+  }
+
+  function renderAfterLoad() {
 
     var now = new Date();
     curYear  = now.getFullYear();
