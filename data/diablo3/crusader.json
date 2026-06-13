@@ -1,0 +1,370 @@
+{
+  "class": "성전사",
+  "classEn": "Crusader",
+  "skills": [
+    {
+      "level": 2,
+      "name": "징벌",
+      "nameEn": "Punish",
+      "type": "주 기술",
+      "typeEn": "Primary",
+      "generation": "공격할 때마다 진노 5",
+      "description": "적을 내리쳐 무기 공격력의 335%만큼 피해를 주고 강화된 감각 효과를 얻어 방패막기 확률이 5초 동안 15% 증가합니다.",
+      "requires": ["방패"],
+      "runes": ["포효", "기민함", "회생", "설욕", "분노"]
+    },
+    {
+      "level": 3,
+      "name": "방패 가격",
+      "nameEn": "Shield Bash",
+      "type": "보조 기술",
+      "typeEn": "Secondary",
+      "cost": "진노 30",
+      "description": "적에게 돌진한 후 주변의 모든 적을 방패로 가격하여 무기 공격력의 700%만큼, 그리고 방패막기 확률의 300%만큼 신성 피해를 줍니다.",
+      "requires": ["방패"],
+      "runes": ["방패 산탄", "한 번에 하나", "방패 십자가", "뭉개기", "방패 짓이기"]
+    },
+    {
+      "level": 4,
+      "name": "베기",
+      "nameEn": "Slash",
+      "type": "주 기술",
+      "typeEn": "Primary",
+      "generation": "공격할 때마다 진노 5",
+      "description": "전방의 공기에 불을 붙여 무기 공격력의 230%만큼 화염 피해를 줍니다.",
+      "runes": ["번개", "도려내기", "분쇄", "열의", "보호"]
+    },
+    {
+      "level": 5,
+      "name": "눈부신 방패",
+      "nameEn": "Shield Glare",
+      "type": "방어",
+      "typeEn": "Defensive",
+      "cooldown": "12초",
+      "description": "방패에서 빛을 발산하여 4초 동안 30미터 전방에 있는 모든 적의 눈을 멀게 합니다.",
+      "requires": ["방패"],
+      "runes": ["신의 뜻", "불확신", "열성의 섬광", "선명한 문장", "진압"]
+    },
+    {
+      "level": 8,
+      "name": "휩쓸기 공격",
+      "nameEn": "Sweep Attack",
+      "type": "보조 기술",
+      "typeEn": "Secondary",
+      "cost": "진노 20",
+      "description": "신비한 도리깨를 휘둘러 18미터 전방의 모든 적에게 무기 공격력의 480%만큼 피해를 줍니다.",
+      "requires": ["무기"],
+      "runes": ["불꽃 휩쓸기", "다리 걸기", "신성 충격", "몰아치는 도리깨", "고무적인 휩쓸기"]
+    },
+    {
+      "level": 9,
+      "name": "철갑 피부",
+      "nameEn": "Iron Skin",
+      "type": "방어",
+      "typeEn": "Defensive",
+      "cooldown": "30초",
+      "description": "피부가 철갑으로 변하여 4초 동안 받은 피해의 50%를 흡수합니다.",
+      "runes": ["튕겨내는 피부", "강철 피부", "폭발성 피부", "번개 피부", "신속"]
+    },
+    {
+      "level": 11,
+      "name": "조롱",
+      "nameEn": "Provoke",
+      "type": "지원",
+      "typeEn": "Utility",
+      "cooldown": "20초",
+      "generation": "진노 30",
+      "description": "주변의 적을 모두 도발합니다. 도발한 적 하나당 즉시 진노를 5씩 추가로 생성합니다. 도발당한 적은 4초 동안 성전사에게 주의를 집중합니다.",
+      "runes": ["정화", "도망가", "멍청아", "오금 저리는 두뇌", "전격 축적", "때려보시지"]
+    },
+    {
+      "level": 12,
+      "name": "강타",
+      "nameEn": "Smite",
+      "type": "주 기술",
+      "typeEn": "Primary",
+      "generation": "공격할 때마다 진노 5",
+      "description": "성스러운 도리깨로 최대 30미터 거리에 있는 적을 후려쳐 무기 공격력의 175%만큼 신성 피해를 줍니다. 공격할 때 도리깨의 사슬이 휘날리면서 추가로 최대 20미터 반경에 있는 3마리의 적에게 무기 공격력의 150%만큼 신성 피해를 줍니다.",
+      "runes": ["산산조각", "족쇄", "쇄도", "수확", "얽힌 운명"]
+    },
+    {
+      "level": 13,
+      "name": "축복받은 망치",
+      "nameEn": "Blessed Hammer",
+      "type": "보조 기술",
+      "typeEn": "Secondary",
+      "cost": "진노 10",
+      "description": "주위를 회전하는 축복받은 망치를 소환하여 망치에 닿는 모든 적에게 무기 공격력의 320%만큼 신성 피해를 줍니다.",
+      "runes": ["타오르는 진노", "천둥강타", "무한야만적인 힘", "지배"]
+    },
+    {
+      "level": 14,
+      "name": "군마 질주",
+      "nameEn": "Steed Charge",
+      "type": "지원",
+      "typeEn": "Utility",
+      "cooldown": "16초",
+      "description": "천상의 군마에 올라타 2초 동안 적들을 통과하며 방해받지 않고 질주합니다.",
+      "runes": ["가시 마갑", "악몽", "회복", "인내", "처참"]
+    },
+    {
+      "level": 15,
+      "name": "용기의 율법",
+      "nameEn": "Laws of Valor",
+      "type": "율법",
+      "typeEn": "Laws",
+      "cooldown": "30초",
+      "activeEffect": "율법을 강화하여 5초 동안 자신과 아군의 공격 속도를 15% 증가시킵니다.",
+      "passiveEffect": "용기의 율법을 읊어 자신과 아군의 공격 속도를 8% 증가시킵니다.",
+      "note": "한 번에 하나의 율법만 읊을 수 있습니다.",
+      "runes": ["천하무적", "얼어붙는 공포", "극대화", "멈출 수 없는 돌진", "이루어진 기도"]
+    },
+    {
+      "level": 16,
+      "name": "정의",
+      "nameEn": "Justice",
+      "type": "주 기술",
+      "typeEn": "Primary",
+      "generation": "공격할 때마다 진노 5",
+      "description": "적에게 정의의 망치를 던져 무기 공격력의 245%만큼 피해를 줍니다.",
+      "runes": ["전격 파열", "일석이조", "추적의 망치", "정의의 칼날", "신성한 빛줄기"]
+    },
+    {
+      "level": 17,
+      "name": "신성화",
+      "nameEn": "Consecration",
+      "type": "방어",
+      "typeEn": "Defensive",
+      "cooldown": "30초",
+      "description": "주위 20미터 반경의 땅을 10초 동안 신성화합니다. 신성화된 땅 위에 있으면 자신과 아군은 매초 생명력을 32,185 회복합니다.",
+      "runes": ["자애로운 빛", "가시밭", "연옥의 방패", "부서진 대지", "악마들의 악몽"]
+    },
+    {
+      "level": 19,
+      "name": "정의의 율법",
+      "nameEn": "Laws of Justice",
+      "type": "율법",
+      "typeEn": "Laws",
+      "cooldown": "30초",
+      "activeEffect": "율법을 강화하여 자신과 아군의 모든 원소 저항을 5초 동안 490 증가시킵니다.",
+      "passiveEffect": "정의의 율법을 읊어 자신과 아군의 모든 원소 저항을 140 증가시킵니다.",
+      "note": "한 번에 하나의 율법만 읊을 수 있습니다.",
+      "runes": ["보호 본능", "묵직한 돌", "바위신념의 갑옷", "쇠약해지는 힘", "용기"]
+    },
+    {
+      "level": 20,
+      "name": "천벌의 검",
+      "nameEn": "Falling Sword",
+      "type": "신념",
+      "typeEn": "Conviction",
+      "cost": "진노 25",
+      "cooldown": "30초",
+      "description": "하늘 높이 뛰어올라 착지할 때 14미터 반경의 적을 내리찍으며 무기 공격력의 1700%만큼 피해를 줍니다.",
+      "note": "이 능력은 효과가 다할 때까지 재사용 대기시간이 시작되지 않습니다.",
+      "runes": ["과열", "천둥구름", "일어나라 형제여", "신속한 강하", "칼폭풍"]
+    },
+    {
+      "level": 21,
+      "name": "축복받은 방패",
+      "nameEn": "Blessed Shield",
+      "type": "보조 기술",
+      "typeEn": "Secondary",
+      "cost": "진노 20",
+      "description": "적에게 천상의 방패를 날려, 무기 공격력의 430%만큼 신성 피해를 주고 방패막기 확률의 250%만큼 추가 신성 피해를 줍니다. 방패는 근처의 적 3마리에게 튕깁니다.",
+      "requires": ["방패"],
+      "runes": ["충격의 방패", "연소", "신성한 방패", "산산조각", "관통 방패"]
+    },
+    {
+      "level": 22,
+      "name": "규탄",
+      "nameEn": "Condemn",
+      "type": "지원",
+      "typeEn": "Utility",
+      "cooldown": "15초",
+      "description": "거대한 폭발을 준비하여 3초 후 15미터 내에 있는 모든 적에게 무기 공격력의 1160%만큼 신성 피해를 줍니다.",
+      "runes": ["진공", "신성 발현", "끝없는 응징", "거대한 폭발", "앙갚음"]
+    },
+    {
+      "level": 24,
+      "name": "심판",
+      "nameEn": "Judgment",
+      "type": "방어",
+      "typeEn": "Defensive",
+      "cooldown": "20초",
+      "description": "대상 지역 반경 20미터 내에 있는 모든 적을 심판하여 6초 동안 이동 불가 상태로 만듭니다.",
+      "runes": ["참회", "거대한 평결", "신중함", "단호함", "쇠약"]
+    },
+    {
+      "level": 25,
+      "name": "희망의 율법",
+      "nameEn": "Laws of Hope",
+      "type": "율법",
+      "typeEn": "Laws",
+      "cooldown": "30초",
+      "activeEffect": "율법을 강화하여 5초 동안 자신과 아군에게 피해를 124,128 흡수하는 보호막을 칩니다.",
+      "passiveEffect": "희망의 율법을 읊어 자신과 아군의 생명력을 매초 10,728 회복시킵니다.",
+      "note": "한 번에 하나의 율법만 읊을 수 있습니다.",
+      "runes": ["천사의 날개", "영원한 희망", "희망의 외침", "믿음의 보상", "신념의 기약"]
+    },
+    {
+      "level": 26,
+      "name": "아카라트의 용사",
+      "nameEn": "Akarat's Champion",
+      "type": "신념",
+      "typeEn": "Conviction",
+      "cooldown": "90초",
+      "description": "성전사단의 분노를 폭발시켜 초인적인 힘을 지닌 아카라트의 용사로 변신합니다. 20초 동안 공격력이 35% 증가하고 진노 회복량이 5 증가합니다.",
+      "runes": ["화염의 심판", "힘의 현신", "활기", "선지자", "급속"]
+    },
+    {
+      "level": 27,
+      "name": "천상의 주먹",
+      "nameEn": "Fist of the Heavens",
+      "type": "보조 기술",
+      "typeEn": "Secondary",
+      "cost": "진노 30",
+      "description": "천상에서 내리꽂히는 번개를 불러 8미터 반경의 적에게 무기 공격력의 545%만큼 번개 피해를 줍니다. 번개는 내리꽂힐 때 폭발하여 밖으로 뻗어나가는 6개의 전류 화살을 생성하고, 화살이 통과하는 모든 적에게 무기공격력의 255%만큼 번개 피해를 줍니다.",
+      "runes": ["신성한 샘", "천상의 뇌우", "균열", "파문", "응보"]
+    },
+    {
+      "level": 30,
+      "name": "결사대",
+      "nameEn": "Phalanx",
+      "type": "지원",
+      "typeEn": "Utility",
+      "cost": "진노 30",
+      "description": "목표 지점으로 돌진하는 강력한 현신을 소환합니다. 돌진 경로 내에서 현신과 부딪힌 적에게 무기 공격력의 490%만큼 피해를 줍니다.",
+      "runes": ["궁수", "방패 돌진", "군마 쇄도", "방패병", "친위병"]
+    },
+    {
+      "level": 30,
+      "name": "하늘의 분노",
+      "nameEn": "Heaven's Fury",
+      "type": "신념",
+      "typeEn": "Conviction",
+      "cooldown": "20초",
+      "description": "신성한 힘으로 가득 찬 맹렬한 빛을 불러와 빛 아래에 있는 모든 적에게 6초에 걸쳐 무기 공격력의 1710%만큼 신성 피해를 줍니다.",
+      "runes": ["축복받은 땅", "넘치는 분노", "갈라지는 분노", "넌 못 지나간다", "천상의 화염"]
+    },
+    {
+      "level": 61,
+      "name": "포격",
+      "nameEn": "Bombardment",
+      "type": "신념",
+      "typeEn": "Conviction",
+      "cooldown": "60초",
+      "description": "포격을 요청하여 대상 지역에 불타는 바윗돌을 5개 떨어뜨립니다. 포격 지점 12미터 반경의 모든 적에게 총 무기 공격력의 2850%만큼 피해를 줍니다.",
+      "runes": ["쇠못통 포격", "전멸", "지뢰밭", "강렬한 포격", "정밀 포격"]
+    }
+  ],
+  "passives": [
+    {
+      "level": 10,
+      "name": "천부의 힘",
+      "nameEn": "Heavenly Strength",
+      "description": "보조 장비로 방패를 들고 있으면 주 장비로 양손 무기를 착용할 수 있습니다. 공격력이 20% 감소합니다."
+    },
+    {
+      "level": 10,
+      "name": "열성",
+      "nameEn": "Fervor",
+      "description": "한손 무기를 사용할 때, 공격 속도가 15% 증가하고 모든 기술의 재사용 대기시간이 15% 감소합니다."
+    },
+    {
+      "level": 13,
+      "name": "경각심",
+      "nameEn": "Vigilant",
+      "description": "초당 생명력 회복량이 2682 증가합니다. 물리 피해를 제외한 모든 받는 피해가 20% 감소합니다."
+    },
+    {
+      "level": 16,
+      "name": "정의",
+      "nameEn": "Righteousness",
+      "description": "주 기술들이 진노를 추가로 3 생성합니다. 최대 진노가 30 증가합니다."
+    },
+    {
+      "level": 20,
+      "name": "난공불락",
+      "nameEn": "Insurmountable",
+      "description": "방패막기에 성공하면 진노를 6 생성합니다."
+    },
+    {
+      "level": 20,
+      "name": "광신",
+      "nameEn": "Fanaticism",
+      "description": "징벌, 베기, 강타, 정의의 공격 속도가 15% 증가합니다."
+    },
+    {
+      "level": 25,
+      "name": "불사",
+      "nameEn": "Indestructible",
+      "description": "죽음에 달하는 피해를 받으면, 그 피해에 면역이 되고 공격력이 35% 증가하며 5초 동안 처치 시 생명력 회복량이 107,284 증가합니다. 이 효과는 60초에 한 번만 발동됩니다."
+    },
+    {
+      "level": 27,
+      "name": "신성한 대의",
+      "nameEn": "Holy Cause",
+      "description": "무기의 공격력이 10% 증가합니다. 신성 피해를 줄 때마다 최대 생명력의 1%까지 생명력을 회복합니다."
+    },
+    {
+      "level": 30,
+      "name": "진노의 화신",
+      "nameEn": "Wrathful",
+      "description": "진노를 1 소모할 때마다 생명력을 1341 회복합니다. 회복량은 생명의 구슬 추가 치유 효과의 1%만큼 증가합니다."
+    },
+    {
+      "level": 30,
+      "name": "신의 요새",
+      "nameEn": "Divine Fortress",
+      "description": "방패의 방패막기 확률에 비례하여 방어도가 증가합니다."
+    },
+    {
+      "level": 35,
+      "name": "전투사령관",
+      "nameEn": "Lord Commander",
+      "description": "군마 질주의 재사용 대기시간이 25% 감소하고, 포격의 재사용 대기시간이 35% 감소합니다. 결사대로 주는 피해가 20% 증가합니다."
+    },
+    {
+      "level": 40,
+      "name": "위치 사수",
+      "nameEn": "Hold Your Ground",
+      "description": "더는 회피할 수 없지만, 방패막기 확률이 30% 증가합니다."
+    },
+    {
+      "level": 45,
+      "name": "율법의 파급력",
+      "nameEn": "Long Arm of the Law",
+      "description": "모든 율법의 사용 효과 지속시간이 5초 증가합니다."
+    },
+    {
+      "level": 50,
+      "name": "강철의 가시",
+      "nameEn": "Iron Maiden",
+      "description": "가시가 50% 증가합니다."
+    },
+    {
+      "level": 55,
+      "name": "회생",
+      "nameEn": "Renewal",
+      "description": "공격을 성공적으로 막을 때마다 생명력이 16,093씩 회복됩니다."
+    },
+    {
+      "level": 60,
+      "name": "호화찬란",
+      "nameEn": "Finery",
+      "description": "장비에 보석을 끼울 때마다 힘이 1.5%씩 증가합니다."
+    },
+    {
+      "level": 65,
+      "name": "둔기 전문가",
+      "nameEn": "Blunt",
+      "description": "정의와 축복받은 망치로 주는 피해가 20% 증가합니다."
+    },
+    {
+      "level": 70,
+      "name": "우뚝 솟은 방패",
+      "nameEn": "Towering Shield",
+      "description": "징벌, 방패 가격, 축복받은 방패로 주는 피해가 20% 증가합니다. 눈부신 방패의 재사용 대기시간이 30% 감소합니다."
+    }
+  ]
+}
