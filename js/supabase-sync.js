@@ -14,28 +14,28 @@
 
     const TABLE = 'app_storage';
 
-    // ✅ tenant_id: localStorage에 없으면 자동 생성 (기기별 고정 ID)
+    // ✅ tenant_id: 없으면 default 고정 (도메인/기기 공통)
     const TENANT_KEY = 'BETHEL_TENANT_ID';
+    const DEFAULT_TENANT_ID = 'default';
     function getTenantId() {
         let id = localStorage.getItem(TENANT_KEY);
-        if (!id) {
-            // 벧엘CM 학원 ID가 있으면 그것을 우선 사용
-            const session = sessionStorage.getItem('auth_academy');
-            if (session) {
-                try {
-                    const academy = JSON.parse(session);
-                    if (academy && academy.id) {
-                        id = academy.id;
-                        localStorage.setItem(TENANT_KEY, id);
-                        return id;
-                    }
-                } catch (_) {}
-            }
-            // 없으면 고정 개인 ID 자동 생성
-            id = 'softlab-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9);
-            localStorage.setItem(TENANT_KEY, id);
-            console.log('[SoftLab-Sync] tenant_id 자동 생성:', id);
+        if (id && !id.startsWith('softlab-')) return id;
+
+        // 벧엘CM 학원 ID가 있으면 그것을 우선 사용
+        const session = sessionStorage.getItem('auth_academy');
+        if (session) {
+            try {
+                const academy = JSON.parse(session);
+                if (academy && academy.id) {
+                    id = academy.id;
+                    localStorage.setItem(TENANT_KEY, id);
+                    return id;
+                }
+            } catch (_) {}
         }
+
+        id = DEFAULT_TENANT_ID;
+        localStorage.setItem(TENANT_KEY, id);
         return id;
     }
 

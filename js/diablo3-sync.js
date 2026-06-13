@@ -7,16 +7,17 @@
     'use strict';
 
     const TENANT_KEY = 'BETHEL_TENANT_ID';
+    const DEFAULT_TENANT_ID = 'default'; // 개인용 고정 tenant (도메인/기기 공통)
     const LS_KEY = 'd3_scripts_v2'; // localStorage 캐시 / 마이그레이션 원본
     const PAGE_SIZE = 50;
 
-    // ─── tenant_id 획득 (BethelSoftLab softlab-xxx 자동 생성 방식) ───
+    // ─── tenant_id 획득 ───
     function getTenantId() {
         let id = localStorage.getItem(TENANT_KEY);
-        if (!id) {
-            id = 'softlab-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9);
+        // 없거나 softlab- 자동생성 ID면 default로 통일 (Vercel 등 새 도메인 대응)
+        if (!id || id.startsWith('softlab-')) {
+            id = DEFAULT_TENANT_ID;
             localStorage.setItem(TENANT_KEY, id);
-            console.log('[D3Sync] tenant_id 자동 생성:', id);
         }
         return id;
     }
