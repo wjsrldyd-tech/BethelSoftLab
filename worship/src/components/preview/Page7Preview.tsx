@@ -1,0 +1,81 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { useWorshipStore } from '../../stores/worshipStore';
+
+// 7페이지: 결단
+export default function Page7Preview() {
+  const { commitmentImage } = useWorshipStore();
+  const [imageStyle, setImageStyle] = useState<React.CSSProperties>({});
+  const imageRef = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    if (!commitmentImage || !imageRef.current) return;
+
+    const handleImageLoad = () => {
+      // 세로가 긴 이미지: 세로와 가로 모두 컨테이너에 맞춤
+      // 가로가 긴 이미지: 가로와 세로 모두 컨테이너에 맞춤
+      setImageStyle({
+        width: '100%',
+        height: '100%',
+        objectFit: 'fill',
+        borderRadius: '4px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+      });
+    };
+
+    const img = imageRef.current;
+    if (img.complete) {
+      handleImageLoad();
+    } else {
+      img.addEventListener('load', handleImageLoad);
+      return () => img.removeEventListener('load', handleImageLoad);
+    }
+  }, [commitmentImage]);
+
+  return (
+    <div 
+      className="h-full flex flex-col bg-white"
+      style={{ 
+        fontFamily: '나눔고딕, Nanum Gothic, sans-serif',
+        padding: '40px 40px',
+        color: '#000000'
+      }}
+    >
+      {/* 제목 - 짝수 페이지, 좌측 정렬 */}
+      <div style={{ textAlign: 'left', paddingBottom: '30px', verticalAlign: 'top' }}>
+        <span style={{ fontSize: '20px', color: '#000000' }}>
+          결단
+        </span>
+      </div>
+
+      <div 
+        className="flex-1 flex items-start justify-center" 
+        style={{ minHeight: '400px', width: '100%', height: '100%' }}
+      >
+        {commitmentImage ? (
+          <img
+            ref={imageRef}
+            src={commitmentImage}
+            alt="결단 악보"
+            style={imageStyle}
+          />
+        ) : (
+          <div 
+            style={{ 
+              width: '100%',
+              height: '400px',
+              border: '2px dashed #BDC3C7',
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#000000',
+              fontSize: '16px'
+            }}
+          >
+            악보 이미지를 업로드하세요
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
