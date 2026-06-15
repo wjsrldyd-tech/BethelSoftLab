@@ -27,7 +27,9 @@
       "target": [
         {
           "target": "portable",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "icon.ico",
@@ -38,6 +40,7 @@
     }
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.108.1",
     "date-fns": "^3.0.6",
     "html2canvas": "^1.4.1",
     "jspdf": "^2.5.1",
