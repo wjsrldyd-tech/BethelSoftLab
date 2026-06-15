@@ -7,24 +7,30 @@
     <link rel="stylesheet" href="css/style.css" />
   </head>
   <body>
-    <main class="sub-home">
-      <header class="sub-home-header">
-        <nav>
-          <a href="index.html" class="back-link">← 메인으로</a>
+    <main class="sub-home sub-home--tools">
+      <header class="sub-topbar">
+        <a href="index.html" class="sub-logo-link">
+          <img class="sub-logo" src="images/main.png" alt="BethelSoftLab" />
+        </a>
+        <nav class="main-tabs" aria-label="메인 메뉴">
+          <a href="game.html" class="main-tab">게임</a>
+          <a href="tools.html" class="main-tab active" aria-current="page">툴</a>
+          <a href="church.html" class="main-tab">교회</a>
         </nav>
-        <div class="sub-home-title">
-          <span class="title-icon">🛠</span>
-          <h1>툴</h1>
-        </div>
       </header>
 
-      <nav class="tool-grid" aria-label="툴 목록">
-        <a href="calendar.html" class="tool-card calendar">
-          <span class="tool-icon">📅</span>
-          <span class="tool-label">달력</span>
-          <span class="tool-desc">A4 인쇄용 월별 달력</span>
-        </a>
-      </nav>
+      <div class="sub-body">
+        <nav class="tool-grid" aria-label="툴 목록">
+          <a href="calendar.html" class="tool-card calendar">
+            <span class="tool-icon">📅</span>
+            <span class="tool-card-text">
+              <span class="tool-label">달력</span>
+              <span class="tool-desc">A4 인쇄용 월별 달력</span>
+            </span>
+            <span class="tool-card-arrow" aria-hidden="true">→</span>
+          </a>
+        </nav>
+      </div>
     </main>
   </body>
 </html>
