@@ -497,10 +497,8 @@
                   </div>
                 </div>
                 <div class="usage-hint">
-                  3 groups of possible combinations:<br>
-                  - <strong>Buff</strong>: Buff, Buff + Attack, Buff + Density, Buff + Elite<br>
-                  - <strong>Attack</strong>: Attack, Attack + Elite, Attack + Density, WW, WW + Elite, WW + Density + Elite<br>
-                  - <strong>Move</strong>: Movement cannot be combined with any other usage
+                  None을 제외한 Usage는 여러 개 동시 선택할 수 있습니다.<br>
+                  선택한 Usage에 따라 아래 ATTACK / BUFF / DENSITY / MOVE SETTINGS 섹션이 표시됩니다.
                 </div>
               </div>
             </div>
@@ -511,15 +509,11 @@
                 <span class="toggle-icon">⊙</span> ATTACK SETTINGS
               </div>
               <div class="ros-section-body" id="sec-attack">
+                <div class="field-hint">Requires Attack or Whirlwind usage to be checked.</div>
                 <div class="field-group">
-                  <label class="field-label" for="aeMinMonsters">Minimum monsters</label>
-                  <input class="field-input" id="aeMinMonsters" type="number" min="0" value="1" />
-                  <span class="field-hint">Minimum number of monsters in range to use this skill</span>
-                </div>
-                <div class="field-group">
-                  <label class="field-label" for="aeAttackRange">Attack range (yards)</label>
-                  <input class="field-input" id="aeAttackRange" type="number" min="0" max="150" value="20" />
-                  <span class="field-hint">Range within which the bot looks for monsters</span>
+                  <label class="field-label" for="aeAttackDistance">Attack distance <span class="req">*</span></label>
+                  <input class="field-input" id="aeAttackDistance" type="number" min="0" max="150" value="0" />
+                  <span class="field-hint">Bot will not use the skill if the target is further than this</span>
                 </div>
               </div>
             </div>
@@ -530,20 +524,7 @@
                 <span class="toggle-icon">⊙</span> BUFF SETTINGS
               </div>
               <div class="ros-section-body" id="sec-buff">
-                <div class="field-group">
-                  <label class="field-label">Buffed resource</label>
-                  <select class="field-select" id="aeBuffedResource">
-                    <option value="">- None -</option>
-                    <option value="Wrath">Wrath (진노)</option>
-                    <option value="Health">Health (생명력)</option>
-                  </select>
-                  <span class="field-hint">The resource the current skill is buffing</span>
-                </div>
-                <div class="field-group">
-                  <label class="field-label" for="aeMinResLevel">Minimum resource level <span class="req">*</span> <small style="font-weight:400;color:var(--text)">(% for health, absolute value for resources)</small></label>
-                  <input class="field-input" id="aeMinResLevel" type="number" min="0" value="0" />
-                  <span class="field-hint">Bot will try to buff if your selected resource level goes below this threshold</span>
-                </div>
+                <div class="field-hint">Requires Buff usage to be checked.</div>
               </div>
             </div>
 
@@ -553,14 +534,58 @@
                 <span class="toggle-icon">⊙</span> DENSITY SETTINGS
               </div>
               <div class="ros-section-body" id="sec-density">
+                <div class="field-hint">Requires Density usage to be checked.</div>
                 <div class="field-group">
-                  <label class="field-label" for="aeDensityCount">Monster count</label>
-                  <input class="field-input" id="aeDensityCount" type="number" min="1" value="3" />
-                  <span class="field-hint">Minimum monsters in range required to trigger density usage</span>
+                  <label class="field-label" for="aeDensityType">Type <span class="req">*</span></label>
+                  <select class="field-select" id="aeDensityType">
+                    <option value="Surrounding">Surrounding</option>
+                    <option value="Path">Path</option>
+                    <option value="Line">Line</option>
+                  </select>
                 </div>
                 <div class="field-group">
-                  <label class="field-label" for="aeDensityRange">Density range (yards)</label>
-                  <input class="field-input" id="aeDensityRange" type="number" min="0" max="150" value="20" />
+                  <label class="field-label" for="aeDistanceMin">Distance Min</label>
+                  <input class="field-input" id="aeDistanceMin" type="number" min="0" max="150" value="0" />
+                  <span class="field-hint">Density calculation filter minimum distance</span>
+                </div>
+                <div class="field-group">
+                  <label class="field-label" for="aeDistanceMax">Distance Max</label>
+                  <input class="field-input" id="aeDistanceMax" type="number" min="0" max="150" value="50" />
+                  <span class="field-hint">Density calculation filter maximum distance</span>
+                </div>
+                <div class="field-group">
+                  <label class="field-label" for="aeCalcMinParam">Calculation min param</label>
+                  <input class="field-input" id="aeCalcMinParam" type="number" min="0" value="0" />
+                  <span class="field-hint">Algorithm dependent min</span>
+                </div>
+                <div class="field-group">
+                  <label class="field-label" for="aeCalcMaxParam">Calculation max param</label>
+                  <input class="field-input" id="aeCalcMaxParam" type="number" min="0" value="30" />
+                  <span class="field-hint">Algorithm dependent max</span>
+                </div>
+                <div class="field-group">
+                  <label class="field-label" for="aeAttackLimit">Attack limit</label>
+                  <input class="field-input" id="aeAttackLimit" type="number" min="0" value="1" />
+                </div>
+                <div class="field-group">
+                  <label class="field-label" for="aeEliteWeight">Elite weight</label>
+                  <input class="field-input" id="aeEliteWeight" type="number" min="0" value="50" />
+                </div>
+                <div class="field-group">
+                  <label class="field-label" for="aeMinionWeight">Minion weight <span class="req">*</span></label>
+                  <input class="field-input" id="aeMinionWeight" type="number" min="0" value="0" />
+                </div>
+                <div class="field-group">
+                  <label class="field-label" for="aeBigGuyWeight">Big guy weight</label>
+                  <input class="field-input" id="aeBigGuyWeight" type="number" min="0" value="0" />
+                </div>
+                <div class="field-group">
+                  <label class="field-label" for="aeGoblinWeight">Goblin weight</label>
+                  <input class="field-input" id="aeGoblinWeight" type="number" min="0" value="0" />
+                </div>
+                <div class="field-group">
+                  <label class="field-label" for="aeNormalMonsterWeight">Normal monster weight</label>
+                  <input class="field-input" id="aeNormalMonsterWeight" type="number" min="0" value="0" />
                 </div>
               </div>
             </div>
@@ -571,8 +596,25 @@
                 <span class="toggle-icon">⊙</span> MOVE SETTINGS
               </div>
               <div class="ros-section-body" id="sec-move">
-                <div class="field-hint" style="padding:0.5rem 0.75rem; background:var(--bg); border:1px solid var(--border); border-radius:6px; font-size:0.8rem;">
-                  Requires Movement usage to be checked. Movement cannot be combined with any other usage.
+                <div class="field-hint">Requires Movement usage to be checked.</div>
+                <div class="field-group">
+                  <label class="field-label" for="aeMoveType">Type <span class="req">*</span></label>
+                  <select class="field-select" id="aeMoveType">
+                    <option value="Walk">Walk</option>
+                    <option value="Teleport">Teleport</option>
+                    <option value="Charge">Charge</option>
+                  </select>
+                  <span class="field-hint">Specifies when the bot will use this movement skill</span>
+                </div>
+                <div class="field-group">
+                  <label class="field-label" for="aeMoveMaxDistance">Maximum distance(y)</label>
+                  <input class="field-input" id="aeMoveMaxDistance" type="number" min="0" max="150" value="50" />
+                  <span class="field-hint">Bot will not use this skill if destination is further than this distance</span>
+                </div>
+                <div class="field-group">
+                  <label class="field-label" for="aeMoveMinDistance">Minimum distance(y)</label>
+                  <input class="field-input" id="aeMoveMinDistance" type="number" min="0" max="150" value="0" />
+                  <span class="field-hint">Bot will not use this skill if destination is closer than this distance</span>
                 </div>
               </div>
             </div>
@@ -894,9 +936,14 @@
           resource: '', minLifeLevel: '', channeling: false,
           useCustom: false, customCond: '',
           usage: [],
-          buffedResource: '', minResLevel: '',
-          minMonsters: '', attackRange: '',
-          densityCount: '', densityRange: '',
+          attackDistance: 0,
+          densityType: 'Surrounding',
+          distanceMin: 0, distanceMax: 50,
+          calcMinParam: 0, calcMaxParam: 30,
+          attackLimit: 1,
+          eliteWeight: 50, minionWeight: 0,
+          bigGuyWeight: 0, goblinWeight: 0, normalMonsterWeight: 0,
+          moveType: 'Walk', moveMaxDistance: 50, moveMinDistance: 0,
         };
         const a = action ? Object.assign({}, DEFAULT, action) : DEFAULT;
 
@@ -929,17 +976,26 @@
           cb.checked = (a.usage || []).includes(cb.value);
         });
 
-        // Buff
-        document.getElementById('aeBuffedResource').value = a.buffedResource || '';
-        document.getElementById('aeMinResLevel').value = a.minResLevel ?? '';
-
         // Attack
-        document.getElementById('aeMinMonsters').value = a.minMonsters ?? '';
-        document.getElementById('aeAttackRange').value = a.attackRange ?? '';
+        document.getElementById('aeAttackDistance').value = a.attackDistance ?? a.attackRange ?? 0;
 
         // Density
-        document.getElementById('aeDensityCount').value = a.densityCount ?? '';
-        document.getElementById('aeDensityRange').value = a.densityRange ?? '';
+        document.getElementById('aeDensityType').value = a.densityType || 'Surrounding';
+        document.getElementById('aeDistanceMin').value = a.distanceMin ?? 0;
+        document.getElementById('aeDistanceMax').value = a.distanceMax ?? a.densityRange ?? 50;
+        document.getElementById('aeCalcMinParam').value = a.calcMinParam ?? 0;
+        document.getElementById('aeCalcMaxParam').value = a.calcMaxParam ?? 30;
+        document.getElementById('aeAttackLimit').value = a.attackLimit ?? 1;
+        document.getElementById('aeEliteWeight').value = a.eliteWeight ?? 50;
+        document.getElementById('aeMinionWeight').value = a.minionWeight ?? 0;
+        document.getElementById('aeBigGuyWeight').value = a.bigGuyWeight ?? 0;
+        document.getElementById('aeGoblinWeight').value = a.goblinWeight ?? 0;
+        document.getElementById('aeNormalMonsterWeight').value = a.normalMonsterWeight ?? 0;
+
+        // Move
+        document.getElementById('aeMoveType').value = a.moveType || 'Walk';
+        document.getElementById('aeMoveMaxDistance').value = a.moveMaxDistance ?? 50;
+        document.getElementById('aeMoveMinDistance').value = a.moveMinDistance ?? 0;
 
         updateUsageSections();
       }
@@ -997,12 +1053,21 @@
           useCustom: document.getElementById('aeUseCustom').checked,
           customCond: document.getElementById('aeCustomCond').value,
           usage: getCheckedUsages(),
-          buffedResource: document.getElementById('aeBuffedResource').value,
-          minResLevel: +document.getElementById('aeMinResLevel').value,
-          minMonsters: +document.getElementById('aeMinMonsters').value,
-          attackRange: +document.getElementById('aeAttackRange').value,
-          densityCount: +document.getElementById('aeDensityCount').value,
-          densityRange: +document.getElementById('aeDensityRange').value,
+          attackDistance: +document.getElementById('aeAttackDistance').value,
+          densityType: document.getElementById('aeDensityType').value,
+          distanceMin: +document.getElementById('aeDistanceMin').value,
+          distanceMax: +document.getElementById('aeDistanceMax').value,
+          calcMinParam: +document.getElementById('aeCalcMinParam').value,
+          calcMaxParam: +document.getElementById('aeCalcMaxParam').value,
+          attackLimit: +document.getElementById('aeAttackLimit').value,
+          eliteWeight: +document.getElementById('aeEliteWeight').value,
+          minionWeight: +document.getElementById('aeMinionWeight').value,
+          bigGuyWeight: +document.getElementById('aeBigGuyWeight').value,
+          goblinWeight: +document.getElementById('aeGoblinWeight').value,
+          normalMonsterWeight: +document.getElementById('aeNormalMonsterWeight').value,
+          moveType: document.getElementById('aeMoveType').value,
+          moveMaxDistance: +document.getElementById('aeMoveMaxDistance').value,
+          moveMinDistance: +document.getElementById('aeMoveMinDistance').value,
         };
 
         if (editActionId !== null) {
