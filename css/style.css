@@ -16,6 +16,8 @@
   --game-glow: rgba(245, 158, 11, 0.3);
   --church: #38bdf8;
   --church-glow: rgba(56, 189, 248, 0.3);
+  --page-padding-x: clamp(1.5rem, 3vw, 3rem);
+  --page-padding-y: 1.75rem;
 }
 
 *,
@@ -43,9 +45,9 @@ a {
   min-height: 100svh;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
-  padding: 2rem;
+  padding: var(--page-padding-y) var(--page-padding-x);
   background:
     radial-gradient(ellipse 80% 50% at 50% -20%, rgba(192, 132, 252, 0.08), transparent),
     var(--bg);
@@ -71,23 +73,20 @@ a {
 
 .launcher-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(180px, 240px));
+  grid-template-columns: repeat(3, 1fr);
   gap: 1.5rem;
   width: 100%;
-  max-width: 820px;
 }
 
-@media (max-width: 680px) {
+@media (max-width: 900px) {
   .launcher-grid {
-    grid-template-columns: repeat(2, minmax(150px, 220px));
-    max-width: 480px;
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
-@media (max-width: 420px) {
+@media (max-width: 520px) {
   .launcher-grid {
     grid-template-columns: 1fr;
-    max-width: 300px;
   }
 }
 
@@ -149,9 +148,7 @@ a {
   min-height: 100svh;
   display: flex;
   flex-direction: column;
-  padding: 2rem;
-  max-width: 960px;
-  margin: 0 auto;
+  padding: var(--page-padding-y) var(--page-padding-x);
   width: 100%;
 }
 
@@ -205,9 +202,7 @@ a {
   min-height: 100svh;
   display: flex;
   flex-direction: column;
-  padding: 2rem;
-  max-width: 960px;
-  margin: 0 auto;
+  padding: var(--page-padding-y) var(--page-padding-x);
   width: 100%;
 }
 
@@ -237,7 +232,7 @@ a {
 
 .tool-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 190px));
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 1.25rem;
 }
 

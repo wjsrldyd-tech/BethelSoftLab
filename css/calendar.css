@@ -6,10 +6,11 @@
   min-height: 100svh;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 1.5rem;
+  align-items: stretch;
+  padding: var(--page-padding-y) var(--page-padding-x);
   gap: 1.2rem;
   background: var(--bg);
+  width: 100%;
 }
 
 /* ===== 컨트롤 바 ===== */
@@ -18,7 +19,6 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  max-width: 1000px;
   gap: 1rem;
 }
 
@@ -100,7 +100,7 @@
 .cal-sheet {
   background: #ffffff;
   width: 100%;
-  max-width: 1000px;
+  max-height: calc(100svh - 7rem);
   aspect-ratio: 297 / 210;     /* A4 가로 비율 */
   padding: 3.5% 4%;
   border-radius: 4px;
