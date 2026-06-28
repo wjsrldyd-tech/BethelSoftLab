@@ -16,6 +16,8 @@
   --game-glow: rgba(245, 158, 11, 0.3);
   --church: #38bdf8;
   --church-glow: rgba(56, 189, 248, 0.3);
+  --stocks: #22c55e;
+  --stocks-glow: rgba(34, 197, 94, 0.3);
   --page-padding-x: clamp(1.5rem, 3vw, 3rem);
   --page-padding-y: 1.75rem;
 }
@@ -66,16 +68,16 @@ a {
 
 .launcher-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 1.5rem;
   width: 100%;
-  max-width: 960px;
+  max-width: 1200px;
   margin: clamp(-5.5rem, -11vh, -7rem) auto 0;
   position: relative;
   z-index: 1;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
   .launcher-grid {
     grid-template-columns: repeat(2, 1fr);
     margin-top: clamp(-3.5rem, -8vh, -5rem);
@@ -268,6 +270,7 @@ a {
 .sub-home--game .main-tab.active { border-bottom-color: var(--game); color: #fcd34d; }
 .sub-home--tools .main-tab.active { border-bottom-color: var(--tools); color: #93c5fd; }
 .sub-home--church .main-tab.active { border-bottom-color: var(--church); color: #7dd3fc; }
+.sub-home--stocks .main-tab.active { border-bottom-color: var(--stocks); color: #86efac; }
 
 @media (max-width: 520px) {
   .sub-topbar {
@@ -383,7 +386,17 @@ a {
   box-shadow: 0 8px 32px var(--church-glow);
 }
 
+.launcher-card.stocks:hover {
+  border-color: var(--stocks);
+  box-shadow: 0 8px 32px var(--stocks-glow);
+}
+
 .tool-card.worship:hover {
   border-color: var(--church);
   box-shadow: 0 8px 32px var(--church-glow);
+}
+
+.tool-card.pp:hover {
+  border-color: var(--stocks);
+  box-shadow: 0 8px 32px var(--stocks-glow);
 }

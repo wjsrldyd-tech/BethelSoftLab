@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PP 계산기 - BethelSoftLab</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <style>
+      .pp-page {
+        min-height: 100svh;
+        display: flex;
+        flex-direction: column;
+        padding: var(--page-padding-y) var(--page-padding-x);
+        gap: 1.25rem;
+        width: 100%;
+      }
+
+      .pp-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        width: 100%;
+      }
+
+      .pp-title {
+        margin: 0;
+        font-size: 1.8rem;
+        font-weight: 600;
+        color: var(--text-h);
+      }
+
+      /* ===== 좌우 2열 — PC: 입력 고정폭 + 결과 나머지 전체 ===== */
+      .pp-main {
+        display: grid;
+        grid-template-columns: minmax(300px, 380px) 1fr;
+        gap: 1.5rem;
+        align-items: start;
+        width: 100%;
+        flex: 1;
+      }
+
+      @media (max-width: 720px) {
+        .pp-main { grid-template-columns: 1fr; }
+      }
+
+      .pp-panel {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 1.5rem 1.75rem;
+      }
+
+      .pp-panel-title {
+        margin: 0 0 1.25rem;
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--text);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      /* ===== 입력 (왼쪽) ===== */
+      .pp-fields {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .pp-field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+      }
+
+      .pp-label {
+        font-size: 0.78rem;
+        color: var(--text);
+        font-weight: 500;
+      }
+
+      .pp-input {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text-h);
+        font-size: 1.2rem;
+        font-family: inherit;
+        padding: 0.7rem 1rem;
+        width: 100%;
+        transition: border-color 0.15s, box-shadow 0.15s;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .pp-input:focus {
+        outline: none;
+        border-color: var(--stocks);
+        box-shadow: 0 0 0 3px var(--stocks-glow);
+      }
+
+      .pp-input::placeholder { color: #3a3a44; }
+
+      .pp-calc-btn {
+        margin-top: 0.25rem;
+        width: 100%;
+        padding: 0.75rem;
+        border-radius: 8px;
+        border: 1px solid var(--stocks);
+        background: transparent;
+        color: var(--stocks);
+        font-size: 0.95rem;
+        font-family: inherit;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s, color 0.2s;
+      }
+
+      .pp-calc-btn:hover {
+        background: var(--stocks);
+        color: #000;
+      }
+
+      /* ===== 결과 (오른쪽) — 가격순 세로 나열 ===== */
+      .pp-result-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        height: 100%;
+        justify-content: center;
+      }
+
+      .pp-result-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.55rem 1.25rem;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: var(--bg);
+      }
+
+      .pp-result-row.resistance { border-left: 3px solid #ef4444; }
+      .pp-result-row.pivot      { border-left: 3px solid var(--stocks); background: rgba(34, 197, 94, 0.06); }
+      .pp-result-row.support    { border-left: 3px solid #3b82f6; }
+
+      .pp-result-name {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text);
+        min-width: 2.5rem;
+      }
+
+      .pp-result-row.pivot .pp-result-name { color: var(--stocks); font-size: 1.05rem; }
+
+      .pp-result-value {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: var(--text-h);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .pp-result-row.resistance .pp-result-value { color: #f87171; }
+      .pp-result-row.pivot      .pp-result-value { color: var(--stocks); font-size: 1.6rem; }
+      .pp-result-row.support    .pp-result-value { color: #60a5fa; }
+
+      .pp-result-row.empty .pp-result-value { color: #3a3a44; font-weight: 400; }
+    </style>
+  </head>
+  <body>
+    <div class="pp-page">
+
+      <div class="pp-header">
+        <h1 class="pp-title">📊 PP 계산기</h1>
+        <a href="stocks.html" class="back-link">← 주식으로</a>
+      </div>
+
+      <div class="pp-main">
+
+        <!-- 왼쪽: 입력 -->
+        <div class="pp-panel">
+          <p class="pp-panel-title">전일 데이터 입력</p>
+          <div class="pp-fields">
+            <div class="pp-field">
+              <label class="pp-label" for="inp-high">전일 고가 (High)</label>
+              <input id="inp-high" class="pp-input" type="number" step="any" min="0" placeholder="0" />
+            </div>
+            <div class="pp-field">
+              <label class="pp-label" for="inp-low">전일 저가 (Low)</label>
+              <input id="inp-low" class="pp-input" type="number" step="any" min="0" placeholder="0" />
+            </div>
+            <div class="pp-field">
+              <label class="pp-label" for="inp-close">전일 종가 (Close)</label>
+              <input id="inp-close" class="pp-input" type="number" step="any" min="0" placeholder="0" />
+            </div>
+            <button id="btn-calc" type="button" class="pp-calc-btn">계산하기</button>
+          </div>
+        </div>
+
+        <!-- 오른쪽: 결과 (가격순 R5→S5) -->
+        <div class="pp-panel" id="pp-result" aria-live="polite">
+          <p class="pp-panel-title">Classic Pivot Point</p>
+          <div class="pp-result-list">
+            <div class="pp-result-row resistance empty" id="row-r5">
+              <span class="pp-result-name">R5</span>
+              <span class="pp-result-value" id="val-r5">—</span>
+            </div>
+            <div class="pp-result-row resistance empty" id="row-r4">
+              <span class="pp-result-name">R4</span>
+              <span class="pp-result-value" id="val-r4">—</span>
+            </div>
+            <div class="pp-result-row resistance empty" id="row-r3">
+              <span class="pp-result-name">R3</span>
+              <span class="pp-result-value" id="val-r3">—</span>
+            </div>
+            <div class="pp-result-row resistance empty" id="row-r2">
+              <span class="pp-result-name">R2</span>
+              <span class="pp-result-value" id="val-r2">—</span>
+            </div>
+            <div class="pp-result-row resistance empty" id="row-r1">
+              <span class="pp-result-name">R1</span>
+              <span class="pp-result-value" id="val-r1">—</span>
+            </div>
+            <div class="pp-result-row pivot empty" id="row-pp">
+              <span class="pp-result-name">PP</span>
+              <span class="pp-result-value" id="val-pp">—</span>
+            </div>
+            <div class="pp-result-row support empty" id="row-s1">
+              <span class="pp-result-name">S1</span>
+              <span class="pp-result-value" id="val-s1">—</span>
+            </div>
+            <div class="pp-result-row support empty" id="row-s2">
+              <span class="pp-result-name">S2</span>
+              <span class="pp-result-value" id="val-s2">—</span>
+            </div>
+            <div class="pp-result-row support empty" id="row-s3">
+              <span class="pp-result-name">S3</span>
+              <span class="pp-result-value" id="val-s3">—</span>
+            </div>
+            <div class="pp-result-row support empty" id="row-s4">
+              <span class="pp-result-name">S4</span>
+              <span class="pp-result-value" id="val-s4">—</span>
+            </div>
+            <div class="pp-result-row support empty" id="row-s5">
+              <span class="pp-result-name">S5</span>
+              <span class="pp-result-value" id="val-s5">—</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <script src="js/pp-calculator.js"></script>
+  </body>
+</html>
