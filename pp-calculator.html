@@ -91,6 +91,13 @@
         transition: border-color 0.15s, box-shadow 0.15s;
         text-align: right;
         font-variant-numeric: tabular-nums;
+        -moz-appearance: textfield;
+      }
+
+      .pp-input::-webkit-outer-spin-button,
+      .pp-input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
       }
 
       .pp-input:focus {
@@ -217,20 +224,20 @@
           <div class="pp-fields">
             <div class="pp-field">
               <label class="pp-label" for="inp-high">전일 고가 (High)</label>
-              <input id="inp-high" class="pp-input" type="number" step="any" min="0" placeholder="0" />
+              <input id="inp-high" class="pp-input" type="text" inputmode="numeric" placeholder="0" />
             </div>
             <div class="pp-field">
               <label class="pp-label" for="inp-low">전일 저가 (Low)</label>
-              <input id="inp-low" class="pp-input" type="number" step="any" min="0" placeholder="0" />
+              <input id="inp-low" class="pp-input" type="text" inputmode="numeric" placeholder="0" />
             </div>
             <div class="pp-field">
               <label class="pp-label" for="inp-close">전일 종가 (Close)</label>
-              <input id="inp-close" class="pp-input" type="number" step="any" min="0" placeholder="0" />
+              <input id="inp-close" class="pp-input" type="text" inputmode="numeric" placeholder="0" />
             </div>
             <hr class="pp-field-divider" />
             <div class="pp-field">
               <label class="pp-label" for="inp-current">현재가</label>
-              <input id="inp-current" class="pp-input" type="number" step="any" min="0" placeholder="0" />
+              <input id="inp-current" class="pp-input" type="text" inputmode="numeric" placeholder="0" />
             </div>
             <button id="btn-calc" type="button" class="pp-calc-btn">계산하기</button>
           </div>

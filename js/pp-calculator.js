@@ -25,7 +25,55 @@
   ];
 
   function fmt(n) {
-    return n.toLocaleString('ko-KR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return n.toLocaleString('ko-KR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  }
+
+  /* KRX 주식 호가 단위 (가격 구간별) */
+  function getTickSize(price) {
+    var p = Number(price);
+    if (!p || p <= 0 || isNaN(p)) p = 50000;
+    if (p < 1000)    return 1;
+    if (p < 5000)    return 5;
+    if (p < 10000)   return 10;
+    if (p < 50000)   return 50;
+    if (p < 100000)  return 100;
+    if (p < 500000)  return 500;
+    return 1000;
+  }
+
+  function parseInputPrice(input) {
+    var n = parseFloat(String(input.value).replace(/,/g, ''));
+    return isNaN(n) ? 0 : n;
+  }
+
+  function adjustPriceByTick(input, direction) {
+    var current = parseInputPrice(input);
+    if (current <= 0) {
+      current = direction > 0 ? getTickSize(50000) : 0;
+    }
+    var tick = getTickSize(current);
+    var next = current + direction * tick;
+    if (next < tick) next = 0;
+    input.value = next > 0 ? String(Math.round(next)) : '';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  function onPriceKeydown(e) {
+    if (e.key === 'Enter') {
+      calculate();
+      return;
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      adjustPriceByTick(e.target, 1);
+      if (e.target === elCurrent) refreshCurrentPrice();
+      return;
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      adjustPriceByTick(e.target, -1);
+      if (e.target === elCurrent) refreshCurrentPrice();
+    }
   }
 
   function calcValues(H, L, C) {
@@ -48,8 +96,8 @@
   }
 
   function getCurrentPrice() {
-    var n = parseFloat(elCurrent.value);
-    return !isNaN(n) && n > 0 ? n : null;
+    var n = parseInputPrice(elCurrent);
+    return n > 0 ? n : null;
   }
 
   /* 현재가가 속한 구간 라벨 (예: R1 ~ PP) */
@@ -140,9 +188,9 @@
   }
 
   function calculate() {
-    var H = parseFloat(elHigh.value);
-    var L = parseFloat(elLow.value);
-    var C = parseFloat(elClose.value);
+    var H = parseInputPrice(elHigh);
+    var L = parseInputPrice(elLow);
+    var C = parseInputPrice(elClose);
 
     if (isNaN(H) || isNaN(L) || isNaN(C) || H <= 0 || L <= 0 || C <= 0) {
       alert('고가 · 저가 · 종가를 모두 입력해 주세요.');
@@ -206,9 +254,7 @@
     elBtn.addEventListener('click', calculate);
 
     [elHigh, elLow, elClose, elCurrent].forEach(function (el) {
-      el.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') calculate();
-      });
+      el.addEventListener('keydown', onPriceKeydown);
     });
 
     elCurrent.addEventListener('input', refreshCurrentPrice);
