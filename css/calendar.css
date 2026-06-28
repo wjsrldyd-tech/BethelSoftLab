@@ -464,6 +464,7 @@
     width: 297mm;
     height: 210mm;
     max-width: none;
+    max-height: none;   /* 화면의 calc(100svh - 7rem) 제한 해제 */
     padding: 10mm 15mm;
     box-sizing: border-box;
     box-shadow: none;
