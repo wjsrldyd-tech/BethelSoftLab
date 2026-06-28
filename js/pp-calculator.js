@@ -100,20 +100,62 @@
     return n > 0 ? n : null;
   }
 
-  /* 현재가가 속한 구간 라벨 (예: R1 ~ PP) */
-  function findZoneLabel(current, values, sortedItems) {
+  function fmtPct(n) {
+    return n.toFixed(1) + '%';
+  }
+
+  /* 현재가 ↔ 인접 피봇까지 남은 비율 (↑ 위 · ↓ 아래) */
+  function calcPositionHtml(current, sortedItems) {
     var idx = -1;
     for (var i = 0; i < sortedItems.length; i++) {
       if (sortedItems[i].kind === 'current') { idx = i; break; }
     }
     if (idx < 0) return '';
 
-    var above = idx > 0 ? sortedItems[idx - 1].label : null;
-    var below = idx < sortedItems.length - 1 ? sortedItems[idx + 1].label : null;
+    var above = idx > 0 ? sortedItems[idx - 1] : null;
+    var below = idx < sortedItems.length - 1 ? sortedItems[idx + 1] : null;
 
-    if (!above && below) return below + ' 이상';
-    if (above && !below) return above + ' 이하';
-    if (above && below) return above + ' ~ ' + below;
+    /* 구간 내: 위·아래 남은 % (합계 100%) */
+    if (above && below) {
+      var range = above.price - below.price;
+      if (range <= 0) return '';
+      var pctUp   = ((above.price - current) / range) * 100;
+      var pctDown = ((current - below.price) / range) * 100;
+      return (
+        '<span class="pp-result-position">' +
+          '<span class="pos-up">↑ ' + fmtPct(pctUp) + '</span>' +
+          '<span class="pos-sep">·</span>' +
+          '<span class="pos-down">↓ ' + fmtPct(pctDown) + '</span>' +
+        '</span>'
+      );
+    }
+
+    /* R5 이상 — 직전 구간(R5~R4) 폭 기준 초과 % */
+    if (above && !below) {
+      var prevIdx = idx - 2;
+      if (prevIdx >= 0) {
+        var refRange = above.price - sortedItems[prevIdx].price;
+        if (refRange > 0) {
+          var over = ((current - above.price) / refRange) * 100;
+          return '<span class="pp-result-position"><span class="pos-up">↑ ' + fmtPct(over) + '</span></span>';
+        }
+      }
+      return '';
+    }
+
+    /* S5 이하 — 직전 구간(S4~S5) 폭 기준 이탈 % */
+    if (!above && below) {
+      var nextIdx = idx + 2;
+      if (nextIdx < sortedItems.length) {
+        var refRange2 = sortedItems[nextIdx].price - below.price;
+        if (refRange2 > 0) {
+          var under = ((below.price - current) / refRange2) * 100;
+          return '<span class="pp-result-position"><span class="pos-down">↓ ' + fmtPct(under) + '</span></span>';
+        }
+      }
+      return '';
+    }
+
     return '';
   }
 
@@ -126,11 +168,10 @@
     return row;
   }
 
-  function createCurrentRow(price, zone) {
+  function createCurrentRow(price, positionHtml) {
     var row = document.createElement('div');
     row.className = 'pp-result-row current-price';
-    var nameHtml = '현재가';
-    if (zone) nameHtml += '<span class="pp-result-zone">' + zone + '</span>';
+    var nameHtml = '현재가' + (positionHtml || '');
     row.innerHTML =
       '<span class="pp-result-name">' + nameHtml + '</span>' +
       '<span class="pp-result-value">' + fmt(price) + '</span>';
@@ -163,11 +204,13 @@
       return 0;
     });
 
-    var zone = currentPrice != null ? findZoneLabel(currentPrice, values, items) : '';
+    var positionHtml = currentPrice != null
+      ? calcPositionHtml(currentPrice, items)
+      : '';
 
     items.forEach(function (item) {
       if (item.kind === 'current') {
-        elList.appendChild(createCurrentRow(item.price, zone));
+        elList.appendChild(createCurrentRow(item.price, positionHtml));
       } else {
         elList.appendChild(createLevelRow(item.level, item.price, false));
       }

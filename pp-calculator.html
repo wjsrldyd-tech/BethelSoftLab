@@ -193,13 +193,19 @@
         font-size: 1.45rem;
       }
 
-      .pp-result-zone {
-        font-size: 0.72rem;
-        color: var(--text);
-        opacity: 0.75;
-        margin-left: 0.35rem;
-        font-weight: 400;
+      .pp-result-position {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        margin-left: 0.5rem;
+        font-size: 0.78rem;
+        font-weight: 500;
+        font-variant-numeric: tabular-nums;
       }
+
+      .pp-result-position .pos-up   { color: #f87171; }
+      .pp-result-position .pos-down { color: #60a5fa; }
+      .pp-result-position .pos-sep  { color: var(--text); opacity: 0.4; }
 
       .pp-field-divider {
         border: none;
