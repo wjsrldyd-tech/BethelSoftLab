@@ -165,6 +165,40 @@
       .pp-result-row.support    .pp-result-value { color: #60a5fa; }
 
       .pp-result-row.empty .pp-result-value { color: #3a3a44; font-weight: 400; }
+
+      .pp-result-row.current-price {
+        border-left: 3px solid #fbbf24;
+        background: rgba(251, 191, 36, 0.12);
+        box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.25);
+      }
+
+      .pp-result-row.current-price .pp-result-name {
+        color: #fbbf24;
+        font-size: 1rem;
+      }
+
+      .pp-result-row.current-price .pp-result-name::before {
+        content: '▶ ';
+      }
+
+      .pp-result-row.current-price .pp-result-value {
+        color: #fde68a;
+        font-size: 1.45rem;
+      }
+
+      .pp-result-zone {
+        font-size: 0.72rem;
+        color: var(--text);
+        opacity: 0.75;
+        margin-left: 0.35rem;
+        font-weight: 400;
+      }
+
+      .pp-field-divider {
+        border: none;
+        border-top: 1px solid var(--border);
+        margin: 0.25rem 0;
+      }
     </style>
   </head>
   <body>
@@ -193,59 +227,19 @@
               <label class="pp-label" for="inp-close">전일 종가 (Close)</label>
               <input id="inp-close" class="pp-input" type="number" step="any" min="0" placeholder="0" />
             </div>
+            <hr class="pp-field-divider" />
+            <div class="pp-field">
+              <label class="pp-label" for="inp-current">현재가</label>
+              <input id="inp-current" class="pp-input" type="number" step="any" min="0" placeholder="0" />
+            </div>
             <button id="btn-calc" type="button" class="pp-calc-btn">계산하기</button>
           </div>
         </div>
 
-        <!-- 오른쪽: 결과 (가격순 R5→S5) -->
+        <!-- 오른쪽: 결과 (동적 렌더 — R5→S5, 현재가 삽입) -->
         <div class="pp-panel" id="pp-result" aria-live="polite">
           <p class="pp-panel-title">Classic Pivot Point</p>
-          <div class="pp-result-list">
-            <div class="pp-result-row resistance empty" id="row-r5">
-              <span class="pp-result-name">R5</span>
-              <span class="pp-result-value" id="val-r5">—</span>
-            </div>
-            <div class="pp-result-row resistance empty" id="row-r4">
-              <span class="pp-result-name">R4</span>
-              <span class="pp-result-value" id="val-r4">—</span>
-            </div>
-            <div class="pp-result-row resistance empty" id="row-r3">
-              <span class="pp-result-name">R3</span>
-              <span class="pp-result-value" id="val-r3">—</span>
-            </div>
-            <div class="pp-result-row resistance empty" id="row-r2">
-              <span class="pp-result-name">R2</span>
-              <span class="pp-result-value" id="val-r2">—</span>
-            </div>
-            <div class="pp-result-row resistance empty" id="row-r1">
-              <span class="pp-result-name">R1</span>
-              <span class="pp-result-value" id="val-r1">—</span>
-            </div>
-            <div class="pp-result-row pivot empty" id="row-pp">
-              <span class="pp-result-name">PP</span>
-              <span class="pp-result-value" id="val-pp">—</span>
-            </div>
-            <div class="pp-result-row support empty" id="row-s1">
-              <span class="pp-result-name">S1</span>
-              <span class="pp-result-value" id="val-s1">—</span>
-            </div>
-            <div class="pp-result-row support empty" id="row-s2">
-              <span class="pp-result-name">S2</span>
-              <span class="pp-result-value" id="val-s2">—</span>
-            </div>
-            <div class="pp-result-row support empty" id="row-s3">
-              <span class="pp-result-name">S3</span>
-              <span class="pp-result-value" id="val-s3">—</span>
-            </div>
-            <div class="pp-result-row support empty" id="row-s4">
-              <span class="pp-result-name">S4</span>
-              <span class="pp-result-value" id="val-s4">—</span>
-            </div>
-            <div class="pp-result-row support empty" id="row-s5">
-              <span class="pp-result-name">S5</span>
-              <span class="pp-result-value" id="val-s5">—</span>
-            </div>
-          </div>
+          <div class="pp-result-list" id="pp-result-list"></div>
         </div>
 
       </div>
