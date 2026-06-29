@@ -296,6 +296,55 @@
         color: #f87171;
       }
 
+      .tj-edit-btn {
+        padding: 0.2rem 0.45rem;
+        border: none;
+        border-radius: 4px;
+        background: transparent;
+        color: var(--text);
+        cursor: pointer;
+        font-size: 0.85rem;
+        opacity: 0.5;
+        transition: opacity 0.15s, color 0.15s;
+      }
+
+      .tj-edit-btn:hover {
+        opacity: 1;
+        color: var(--stocks);
+      }
+
+      .tj-row-actions {
+        display: flex;
+        gap: 0.15rem;
+        justify-content: flex-end;
+      }
+
+      .tj-table tr.row-editing td {
+        background: rgba(34, 197, 94, 0.1);
+      }
+
+      .tj-form-btns {
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      .tj-form-btns .tj-btn { flex: 1; }
+
+      .tj-btn-cancel {
+        border-color: var(--border);
+        color: var(--text);
+      }
+
+      .tj-btn-cancel:hover {
+        background: var(--bg-card-hover);
+        color: var(--text-h);
+      }
+
+      .tj-panel.editing {
+        border-color: var(--stocks);
+        box-shadow: 0 0 0 1px var(--stocks-glow);
+      }
+
       .tj-empty {
         padding: 2rem 1rem;
         text-align: center;
@@ -362,8 +411,8 @@
             </div>
           </div>
 
-          <div class="tj-panel" style="margin-top: 1rem;">
-            <p class="tj-panel-title">현재 상황</p>
+          <div class="tj-panel" id="panel-base" style="margin-top: 1rem;">
+            <p class="tj-panel-title" id="base-panel-title">현재 상황</p>
             <div class="tj-fields">
               <div class="tj-field">
                 <label class="tj-label" for="inp-base-qty">보유 수량</label>
@@ -382,8 +431,8 @@
             </div>
           </div>
 
-          <div class="tj-panel" style="margin-top: 1rem;">
-            <p class="tj-panel-title">매매 기록 추가</p>
+          <div class="tj-panel" id="panel-entry" style="margin-top: 1rem;">
+            <p class="tj-panel-title" id="entry-panel-title">매매 기록 추가</p>
             <div class="tj-fields">
               <div class="tj-side-toggle" role="group" aria-label="매수 매도">
                 <button type="button" class="tj-side-btn buy active" data-side="buy">매수</button>
@@ -406,7 +455,10 @@
                 <input id="inp-note" class="tj-input" type="text" placeholder="계획 메모" maxlength="100" disabled />
               </div>
               <span id="entry-msg" class="tj-msg"></span>
-              <button id="btn-add-entry" type="button" class="tj-btn" disabled>기록 추가</button>
+              <div class="tj-form-btns">
+                <button id="btn-add-entry" type="button" class="tj-btn" disabled>기록 추가</button>
+                <button id="btn-cancel-entry" type="button" class="tj-btn tj-btn-cancel" hidden>취소</button>
+              </div>
             </div>
           </div>
         </div>

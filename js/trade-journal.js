@@ -7,6 +7,8 @@
   var journalBase = null;
   var journalEntries = [];
   var currentSide = 'buy';
+  var editMode = null;
+  var editingEntryId = null;
 
   var elSelInst    = document.getElementById('sel-instrument');
   var elTicker     = document.getElementById('inp-ticker');
@@ -22,7 +24,12 @@
   var elTradedAt   = document.getElementById('inp-traded-at');
   var elNote       = document.getElementById('inp-note');
   var elBtnAddEntry = document.getElementById('btn-add-entry');
+  var elBtnCancelEntry = document.getElementById('btn-cancel-entry');
   var elEntryMsg   = document.getElementById('entry-msg');
+  var elPanelBase  = document.getElementById('panel-base');
+  var elPanelEntry = document.getElementById('panel-entry');
+  var elBasePanelTitle = document.getElementById('base-panel-title');
+  var elEntryPanelTitle = document.getElementById('entry-panel-title');
   var elSummary    = document.getElementById('tj-summary');
   var elSumQty     = document.getElementById('sum-qty');
   var elSumAvg     = document.getElementById('sum-avg');
@@ -210,6 +217,95 @@
     return { rows: rows, totalRealized: totalRealized };
   }
 
+  /** 시뮬레이션 — 보유 수량이 음수가 되는지 검사 */
+  function validateJournal(base, entries) {
+    var result = computeJournal(base, entries);
+    for (var i = 0; i < result.rows.length; i++) {
+      if (result.rows[i].qtyAfter < 0) {
+        var label = result.rows[i].kind === 'base' ? '시작' : ('기록 #' + i);
+        return { ok: false, message: label + ' 이후 보유 수량이 부족합니다.' };
+      }
+    }
+    return { ok: true };
+  }
+
+  function setSide(side) {
+    currentSide = side;
+    sideBtns.forEach(function (b) {
+      b.classList.toggle('active', b.getAttribute('data-side') === side);
+    });
+  }
+
+  function clearEntryForm() {
+    elPrice.value = '';
+    elQty.value = '';
+    elNote.value = '';
+    elTradedAt.value = todayStr();
+    setSide('buy');
+  }
+
+  function updateEditUI() {
+    var editingBase = editMode === 'base';
+    var editingEntry = editMode === 'entry';
+
+    elBasePanelTitle.textContent = editingBase ? '현재 상황 수정' : '현재 상황';
+    elEntryPanelTitle.textContent = editingEntry ? '매매 기록 수정' : '매매 기록 추가';
+    elBtnSaveBase.textContent = editingBase ? '수정 저장' : '현재 상황 저장';
+    elBtnAddEntry.textContent = editingEntry ? '수정 저장' : '기록 추가';
+    elBtnCancelEntry.hidden = !editingEntry;
+    elPanelBase.classList.toggle('editing', editingBase);
+    elPanelEntry.classList.toggle('editing', editingEntry);
+  }
+
+  function clearEditMode() {
+    editMode = null;
+    editingEntryId = null;
+    updateEditUI();
+    if (journalBase) {
+      elBaseQty.value  = journalBase.baseQty > 0 ? String(journalBase.baseQty) : '';
+      elBaseAvg.value  = journalBase.baseAvg > 0 ? String(journalBase.baseAvg) : '';
+      elBaseNote.value = journalBase.note || '';
+    }
+    clearEntryForm();
+    setMsg(elBaseMsg, '');
+    setMsg(elEntryMsg, '');
+    renderJournal();
+  }
+
+  function startEditBase() {
+    if (!journalBase) return;
+    editMode = 'base';
+    editingEntryId = null;
+    elBaseQty.value  = String(journalBase.baseQty);
+    elBaseAvg.value  = String(journalBase.baseAvg);
+    elBaseNote.value = journalBase.note || '';
+    clearEntryForm();
+    setMsg(elBaseMsg, '');
+    setMsg(elEntryMsg, '');
+    updateEditUI();
+    renderJournal();
+    elPanelBase.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    elBaseQty.focus();
+  }
+
+  function startEditEntry(id) {
+    var entry = journalEntries.filter(function (e) { return e.id === id; })[0];
+    if (!entry) return;
+    editMode = 'entry';
+    editingEntryId = id;
+    setSide(entry.side);
+    elPrice.value = String(entry.price);
+    elQty.value = String(entry.qty);
+    elTradedAt.value = entry.tradedAt || todayStr();
+    elNote.value = entry.note || '';
+    setMsg(elBaseMsg, '');
+    setMsg(elEntryMsg, '');
+    updateEditUI();
+    renderJournal();
+    elPanelEntry.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    elPrice.focus();
+  }
+
   function setFormEnabled(enabled) {
     [elBaseQty, elBaseAvg, elBaseNote, elBtnSaveBase,
      elPrice, elQty, elTradedAt, elNote, elBtnAddEntry].forEach(function (el) {
@@ -264,7 +360,10 @@
 
     rows.forEach(function (row, idx) {
       var isBase = row.kind === 'base';
-      html += '<tr class="' + (isBase ? 'row-base' : '') + '">';
+      var isEditing = (isBase && editMode === 'base')
+        || (!isBase && editMode === 'entry' && row.entryId === editingEntryId);
+      html += '<tr class="' + (isBase ? 'row-base' : '')
+        + (isEditing ? ' row-editing' : '') + '">';
       html += '<td>' + (isBase ? '—' : idx) + '</td>';
       html += '<td><span class="tj-badge ' + (isBase ? 'base' : row.side) + '">'
         + escapeHtml(row.label) + '</span></td>';
@@ -285,12 +384,16 @@
         html += '—';
       }
       html += '</td>';
-      html += '<td>';
-      if (!isBase && row.entryId) {
+      html += '<td><div class="tj-row-actions">';
+      if (isBase) {
+        html += '<button type="button" class="tj-edit-btn" data-kind="base" aria-label="시작 수정">✎</button>';
+      } else if (row.entryId) {
+        html += '<button type="button" class="tj-edit-btn" data-id="' + escapeAttr(row.entryId)
+          + '" aria-label="수정">✎</button>';
         html += '<button type="button" class="tj-del-btn" data-id="' + escapeAttr(row.entryId)
           + '" aria-label="삭제">✕</button>';
       }
-      html += '</td></tr>';
+      html += '</div></td></tr>';
     });
 
     html += '</tbody></table></div>';
@@ -299,6 +402,16 @@
     elTableArea.querySelectorAll('.tj-del-btn').forEach(function (btn) {
       btn.addEventListener('click', function () {
         deleteEntry(btn.getAttribute('data-id'));
+      });
+    });
+
+    elTableArea.querySelectorAll('.tj-edit-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        if (btn.getAttribute('data-kind') === 'base') {
+          startEditBase();
+        } else {
+          startEditEntry(btn.getAttribute('data-id'));
+        }
       });
     });
   }
@@ -336,14 +449,19 @@
       elBaseNote.value = '';
     }
 
+    editMode = null;
+    editingEntryId = null;
+    updateEditUI();
+    clearEntryForm();
     renderJournal();
   }
 
   async function onInstrumentChange() {
     currentInstrumentId = elSelInst.value || null;
     setFormEnabled(!!currentInstrumentId);
-    setMsg(elBaseMsg, '');
-    setMsg(elEntryMsg, '');
+    editMode = null;
+    editingEntryId = null;
+    updateEditUI();
 
     if (!currentInstrumentId) {
       journalBase = null;
@@ -395,15 +513,11 @@
       return;
     }
 
-    for (var i = 0; i < journalEntries.length; i++) {
-      var simBase = { baseQty: baseQty, baseAvg: baseAvg, note: note };
-      var simEntries = journalEntries.slice(0, i + 1);
-      var simRows = computeJournal(simBase, simEntries).rows;
-      var last = simRows[simRows.length - 1];
-      if (last.qtyAfter < 0) {
-        setMsg(elBaseMsg, '시작 수량이 너무 적습니다. 기록 #' + (i + 1) + ' 매도를 처리할 수 없습니다.');
-        return;
-      }
+    var simBase = { baseQty: baseQty, baseAvg: baseAvg, note: note };
+    var check = validateJournal(simBase, journalEntries);
+    if (!check.ok) {
+      setMsg(elBaseMsg, check.message);
+      return;
     }
 
     try {
@@ -413,14 +527,17 @@
         baseAvg: baseAvg,
         note: note,
       });
-      setMsg(elBaseMsg, '저장되었습니다.', true);
+      var wasEdit = editMode === 'base';
+      editMode = null;
+      updateEditUI();
+      setMsg(elBaseMsg, wasEdit ? '수정되었습니다.' : '저장되었습니다.', true);
       await loadJournal(currentInstrumentId);
     } catch (e) {
       setMsg(elBaseMsg, '저장 실패: ' + (e.message || e));
     }
   }
 
-  async function addEntry() {
+  async function saveEntry() {
     if (!currentInstrumentId) return;
 
     if (!journalBase) {
@@ -432,6 +549,7 @@
     var qty   = parseNum(elQty);
     var note  = elNote.value.trim();
     var tradedAt = elTradedAt.value || todayStr();
+    var isEdit = editMode === 'entry' && editingEntryId;
 
     if (price <= 0) {
       setMsg(elEntryMsg, '가격을 입력해 주세요.');
@@ -444,36 +562,70 @@
       return;
     }
 
-    var result = computeJournal(journalBase, journalEntries);
-    var last = result.rows[result.rows.length - 1];
+    var newEntry = {
+      id: isEdit ? editingEntryId : null,
+      side: currentSide,
+      price: price,
+      qty: qty,
+      tradedAt: tradedAt,
+      note: note,
+    };
 
-    if (currentSide === 'sell' && qty > last.qtyAfter) {
-      setMsg(elEntryMsg, '매도 수량이 보유(' + fmtQty(last.qtyAfter) + '주)을 초과합니다.');
+    var simEntries = journalEntries.map(function (e) {
+      if (isEdit && e.id === editingEntryId) {
+        return Object.assign({}, e, newEntry);
+      }
+      return e;
+    });
+    if (!isEdit) {
+      simEntries = simEntries.concat([newEntry]);
+    }
+
+    var check = validateJournal(journalBase, simEntries);
+    if (!check.ok) {
+      setMsg(elEntryMsg, check.message);
       return;
     }
 
     try {
-      await db.saveJournalEntry({
+      var payload = {
         instrumentId: currentInstrumentId,
         side: currentSide,
         price: price,
         qty: qty,
         tradedAt: tradedAt,
         note: note,
-      });
-      elPrice.value = '';
-      elQty.value = '';
-      elNote.value = '';
-      setMsg(elEntryMsg, '기록이 추가되었습니다.', true);
+      };
+      if (isEdit) {
+        var orig = journalEntries.filter(function (e) { return e.id === editingEntryId; })[0];
+        payload.id = editingEntryId;
+        payload.sortOrder = orig ? orig.sortOrder : undefined;
+      }
+      await db.saveJournalEntry(payload);
+      clearEntryForm();
+      editMode = null;
+      editingEntryId = null;
+      updateEditUI();
+      setMsg(elEntryMsg, isEdit ? '수정되었습니다.' : '기록이 추가되었습니다.', true);
       await loadJournal(currentInstrumentId);
     } catch (e) {
       setMsg(elEntryMsg, '저장 실패: ' + (e.message || e));
     }
   }
 
+  async function addEntry() {
+    await saveEntry();
+  }
+
   async function deleteEntry(id) {
     if (!confirm('이 기록을 삭제할까요?')) return;
     try {
+      if (editingEntryId === id) {
+        editMode = null;
+        editingEntryId = null;
+        clearEntryForm();
+        updateEditUI();
+      }
       await db.deleteJournalEntry(id);
       await loadJournal(currentInstrumentId);
     } catch (e) {
@@ -484,10 +636,7 @@
   function initSideToggle() {
     sideBtns.forEach(function (btn) {
       btn.addEventListener('click', function () {
-        currentSide = btn.getAttribute('data-side');
-        sideBtns.forEach(function (b) {
-          b.classList.toggle('active', b === btn);
-        });
+        setSide(btn.getAttribute('data-side'));
       });
     });
   }
@@ -501,11 +650,15 @@
 
     elTradedAt.value = todayStr();
     initSideToggle();
+    updateEditUI();
 
     elSelInst.addEventListener('change', onInstrumentChange);
     elBtnAddInst.addEventListener('click', addInstrument);
     elBtnSaveBase.addEventListener('click', saveBase);
     elBtnAddEntry.addEventListener('click', addEntry);
+    elBtnCancelEntry.addEventListener('click', function () {
+      clearEditMode();
+    });
 
     [elBaseAvg, elPrice].forEach(function (el) {
       el.addEventListener('keydown', onPriceKeydown);
