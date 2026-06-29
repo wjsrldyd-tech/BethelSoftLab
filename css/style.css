@@ -400,3 +400,8 @@ a {
   border-color: var(--stocks);
   box-shadow: 0 8px 32px var(--stocks-glow);
 }
+
+.tool-card.journal:hover {
+  border-color: var(--stocks);
+  box-shadow: 0 8px 32px var(--stocks-glow);
+}

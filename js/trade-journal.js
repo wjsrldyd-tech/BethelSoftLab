@@ -1,0 +1,431 @@
+(function () {
+  'use strict';
+
+  var db = null;
+  var instruments = [];
+  var currentInstrumentId = null;
+  var journalBase = null;
+  var journalEntries = [];
+  var currentSide = 'buy';
+
+  var elSelInst    = document.getElementById('sel-instrument');
+  var elTicker     = document.getElementById('inp-ticker');
+  var elName       = document.getElementById('inp-name');
+  var elBtnAddInst = document.getElementById('btn-add-inst');
+  var elBaseQty    = document.getElementById('inp-base-qty');
+  var elBaseAvg    = document.getElementById('inp-base-avg');
+  var elBaseNote   = document.getElementById('inp-base-note');
+  var elBtnSaveBase = document.getElementById('btn-save-base');
+  var elBaseMsg    = document.getElementById('base-msg');
+  var elPrice      = document.getElementById('inp-price');
+  var elQty        = document.getElementById('inp-qty');
+  var elTradedAt   = document.getElementById('inp-traded-at');
+  var elNote       = document.getElementById('inp-note');
+  var elBtnAddEntry = document.getElementById('btn-add-entry');
+  var elEntryMsg   = document.getElementById('entry-msg');
+  var elSummary    = document.getElementById('tj-summary');
+  var elSumQty     = document.getElementById('sum-qty');
+  var elSumAvg     = document.getElementById('sum-avg');
+  var elTableArea  = document.getElementById('tj-table-area');
+  var sideBtns     = document.querySelectorAll('.tj-side-btn');
+
+  function fmt(n) {
+    if (n == null || isNaN(n)) return '—';
+    return Number(n).toLocaleString('ko-KR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    });
+  }
+
+  function fmtQty(n) {
+    if (n == null || isNaN(n)) return '—';
+    return Number(n).toLocaleString('ko-KR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    });
+  }
+
+  function parseNum(input) {
+    var n = parseFloat(String(input.value).replace(/,/g, ''));
+    return isNaN(n) ? 0 : n;
+  }
+
+  function getTickSize(price) {
+    var p = Number(price);
+    if (!p || p <= 0 || isNaN(p)) p = 50000;
+    if (p < 1000)    return 1;
+    if (p < 5000)    return 5;
+    if (p < 10000)   return 10;
+    if (p < 50000)   return 50;
+    if (p < 100000)  return 100;
+    if (p < 500000)  return 500;
+    return 1000;
+  }
+
+  function adjustPriceByTick(input, direction) {
+    var current = parseNum(input);
+    if (current <= 0) {
+      current = direction > 0 ? getTickSize(50000) : 0;
+    }
+    var tick = getTickSize(current);
+    var next = current + direction * tick;
+    if (next < tick) next = 0;
+    input.value = next > 0 ? String(Math.round(next)) : '';
+  }
+
+  function onPriceKeydown(e) {
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      adjustPriceByTick(e.target, 1);
+      return;
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      adjustPriceByTick(e.target, -1);
+    }
+  }
+
+  function setMsg(el, text, ok) {
+    el.textContent = text || '';
+    el.classList.toggle('ok', !!ok);
+  }
+
+  function todayStr() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  /** 시작 상태 + 기록 순서대로 평단·수량 재계산 */
+  function computeJournal(base, entries) {
+    var qty = base.baseQty;
+    var avg = base.baseAvg;
+    var rows = [{
+      kind: 'base',
+      label: '시작',
+      side: null,
+      price: null,
+      qty: null,
+      tradedAt: null,
+      note: base.note || '',
+      qtyAfter: qty,
+      avgAfter: avg,
+      entryId: null,
+    }];
+
+    entries.forEach(function (entry) {
+      if (entry.side === 'buy') {
+        var newQty = qty + entry.qty;
+        avg = newQty > 0 ? (qty * avg + entry.qty * entry.price) / newQty : avg;
+        qty = newQty;
+      } else {
+        qty = qty - entry.qty;
+      }
+      rows.push({
+        kind: 'entry',
+        label: entry.side === 'buy' ? '매수' : '매도',
+        side: entry.side,
+        price: entry.price,
+        qty: entry.qty,
+        tradedAt: entry.tradedAt,
+        note: entry.note || '',
+        qtyAfter: qty,
+        avgAfter: avg,
+        entryId: entry.id,
+      });
+    });
+
+    return rows;
+  }
+
+  function setFormEnabled(enabled) {
+    [elBaseQty, elBaseAvg, elBaseNote, elBtnSaveBase,
+     elPrice, elQty, elTradedAt, elNote, elBtnAddEntry].forEach(function (el) {
+      el.disabled = !enabled;
+    });
+  }
+
+  function renderInstrumentSelect() {
+    var prev = elSelInst.value;
+    elSelInst.innerHTML = '<option value="">— 종목을 선택하세요 —</option>';
+    instruments.forEach(function (inst) {
+      var opt = document.createElement('option');
+      opt.value = inst.id;
+      var label = inst.ticker;
+      if (inst.name) label += ' ' + inst.name;
+      opt.textContent = label;
+      elSelInst.appendChild(opt);
+    });
+    if (prev && instruments.some(function (i) { return i.id === prev; })) {
+      elSelInst.value = prev;
+    }
+  }
+
+  function renderJournal() {
+    if (!currentInstrumentId || !journalBase) {
+      elSummary.hidden = true;
+      elTableArea.innerHTML = '<div class="tj-empty">현재 상황을 저장하면 일지가 시작됩니다.</div>';
+      return;
+    }
+
+    var rows = computeJournal(journalBase, journalEntries);
+    var last = rows[rows.length - 1];
+
+    elSummary.hidden = false;
+    elSumQty.textContent = fmtQty(last.qtyAfter) + '주';
+    elSumAvg.textContent = fmt(last.avgAfter) + '원';
+
+    var html = '<div class="tj-table-wrap"><table class="tj-table"><thead><tr>'
+      + '<th>#</th><th>구분</th><th class="num">가격</th><th class="num">수량</th>'
+      + '<th>날짜</th><th>메모</th>'
+      + '<th class="num">보유</th><th class="num">평단</th><th></th>'
+      + '</tr></thead><tbody>';
+
+    rows.forEach(function (row, idx) {
+      var isBase = row.kind === 'base';
+      html += '<tr class="' + (isBase ? 'row-base' : '') + '">';
+      html += '<td>' + (isBase ? '—' : idx) + '</td>';
+      html += '<td><span class="tj-badge ' + (isBase ? 'base' : row.side) + '">'
+        + escapeHtml(row.label) + '</span></td>';
+      html += '<td class="num">' + (row.price != null ? fmt(row.price) : '—') + '</td>';
+      html += '<td class="num">' + (row.qty != null ? fmtQty(row.qty) : '—') + '</td>';
+      html += '<td>' + (row.tradedAt ? escapeHtml(row.tradedAt) : '—') + '</td>';
+      html += '<td><span class="tj-note" title="' + escapeAttr(row.note) + '">'
+        + escapeHtml(row.note || '—') + '</span></td>';
+      html += '<td class="num">' + fmtQty(row.qtyAfter) + '</td>';
+      html += '<td class="num">' + fmt(row.avgAfter) + '</td>';
+      html += '<td>';
+      if (!isBase && row.entryId) {
+        html += '<button type="button" class="tj-del-btn" data-id="' + escapeAttr(row.entryId)
+          + '" aria-label="삭제">✕</button>';
+      }
+      html += '</td></tr>';
+    });
+
+    html += '</tbody></table></div>';
+    elTableArea.innerHTML = html;
+
+    elTableArea.querySelectorAll('.tj-del-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        deleteEntry(btn.getAttribute('data-id'));
+      });
+    });
+  }
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function escapeAttr(s) {
+    return escapeHtml(s).replace(/'/g, '&#39;');
+  }
+
+  async function loadInstruments() {
+    instruments = await db.listInstruments();
+    renderInstrumentSelect();
+  }
+
+  async function loadJournal(instrumentId) {
+    journalBase = await db.getJournalBase(instrumentId);
+    journalEntries = journalBase
+      ? await db.listJournalEntries(instrumentId)
+      : [];
+
+    if (journalBase) {
+      elBaseQty.value  = journalBase.baseQty > 0 ? String(journalBase.baseQty) : '';
+      elBaseAvg.value  = journalBase.baseAvg > 0 ? String(journalBase.baseAvg) : '';
+      elBaseNote.value = journalBase.note || '';
+    } else {
+      elBaseQty.value = '';
+      elBaseAvg.value = '';
+      elBaseNote.value = '';
+    }
+
+    renderJournal();
+  }
+
+  async function onInstrumentChange() {
+    currentInstrumentId = elSelInst.value || null;
+    setFormEnabled(!!currentInstrumentId);
+    setMsg(elBaseMsg, '');
+    setMsg(elEntryMsg, '');
+
+    if (!currentInstrumentId) {
+      journalBase = null;
+      journalEntries = [];
+      elSummary.hidden = true;
+      elTableArea.innerHTML = '<div class="tj-empty">종목을 선택하면 일지가 표시됩니다.</div>';
+      return;
+    }
+
+    await loadJournal(currentInstrumentId);
+  }
+
+  async function addInstrument() {
+    var ticker = elTicker.value.trim();
+    var name   = elName.value.trim();
+    if (!ticker) {
+      alert('종목 코드를 입력해 주세요.');
+      elTicker.focus();
+      return;
+    }
+
+    try {
+      var id = await db.saveInstrument({ ticker: ticker, name: name });
+      elTicker.value = '';
+      elName.value = '';
+      await loadInstruments();
+      elSelInst.value = id;
+      await onInstrumentChange();
+    } catch (e) {
+      alert('종목 저장 실패: ' + (e.message || e));
+    }
+  }
+
+  async function saveBase() {
+    if (!currentInstrumentId) return;
+
+    var baseQty = parseNum(elBaseQty);
+    var baseAvg = parseNum(elBaseAvg);
+    var note    = elBaseNote.value.trim();
+
+    if (baseQty <= 0) {
+      setMsg(elBaseMsg, '보유 수량을 입력해 주세요.');
+      elBaseQty.focus();
+      return;
+    }
+    if (baseAvg <= 0) {
+      setMsg(elBaseMsg, '평단가를 입력해 주세요.');
+      elBaseAvg.focus();
+      return;
+    }
+
+    for (var i = 0; i < journalEntries.length; i++) {
+      var simBase = { baseQty: baseQty, baseAvg: baseAvg, note: note };
+      var simEntries = journalEntries.slice(0, i + 1);
+      var simRows = computeJournal(simBase, simEntries);
+      var last = simRows[simRows.length - 1];
+      if (last.qtyAfter < 0) {
+        setMsg(elBaseMsg, '시작 수량이 너무 적습니다. 기록 #' + (i + 1) + ' 매도를 처리할 수 없습니다.');
+        return;
+      }
+    }
+
+    try {
+      await db.saveJournalBase({
+        instrumentId: currentInstrumentId,
+        baseQty: baseQty,
+        baseAvg: baseAvg,
+        note: note,
+      });
+      setMsg(elBaseMsg, '저장되었습니다.', true);
+      await loadJournal(currentInstrumentId);
+    } catch (e) {
+      setMsg(elBaseMsg, '저장 실패: ' + (e.message || e));
+    }
+  }
+
+  async function addEntry() {
+    if (!currentInstrumentId) return;
+
+    if (!journalBase) {
+      setMsg(elEntryMsg, '먼저 현재 상황을 저장해 주세요.');
+      return;
+    }
+
+    var price = parseNum(elPrice);
+    var qty   = parseNum(elQty);
+    var note  = elNote.value.trim();
+    var tradedAt = elTradedAt.value || todayStr();
+
+    if (price <= 0) {
+      setMsg(elEntryMsg, '가격을 입력해 주세요.');
+      elPrice.focus();
+      return;
+    }
+    if (qty <= 0) {
+      setMsg(elEntryMsg, '수량을 입력해 주세요.');
+      elQty.focus();
+      return;
+    }
+
+    var rows = computeJournal(journalBase, journalEntries);
+    var last = rows[rows.length - 1];
+
+    if (currentSide === 'sell' && qty > last.qtyAfter) {
+      setMsg(elEntryMsg, '매도 수량이 보유(' + fmtQty(last.qtyAfter) + '주)을 초과합니다.');
+      return;
+    }
+
+    try {
+      await db.saveJournalEntry({
+        instrumentId: currentInstrumentId,
+        side: currentSide,
+        price: price,
+        qty: qty,
+        tradedAt: tradedAt,
+        note: note,
+      });
+      elPrice.value = '';
+      elQty.value = '';
+      elNote.value = '';
+      setMsg(elEntryMsg, '기록이 추가되었습니다.', true);
+      await loadJournal(currentInstrumentId);
+    } catch (e) {
+      setMsg(elEntryMsg, '저장 실패: ' + (e.message || e));
+    }
+  }
+
+  async function deleteEntry(id) {
+    if (!confirm('이 기록을 삭제할까요?')) return;
+    try {
+      await db.deleteJournalEntry(id);
+      await loadJournal(currentInstrumentId);
+    } catch (e) {
+      alert('삭제 실패: ' + (e.message || e));
+    }
+  }
+
+  function initSideToggle() {
+    sideBtns.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        currentSide = btn.getAttribute('data-side');
+        sideBtns.forEach(function (b) {
+          b.classList.toggle('active', b === btn);
+        });
+      });
+    });
+  }
+
+  function init() {
+    db = window.stocksDb;
+    if (!db) {
+      elTableArea.innerHTML = '<div class="tj-empty">DB를 불러올 수 없습니다.</div>';
+      return;
+    }
+
+    elTradedAt.value = todayStr();
+    initSideToggle();
+
+    elSelInst.addEventListener('change', onInstrumentChange);
+    elBtnAddInst.addEventListener('click', addInstrument);
+    elBtnSaveBase.addEventListener('click', saveBase);
+    elBtnAddEntry.addEventListener('click', addEntry);
+
+    [elBaseAvg, elPrice].forEach(function (el) {
+      el.addEventListener('keydown', onPriceKeydown);
+    });
+
+    loadInstruments().catch(function (e) {
+      console.warn('[Journal] 종목 로드 실패:', e.message || e);
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+}());

@@ -8,8 +8,10 @@
 
     const TENANT_KEY       = 'BETHEL_TENANT_ID';
     const DEFAULT_TENANT_ID = 'default';
-    const TBL_INST  = 'stocks_instruments';
-    const TBL_PP    = 'stocks_pp_entries';
+    const TBL_INST   = 'stocks_instruments';
+    const TBL_PP     = 'stocks_pp_entries';
+    const TBL_JBASE  = 'stocks_journal_bases';
+    const TBL_JENTRY = 'stocks_journal_entries';
 
     // ─── tenant_id 획득 ───────────────────────────────────────────────
     function getTenantId() {
@@ -157,6 +159,89 @@
         if (error) throw error;
     }
 
+    // ════════════════════════════════════════════════════════════════
+    // stocks_journal_bases / stocks_journal_entries CRUD
+    // ════════════════════════════════════════════════════════════════
+
+    async function getJournalBase(instrumentId) {
+        const { data, error } = await client
+            .from(TBL_JBASE)
+            .select('*')
+            .eq('tenant_id', getTenantId())
+            .eq('instrument_id', instrumentId)
+            .maybeSingle();
+        if (error) throw error;
+        return data ? rowToJournalBase(data) : null;
+    }
+
+    async function saveJournalBase(base) {
+        const tenantId = getTenantId();
+        const existing = await getJournalBase(base.instrumentId);
+        const row = {
+            id:            existing ? existing.id : (base.id || genId('jb')),
+            tenant_id:     tenantId,
+            instrument_id: base.instrumentId,
+            base_qty:      base.baseQty,
+            base_avg:      base.baseAvg,
+            note:          base.note || '',
+            updated_at:    new Date().toISOString(),
+        };
+        const { error } = await client
+            .from(TBL_JBASE)
+            .upsert(row, { onConflict: 'tenant_id,id' });
+        if (error) throw error;
+        return row.id;
+    }
+
+    async function listJournalEntries(instrumentId) {
+        const { data, error } = await client
+            .from(TBL_JENTRY)
+            .select('*')
+            .eq('tenant_id', getTenantId())
+            .eq('instrument_id', instrumentId)
+            .order('sort_order', { ascending: true })
+            .order('created_at', { ascending: true });
+        if (error) throw error;
+        return (data || []).map(rowToJournalEntry);
+    }
+
+    async function saveJournalEntry(entry) {
+        const tenantId = getTenantId();
+        let sortOrder = entry.sortOrder;
+        if (sortOrder == null) {
+            const existing = await listJournalEntries(entry.instrumentId);
+            sortOrder = existing.length > 0
+                ? Math.max(...existing.map(e => e.sortOrder)) + 1
+                : 0;
+        }
+        const row = {
+            id:            entry.id || genId('je'),
+            tenant_id:     tenantId,
+            instrument_id: entry.instrumentId,
+            side:          entry.side,
+            price:         entry.price,
+            qty:           entry.qty,
+            traded_at:     entry.tradedAt || new Date().toISOString().slice(0, 10),
+            note:          entry.note || '',
+            sort_order:    sortOrder,
+            updated_at:    new Date().toISOString(),
+        };
+        const { error } = await client
+            .from(TBL_JENTRY)
+            .upsert(row, { onConflict: 'tenant_id,id' });
+        if (error) throw error;
+        return row.id;
+    }
+
+    async function deleteJournalEntry(id) {
+        const { error } = await client
+            .from(TBL_JENTRY)
+            .delete()
+            .eq('tenant_id', getTenantId())
+            .eq('id', id);
+        if (error) throw error;
+    }
+
     // ─── Row → JS 변환 ────────────────────────────────────────────────
 
     function rowToInstrument(row) {
@@ -200,42 +285,142 @@
         };
     }
 
+    function rowToJournalBase(row) {
+        return {
+            id:           row.id,
+            tenantId:     row.tenant_id,
+            instrumentId: row.instrument_id,
+            baseQty:      Number(row.base_qty),
+            baseAvg:      Number(row.base_avg),
+            note:         row.note || '',
+            createdAt:    row.created_at,
+            updatedAt:    row.updated_at,
+        };
+    }
+
+    function rowToJournalEntry(row) {
+        return {
+            id:           row.id,
+            tenantId:     row.tenant_id,
+            instrumentId: row.instrument_id,
+            side:         row.side,
+            price:        Number(row.price),
+            qty:          Number(row.qty),
+            tradedAt:     row.traded_at,
+            note:         row.note || '',
+            sortOrder:    row.sort_order,
+            createdAt:    row.created_at,
+            updatedAt:    row.updated_at,
+        };
+    }
+
     // ─── localStorage 전용 폴백 (Supabase 없을 때) ───────────────────
     function makeLocalOnlyDb() {
-        const LS_PP = 'stocks_pp_entries_local';
+        const LS_PP     = 'stocks_pp_entries_local';
+        const LS_INST   = 'stocks_instruments_local';
+        const LS_JBASE  = 'stocks_journal_bases_local';
+        const LS_JENTRY = 'stocks_journal_entries_local';
 
-        function loadAll() {
-            try { return JSON.parse(localStorage.getItem(LS_PP) || '[]'); }
+        function loadJson(key) {
+            try { return JSON.parse(localStorage.getItem(key) || '[]'); }
             catch { return []; }
         }
-        function saveAll(arr) {
-            localStorage.setItem(LS_PP, JSON.stringify(arr));
+        function saveJson(key, arr) {
+            localStorage.setItem(key, JSON.stringify(arr));
         }
+
+        function loadAllPp() { return loadJson(LS_PP); }
+        function saveAllPp(arr) { saveJson(LS_PP, arr); }
+        function loadAllInst() { return loadJson(LS_INST); }
+        function saveAllInst(arr) { saveJson(LS_INST, arr); }
+        function loadAllJBase() { return loadJson(LS_JBASE); }
+        function saveAllJBase(arr) { saveJson(LS_JBASE, arr); }
+        function loadAllJEntry() { return loadJson(LS_JENTRY); }
+        function saveAllJEntry(arr) { saveJson(LS_JENTRY, arr); }
 
         return {
             isLocal: true,
             getTenantId,
-            listInstruments:  async () => [],
-            saveInstrument:   async () => null,
-            deleteInstrument: async () => {},
+            listInstruments: async () => loadAllInst(),
+            saveInstrument: async (inst) => {
+                const all = loadAllInst();
+                const id = inst.id || genId('i');
+                const row = { ...inst, id, updatedAt: new Date().toISOString() };
+                const idx = all.findIndex(e => e.id === id);
+                if (idx >= 0) all[idx] = row; else all.push(row);
+                saveAllInst(all);
+                return id;
+            },
+            deleteInstrument: async (id) => {
+                saveAllInst(loadAllInst().filter(e => e.id !== id));
+                saveAllJBase(loadAllJBase().filter(e => e.instrumentId !== id));
+                saveAllJEntry(loadAllJEntry().filter(e => e.instrumentId !== id));
+            },
             loadLastPpEntry: async () => {
-                const all = loadAll();
+                const all = loadAllPp();
                 return all.length > 0 ? all[all.length - 1] : null;
             },
             listPpEntries: async ({ limit = 30 } = {}) => {
-                return loadAll().slice(-limit).reverse();
+                return loadAllPp().slice(-limit).reverse();
             },
             savePpEntry: async (entry) => {
-                const all = loadAll();
+                const all = loadAllPp();
                 const id = entry.id || genId('pp');
                 const idx = all.findIndex(e => e.id === id);
                 const row = { ...entry, id, updatedAt: new Date().toISOString() };
                 if (idx >= 0) all[idx] = row; else all.push(row);
-                saveAll(all);
+                saveAllPp(all);
                 return id;
             },
             deletePpEntry: async (id) => {
-                saveAll(loadAll().filter(e => e.id !== id));
+                saveAllPp(loadAllPp().filter(e => e.id !== id));
+            },
+            getJournalBase: async (instrumentId) => {
+                return loadAllJBase().find(e => e.instrumentId === instrumentId) || null;
+            },
+            saveJournalBase: async (base) => {
+                const all = loadAllJBase();
+                const existing = all.find(e => e.instrumentId === base.instrumentId);
+                const id = existing ? existing.id : (base.id || genId('jb'));
+                const row = {
+                    ...base,
+                    id,
+                    updatedAt: new Date().toISOString(),
+                };
+                const idx = all.findIndex(e => e.instrumentId === base.instrumentId);
+                if (idx >= 0) all[idx] = row; else all.push(row);
+                saveAllJBase(all);
+                return id;
+            },
+            listJournalEntries: async (instrumentId) => {
+                return loadAllJEntry()
+                    .filter(e => e.instrumentId === instrumentId)
+                    .sort((a, b) => a.sortOrder - b.sortOrder || (a.createdAt || '').localeCompare(b.createdAt || ''));
+            },
+            saveJournalEntry: async (entry) => {
+                const all = loadAllJEntry();
+                const id = entry.id || genId('je');
+                let sortOrder = entry.sortOrder;
+                if (sortOrder == null) {
+                    const forInst = all.filter(e => e.instrumentId === entry.instrumentId);
+                    sortOrder = forInst.length > 0
+                        ? Math.max(...forInst.map(e => e.sortOrder)) + 1
+                        : 0;
+                }
+                const row = {
+                    ...entry,
+                    id,
+                    sortOrder,
+                    createdAt: entry.createdAt || new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                };
+                const idx = all.findIndex(e => e.id === id);
+                if (idx >= 0) all[idx] = row; else all.push(row);
+                saveAllJEntry(all);
+                return id;
+            },
+            deleteJournalEntry: async (id) => {
+                saveAllJEntry(loadAllJEntry().filter(e => e.id !== id));
             },
         };
     }
@@ -253,6 +438,12 @@
         listPpEntries,
         savePpEntry,
         deletePpEntry,
+        // 매매 일지
+        getJournalBase,
+        saveJournalBase,
+        listJournalEntries,
+        saveJournalEntry,
+        deleteJournalEntry,
     };
 
     console.log('[StocksDB] 초기화 완료 — tenant_id:', getTenantId());

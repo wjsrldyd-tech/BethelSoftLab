@@ -109,7 +109,7 @@ create trigger trg_stocks_pp_entries_updated_at
 -- ============================================================
 -- 5. 향후 확장 테이블 (필요 시 추가)
 -- ============================================================
--- stocks_trades  : 매매 기록 (매수가·매도가·수량·날짜·종목)
+-- stocks_trades  : (구 stocks_trades 예정 → stocks_journal_* 로 구현됨)
 -- stocks_memos   : 종목별 분석 메모 / 노트
 -- stocks_alerts  : 관심 종목 알림 설정
 --
