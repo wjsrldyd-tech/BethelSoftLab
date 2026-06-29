@@ -11,7 +11,7 @@
         display: flex;
         flex-direction: column;
         padding: var(--page-padding-y) var(--page-padding-x);
-        gap: 1.25rem;
+        gap: 1rem;
         width: 100%;
       }
 
@@ -30,73 +30,257 @@
         color: var(--text-h);
       }
 
-      .tj-main {
-        display: grid;
-        grid-template-columns: minmax(300px, 380px) 1fr;
-        gap: 1.5rem;
-        align-items: start;
-        width: 100%;
-        flex: 1;
+      /* ===== 상단: 종목 + 설정 (인라인 한 줄) ===== */
+      .tj-toolbar {
+        display: flex;
+        align-items: flex-end;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        padding: 0.65rem 0.85rem;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
       }
 
-      @media (max-width: 900px) {
-        .tj-main { grid-template-columns: 1fr; }
+      .tj-toolbar .tj-select {
+        flex: 1 1 10rem;
+        min-width: 9rem;
+        max-width: 220px;
       }
 
-      .tj-panel {
+      .tj-toolbar.settings-open .tj-select {
+        flex: 0 0 auto;
+        width: 10rem;
+        max-width: 10rem;
+      }
+
+      .tj-settings-bar {
+        display: none;
+        flex: 1 1 auto;
+        align-items: flex-end;
+        gap: 0.45rem 0.55rem;
+        flex-wrap: wrap;
+        min-width: 0;
+        padding: 0.35rem 0.5rem;
+        border-radius: 8px;
+        border: 1px solid transparent;
+      }
+
+      .tj-toolbar.settings-open .tj-settings-bar {
+        display: flex;
+      }
+
+      .tj-settings-bar.editing {
+        border-color: var(--stocks);
+        background: rgba(34, 197, 94, 0.06);
+      }
+
+      .tj-set-field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        flex: 0 0 auto;
+      }
+
+      .tj-set-field .tj-input {
+        width: 5.5rem;
+        padding: 0.45rem 0.55rem;
+        font-size: 0.92rem;
+      }
+
+      .tj-set-field .tj-input.tj-num {
+        width: 6.5rem;
+        text-align: right;
+      }
+
+      .tj-set-divider {
+        width: 1px;
+        height: 2.1rem;
+        background: var(--border);
+        align-self: center;
+        flex-shrink: 0;
+        margin: 0 0.15rem;
+      }
+
+      .tj-set-msg {
+        flex: 1 1 6rem;
+        min-width: 4rem;
+        align-self: center;
+        margin: 0;
+      }
+
+      .tj-btn-settings {
+        padding: 0.5rem 0.85rem;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: var(--bg);
+        color: var(--text-h);
+        font-family: inherit;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: border-color 0.15s, background 0.15s, color 0.15s;
+        white-space: nowrap;
+        flex-shrink: 0;
+        height: 2.35rem;
+      }
+
+      .tj-btn-settings:hover,
+      .tj-btn-settings.active {
+        border-color: var(--stocks);
+        background: rgba(34, 197, 94, 0.08);
+        color: #86efac;
+      }
+
+      .tj-btn-set {
+        padding: 0.48rem 0.7rem;
+        height: 2.35rem;
+        font-size: 0.82rem;
+        width: auto;
+        flex-shrink: 0;
+      }
+
+      /* ===== 메인 작업 영역 ===== */
+      .tj-workspace {
         background: var(--bg-card);
         border: 1px solid var(--border);
         border-radius: 14px;
-        padding: 1.5rem 1.75rem;
-      }
-
-      .tj-panel-title {
-        margin: 0 0 1.25rem;
-        font-size: 0.82rem;
-        font-weight: 600;
-        color: var(--text);
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-      }
-
-      .tj-fields {
+        padding: 1.25rem 1.5rem;
+        flex: 1;
         display: flex;
         flex-direction: column;
         gap: 1rem;
+        min-height: 0;
       }
 
-      .tj-field {
+      .tj-fee-note {
+        margin: 0;
+        font-size: 0.72rem;
+        color: var(--text);
+        line-height: 1.5;
+      }
+
+      /* ===== 요약 + 매매 입력 (반반 한 줄) ===== */
+      .tj-action-row {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+        margin-bottom: 0.5rem;
+        align-items: stretch;
+      }
+
+      .tj-action-row:has(.tj-summary[hidden]) {
+        grid-template-columns: 1fr;
+      }
+
+      .tj-summary {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 0.5rem 0.65rem;
+        align-content: center;
+        padding: 0.85rem 1rem;
+        border-radius: 12px;
+        border: 1px solid var(--stocks);
+        background: rgba(34, 197, 94, 0.06);
+        min-height: 100%;
+        box-sizing: border-box;
+      }
+
+      .tj-summary-item {
         display: flex;
         flex-direction: column;
-        gap: 0.35rem;
+        gap: 0.2rem;
+        min-width: 0;
+      }
+
+      .tj-summary-label {
+        font-size: 0.68rem;
+        color: var(--text);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        white-space: nowrap;
+      }
+
+      .tj-summary-value {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--stocks);
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .tj-summary-value.pnl-plus { color: #f87171; }
+      .tj-summary-value.pnl-minus { color: #60a5fa; }
+
+      .tj-entry-bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 0.55rem 0.65rem;
+        padding: 0.85rem 1rem;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: var(--bg);
+        min-height: 100%;
+        box-sizing: border-box;
+      }
+
+      .tj-entry-bar.editing {
+        border-color: var(--stocks);
+        box-shadow: 0 0 0 1px var(--stocks-glow);
+      }
+
+      .tj-entry-bar.disabled {
+        opacity: 0.55;
+        pointer-events: none;
+      }
+
+      .tj-entry-field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+
+      .tj-entry-field.side { flex-shrink: 0; }
+
+      .tj-entry-field:not(.side) {
+        flex: 1 1 5rem;
+        min-width: 4.5rem;
       }
 
       .tj-label {
-        font-size: 0.78rem;
+        font-size: 0.7rem;
         color: var(--text);
         font-weight: 500;
+        white-space: nowrap;
       }
 
       .tj-input,
       .tj-select {
-        background: var(--bg);
+        background: var(--bg-card);
         border: 1px solid var(--border);
         border-radius: 8px;
         color: var(--text-h);
         font-size: 1rem;
         font-family: inherit;
-        padding: 0.6rem 0.85rem;
-        width: 100%;
+        padding: 0.5rem 0.7rem;
         transition: border-color 0.15s, box-shadow 0.15s;
         font-variant-numeric: tabular-nums;
       }
 
-      .tj-input[type="number"],
       .tj-input.tj-num {
         text-align: right;
-        font-size: 1.1rem;
+        font-size: 1.05rem;
+        width: 100%;
         -moz-appearance: textfield;
       }
+
+      .tj-input.tj-date { width: 100%; }
 
       .tj-input::-webkit-outer-spin-button,
       .tj-input::-webkit-inner-spin-button {
@@ -111,56 +295,16 @@
         box-shadow: 0 0 0 3px var(--stocks-glow);
       }
 
-      .tj-divider {
-        border: none;
-        border-top: 1px solid var(--border);
-        margin: 0.25rem 0;
-      }
-
-      .tj-btn {
-        width: 100%;
-        padding: 0.7rem;
-        border-radius: 8px;
-        border: 1px solid var(--stocks);
-        background: transparent;
-        color: var(--stocks);
-        font-size: 0.92rem;
-        font-family: inherit;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background 0.2s, color 0.2s;
-      }
-
-      .tj-btn:hover {
-        background: var(--stocks);
-        color: #000;
-      }
-
-      .tj-btn:disabled {
-        opacity: 0.4;
-        cursor: not-allowed;
-      }
-
-      .tj-btn-sm {
-        width: auto;
-        padding: 0.35rem 0.75rem;
-        font-size: 0.8rem;
-      }
-
-      .tj-side-toggle {
-        display: flex;
-        gap: 0.5rem;
-      }
+      .tj-side-toggle { display: flex; gap: 0.35rem; }
 
       .tj-side-btn {
-        flex: 1;
-        padding: 0.55rem;
+        padding: 0.48rem 0.85rem;
         border-radius: 8px;
         border: 1px solid var(--border);
-        background: var(--bg);
+        background: var(--bg-card);
         color: var(--text);
         font-family: inherit;
-        font-size: 0.9rem;
+        font-size: 0.88rem;
         font-weight: 600;
         cursor: pointer;
         transition: border-color 0.15s, background 0.15s;
@@ -178,57 +322,63 @@
         color: #60a5fa;
       }
 
-      .tj-inst-add {
+      .tj-entry-actions {
         display: flex;
-        gap: 0.5rem;
-        align-items: flex-end;
+        gap: 0.4rem;
+        flex-shrink: 0;
       }
 
-      .tj-inst-add .tj-field { flex: 1; }
+      .tj-btn {
+        padding: 0.52rem 1rem;
+        border-radius: 8px;
+        border: 1px solid var(--stocks);
+        background: transparent;
+        color: var(--stocks);
+        font-size: 0.88rem;
+        font-family: inherit;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s, color 0.2s;
+        white-space: nowrap;
+      }
+
+      .tj-btn:hover {
+        background: var(--stocks);
+        color: #000;
+      }
+
+      .tj-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      .tj-btn-cancel {
+        border-color: var(--border);
+        color: var(--text);
+      }
+
+      .tj-btn-cancel:hover {
+        background: var(--bg-card-hover);
+        color: var(--text-h);
+      }
+
+      .tj-entry-foot {
+        flex: 1 1 100%;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        min-height: 1.2em;
+      }
 
       .tj-msg {
         font-size: 0.78rem;
         color: #f87171;
-        min-height: 1.2em;
       }
 
       .tj-msg.ok { color: var(--stocks); }
 
-      /* ===== 일지 목록 ===== */
-      .tj-summary {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1rem 2rem;
-        padding: 1rem 1.25rem;
-        margin-bottom: 1rem;
-        border-radius: 10px;
-        border: 1px solid var(--stocks);
-        background: rgba(34, 197, 94, 0.06);
-      }
-
-      .tj-summary-item {
-        display: flex;
-        flex-direction: column;
-        gap: 0.15rem;
-      }
-
-      .tj-summary-label {
-        font-size: 0.72rem;
-        color: var(--text);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-      }
-
-      .tj-summary-value {
-        font-size: 1.35rem;
-        font-weight: 700;
-        color: var(--stocks);
-        font-variant-numeric: tabular-nums;
-      }
-
-      .tj-table-wrap {
-        overflow-x: auto;
-      }
+      /* ===== 표 ===== */
+      .tj-table-wrap { overflow-x: auto; flex: 1; }
 
       .tj-table {
         width: 100%;
@@ -258,13 +408,15 @@
         color: var(--text-h);
       }
 
-      .tj-table tr:hover td {
-        background: var(--bg-card-hover);
-      }
+      .tj-table tr:hover td { background: var(--bg-card-hover); }
 
       .tj-table tr.row-base td {
         color: var(--text);
         font-style: italic;
+      }
+
+      .tj-table tr.row-editing td {
+        background: rgba(34, 197, 94, 0.1);
       }
 
       .tj-badge {
@@ -279,6 +431,13 @@
       .tj-badge.sell { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
       .tj-badge.base { background: rgba(34, 197, 94, 0.12); color: var(--stocks); }
 
+      .tj-row-actions {
+        display: flex;
+        gap: 0.15rem;
+        justify-content: flex-end;
+      }
+
+      .tj-edit-btn,
       .tj-del-btn {
         padding: 0.2rem 0.45rem;
         border: none;
@@ -291,59 +450,12 @@
         transition: opacity 0.15s, color 0.15s;
       }
 
-      .tj-del-btn:hover {
-        opacity: 1;
-        color: #f87171;
-      }
+      .tj-edit-btn:hover { opacity: 1; color: var(--stocks); }
+      .tj-del-btn:hover  { opacity: 1; color: #f87171; }
 
-      .tj-edit-btn {
-        padding: 0.2rem 0.45rem;
-        border: none;
-        border-radius: 4px;
-        background: transparent;
-        color: var(--text);
-        cursor: pointer;
-        font-size: 0.85rem;
-        opacity: 0.5;
-        transition: opacity 0.15s, color 0.15s;
-      }
-
-      .tj-edit-btn:hover {
-        opacity: 1;
-        color: var(--stocks);
-      }
-
-      .tj-row-actions {
-        display: flex;
-        gap: 0.15rem;
-        justify-content: flex-end;
-      }
-
-      .tj-table tr.row-editing td {
-        background: rgba(34, 197, 94, 0.1);
-      }
-
-      .tj-form-btns {
-        display: flex;
-        gap: 0.5rem;
-      }
-
-      .tj-form-btns .tj-btn { flex: 1; }
-
-      .tj-btn-cancel {
-        border-color: var(--border);
-        color: var(--text);
-      }
-
-      .tj-btn-cancel:hover {
-        background: var(--bg-card-hover);
-        color: var(--text-h);
-      }
-
-      .tj-panel.editing {
-        border-color: var(--stocks);
-        box-shadow: 0 0 0 1px var(--stocks-glow);
-      }
+      .tj-pnl.plus { color: #f87171; font-weight: 600; }
+      .tj-pnl.minus { color: #60a5fa; font-weight: 600; }
+      .tj-pnl.zero { color: var(--text); }
 
       .tj-empty {
         padding: 2rem 1rem;
@@ -352,28 +464,36 @@
         font-size: 0.9rem;
       }
 
-      .tj-note {
-        font-size: 0.78rem;
-        color: var(--text);
-        max-width: 8rem;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+      @media (max-width: 1100px) {
+        .tj-summary {
+          grid-template-columns: repeat(3, 1fr);
+        }
       }
 
-      .tj-pnl.plus { color: #f87171; font-weight: 600; }
-      .tj-pnl.minus { color: #60a5fa; font-weight: 600; }
-      .tj-pnl.zero { color: var(--text); }
+      @media (max-width: 960px) {
+        .tj-action-row {
+          grid-template-columns: 1fr;
+        }
 
-      .tj-fee-note {
-        margin: 0 0 1rem;
-        font-size: 0.72rem;
-        color: var(--text);
-        line-height: 1.5;
+        .tj-summary {
+          grid-template-columns: repeat(5, 1fr);
+        }
       }
 
-      .tj-summary-value.pnl-plus { color: #f87171; }
-      .tj-summary-value.pnl-minus { color: #60a5fa; }
+      @media (max-width: 720px) {
+        .tj-summary {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .tj-entry-actions {
+          margin-left: 0;
+          width: 100%;
+        }
+
+        .tj-entry-actions .tj-btn { flex: 1; }
+
+        .tj-input.tj-num { width: 100%; }
+        .tj-input.tj-date { width: 100%; }
+      }
     </style>
   </head>
   <body>
@@ -384,116 +504,97 @@
         <a href="stocks.html" class="back-link">← 주식으로</a>
       </div>
 
-      <div class="tj-main">
+      <div class="tj-toolbar" id="tj-toolbar">
+        <select id="sel-instrument" class="tj-select" aria-label="종목 선택">
+          <option value="">— 종목을 선택하세요 —</option>
+        </select>
 
-        <!-- 왼쪽: 종목 · 현재 상황 · 기록 추가 -->
-        <div class="tj-left">
-          <div class="tj-panel">
-            <p class="tj-panel-title">종목</p>
-            <div class="tj-fields">
-              <div class="tj-field">
-                <label class="tj-label" for="sel-instrument">종목 선택</label>
-                <select id="sel-instrument" class="tj-select">
-                  <option value="">— 종목을 선택하세요 —</option>
-                </select>
-              </div>
-              <div class="tj-inst-add">
-                <div class="tj-field">
-                  <label class="tj-label" for="inp-ticker">코드</label>
-                  <input id="inp-ticker" class="tj-input" type="text" placeholder="005930" maxlength="12" />
-                </div>
-                <div class="tj-field">
-                  <label class="tj-label" for="inp-name">이름</label>
-                  <input id="inp-name" class="tj-input" type="text" placeholder="삼성전자" maxlength="40" />
-                </div>
-                <button id="btn-add-inst" type="button" class="tj-btn tj-btn-sm">추가</button>
-              </div>
-            </div>
+        <div id="settings-bar" class="tj-settings-bar" aria-label="설정">
+          <div class="tj-set-field">
+            <label class="tj-label" for="inp-ticker">코드</label>
+            <input id="inp-ticker" class="tj-input" type="text" placeholder="005930" maxlength="12" />
           </div>
-
-          <div class="tj-panel" id="panel-base" style="margin-top: 1rem;">
-            <p class="tj-panel-title" id="base-panel-title">현재 상황</p>
-            <div class="tj-fields">
-              <div class="tj-field">
-                <label class="tj-label" for="inp-base-qty">보유 수량</label>
-                <input id="inp-base-qty" class="tj-input tj-num" type="text" inputmode="numeric" placeholder="0" disabled />
-              </div>
-              <div class="tj-field">
-                <label class="tj-label" for="inp-base-avg">평단가</label>
-                <input id="inp-base-avg" class="tj-input tj-num" type="text" inputmode="numeric" placeholder="0" disabled />
-              </div>
-              <div class="tj-field">
-                <label class="tj-label" for="inp-base-note">메모 (선택)</label>
-                <input id="inp-base-note" class="tj-input" type="text" placeholder="시작 기준 메모" maxlength="100" disabled />
-              </div>
-              <span id="base-msg" class="tj-msg"></span>
-              <button id="btn-save-base" type="button" class="tj-btn" disabled>현재 상황 저장</button>
-            </div>
+          <div class="tj-set-field">
+            <label class="tj-label" for="inp-name">이름</label>
+            <input id="inp-name" class="tj-input" type="text" placeholder="삼성전자" maxlength="40" />
           </div>
-
-          <div class="tj-panel" id="panel-entry" style="margin-top: 1rem;">
-            <p class="tj-panel-title" id="entry-panel-title">매매 기록 추가</p>
-            <div class="tj-fields">
-              <div class="tj-side-toggle" role="group" aria-label="매수 매도">
-                <button type="button" class="tj-side-btn buy active" data-side="buy">매수</button>
-                <button type="button" class="tj-side-btn sell" data-side="sell">매도</button>
-              </div>
-              <div class="tj-field">
-                <label class="tj-label" for="inp-price">가격</label>
-                <input id="inp-price" class="tj-input tj-num" type="text" inputmode="numeric" placeholder="0" disabled />
-              </div>
-              <div class="tj-field">
-                <label class="tj-label" for="inp-qty">수량</label>
-                <input id="inp-qty" class="tj-input tj-num" type="text" inputmode="numeric" placeholder="0" disabled />
-              </div>
-              <div class="tj-field">
-                <label class="tj-label" for="inp-traded-at">날짜</label>
-                <input id="inp-traded-at" class="tj-input" type="date" disabled />
-              </div>
-              <div class="tj-field">
-                <label class="tj-label" for="inp-note">메모 (선택)</label>
-                <input id="inp-note" class="tj-input" type="text" placeholder="계획 메모" maxlength="100" disabled />
-              </div>
-              <span id="entry-msg" class="tj-msg"></span>
-              <div class="tj-form-btns">
-                <button id="btn-add-entry" type="button" class="tj-btn" disabled>기록 추가</button>
-                <button id="btn-cancel-entry" type="button" class="tj-btn tj-btn-cancel" hidden>취소</button>
-              </div>
-            </div>
+          <button id="btn-add-inst" type="button" class="tj-btn tj-btn-set">종목 추가</button>
+          <span class="tj-set-divider" aria-hidden="true"></span>
+          <div class="tj-set-field">
+            <label class="tj-label" for="inp-base-qty">보유</label>
+            <input id="inp-base-qty" class="tj-input tj-num" type="text" inputmode="numeric" placeholder="0" disabled />
           </div>
+          <div class="tj-set-field">
+            <label class="tj-label" for="inp-base-avg">평단</label>
+            <input id="inp-base-avg" class="tj-input tj-num" type="text" inputmode="numeric" placeholder="0" disabled />
+          </div>
+          <button id="btn-save-base" type="button" class="tj-btn tj-btn-set" disabled>시작 저장</button>
+          <span id="base-msg" class="tj-msg tj-set-msg"></span>
         </div>
 
-        <!-- 오른쪽: 일지 목록 -->
-        <div class="tj-panel" id="tj-result" aria-live="polite">
-          <p class="tj-panel-title">일지 · 평단 변화</p>
-          <p class="tj-fee-note">추가평단·실현손익은 일지 매매분만 집계합니다. 수수료 키움 인터넷 0.015%(최저 1,000원), 매도세 0.18% 반영.</p>
+        <button type="button" id="btn-settings" class="tj-btn-settings">⚙ 설정</button>
+      </div>
+
+      <div class="tj-workspace" id="tj-result" aria-live="polite">
+        <p class="tj-fee-note">추가평단·실현손익은 일지 매매분만 집계합니다. 수수료 키움 인터넷 0.015%(최저 1,000원), 매도세 0.18% 반영.</p>
+
+        <div class="tj-action-row">
           <div id="tj-summary" class="tj-summary" hidden>
             <div class="tj-summary-item">
-              <span class="tj-summary-label">보유 수량</span>
+              <span class="tj-summary-label">보유</span>
               <span class="tj-summary-value" id="sum-qty">—</span>
             </div>
             <div class="tj-summary-item">
-              <span class="tj-summary-label">전체 평단</span>
+              <span class="tj-summary-label">전체평단</span>
               <span class="tj-summary-value" id="sum-avg">—</span>
             </div>
             <div class="tj-summary-item">
-              <span class="tj-summary-label">추가 보유</span>
+              <span class="tj-summary-label">추가보유</span>
               <span class="tj-summary-value" id="sum-add-qty">—</span>
             </div>
             <div class="tj-summary-item">
-              <span class="tj-summary-label">추가 평단</span>
+              <span class="tj-summary-label">추가평단</span>
               <span class="tj-summary-value" id="sum-add-avg">—</span>
             </div>
             <div class="tj-summary-item">
-              <span class="tj-summary-label">누적 실현손익</span>
+              <span class="tj-summary-label">실현손익</span>
               <span class="tj-summary-value" id="sum-realized">—</span>
             </div>
           </div>
-          <div id="tj-table-area">
-            <div class="tj-empty">종목을 선택하면 일지가 표시됩니다.</div>
+
+          <div id="entry-bar" class="tj-entry-bar disabled">
+          <div class="tj-entry-field side">
+            <span class="tj-label">구분</span>
+            <div class="tj-side-toggle" role="group" aria-label="매수 매도">
+              <button type="button" class="tj-side-btn buy active" data-side="buy">매수</button>
+              <button type="button" class="tj-side-btn sell" data-side="sell">매도</button>
+            </div>
+          </div>
+          <div class="tj-entry-field">
+            <label class="tj-label" for="inp-price">가격</label>
+            <input id="inp-price" class="tj-input tj-num" type="text" inputmode="numeric" placeholder="0" disabled />
+          </div>
+          <div class="tj-entry-field">
+            <label class="tj-label" for="inp-qty">수량</label>
+            <input id="inp-qty" class="tj-input tj-num" type="text" inputmode="numeric" placeholder="0" disabled />
+          </div>
+          <div class="tj-entry-field">
+            <label class="tj-label" for="inp-traded-at">날짜</label>
+            <input id="inp-traded-at" class="tj-input tj-date" type="date" disabled />
+          </div>
+          <div class="tj-entry-actions">
+            <button id="btn-add-entry" type="button" class="tj-btn" disabled>기록 추가</button>
+            <button id="btn-cancel-entry" type="button" class="tj-btn tj-btn-cancel" hidden>취소</button>
+          </div>
+          <div class="tj-entry-foot">
+            <span id="entry-msg" class="tj-msg"></span>
+          </div>
           </div>
         </div>
 
+        <div id="tj-table-area">
+          <div class="tj-empty">종목을 선택하면 일지가 표시됩니다.</div>
+        </div>
       </div>
     </div>
 
