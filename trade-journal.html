@@ -311,6 +311,20 @@
         text-overflow: ellipsis;
         white-space: nowrap;
       }
+
+      .tj-pnl.plus { color: #f87171; font-weight: 600; }
+      .tj-pnl.minus { color: #60a5fa; font-weight: 600; }
+      .tj-pnl.zero { color: var(--text); }
+
+      .tj-fee-note {
+        margin: 0 0 1rem;
+        font-size: 0.72rem;
+        color: var(--text);
+        line-height: 1.5;
+      }
+
+      .tj-summary-value.pnl-plus { color: #f87171; }
+      .tj-summary-value.pnl-minus { color: #60a5fa; }
     </style>
   </head>
   <body>
@@ -400,14 +414,27 @@
         <!-- 오른쪽: 일지 목록 -->
         <div class="tj-panel" id="tj-result" aria-live="polite">
           <p class="tj-panel-title">일지 · 평단 변화</p>
+          <p class="tj-fee-note">추가평단·실현손익은 일지 매매분만 집계합니다. 수수료 키움 인터넷 0.015%(최저 1,000원), 매도세 0.18% 반영.</p>
           <div id="tj-summary" class="tj-summary" hidden>
             <div class="tj-summary-item">
               <span class="tj-summary-label">보유 수량</span>
               <span class="tj-summary-value" id="sum-qty">—</span>
             </div>
             <div class="tj-summary-item">
-              <span class="tj-summary-label">평단가</span>
+              <span class="tj-summary-label">전체 평단</span>
               <span class="tj-summary-value" id="sum-avg">—</span>
+            </div>
+            <div class="tj-summary-item">
+              <span class="tj-summary-label">추가 보유</span>
+              <span class="tj-summary-value" id="sum-add-qty">—</span>
+            </div>
+            <div class="tj-summary-item">
+              <span class="tj-summary-label">추가 평단</span>
+              <span class="tj-summary-value" id="sum-add-avg">—</span>
+            </div>
+            <div class="tj-summary-item">
+              <span class="tj-summary-label">누적 실현손익</span>
+              <span class="tj-summary-value" id="sum-realized">—</span>
             </div>
           </div>
           <div id="tj-table-area">

@@ -26,8 +26,26 @@
   var elSummary    = document.getElementById('tj-summary');
   var elSumQty     = document.getElementById('sum-qty');
   var elSumAvg     = document.getElementById('sum-avg');
+  var elSumAddQty  = document.getElementById('sum-add-qty');
+  var elSumAddAvg  = document.getElementById('sum-add-avg');
+  var elSumRealized = document.getElementById('sum-realized');
   var elTableArea  = document.getElementById('tj-table-area');
   var sideBtns     = document.querySelectorAll('.tj-side-btn');
+
+  /** 키움증권 인터넷 주문 기준 (실험용 — 계좌별 상이할 수 있음) */
+  var KIWOOM = {
+    commissionRate: 0.00015,
+    minCommission: 1000,
+    sellTaxRate: 0.0018,
+  };
+
+  function calcCommission(amount) {
+    return Math.max(Math.round(amount * KIWOOM.commissionRate), KIWOOM.minCommission);
+  }
+
+  function calcSellTax(sellAmount) {
+    return Math.round(sellAmount * KIWOOM.sellTaxRate);
+  }
 
   function fmt(n) {
     if (n == null || isNaN(n)) return '—';
@@ -94,10 +112,36 @@
     return new Date().toISOString().slice(0, 10);
   }
 
-  /** 시작 상태 + 기록 순서대로 평단·수량 재계산 */
+  function fmtPnl(n) {
+    if (n == null || isNaN(n)) return '—';
+    var prefix = n > 0 ? '+' : '';
+    return prefix + fmt(n);
+  }
+
+  function pnlClass(n) {
+    if (n == null || isNaN(n) || n === 0) return 'zero';
+    return n > 0 ? 'plus' : 'minus';
+  }
+
+  function setSummaryPnl(el, n) {
+    el.textContent = (n != null && !isNaN(n)) ? fmtPnl(n) + '원' : '—';
+    el.classList.remove('pnl-plus', 'pnl-minus');
+    if (n > 0) el.classList.add('pnl-plus');
+    else if (n < 0) el.classList.add('pnl-minus');
+  }
+
+  /**
+   * 전체 보유·평단 + 추가 매매 풀(일지분) + 실현손익 재계산
+   * - 추가평단: 시작 보유 제외, 일지 매수만 가중 (매수 수수료 포함)
+   * - 실현손익: 매도 시 추가 풀에서 먼저 차감, 추가평단 대비 손익 − 매도 수수료·세금
+   */
   function computeJournal(base, entries) {
     var qty = base.baseQty;
     var avg = base.baseAvg;
+    var addQty = 0;
+    var addAvg = 0;
+    var totalRealized = 0;
+
     var rows = [{
       kind: 'base',
       label: '시작',
@@ -108,17 +152,44 @@
       note: base.note || '',
       qtyAfter: qty,
       avgAfter: avg,
+      addQtyAfter: 0,
+      addAvgAfter: null,
+      realizedPnl: null,
       entryId: null,
     }];
 
     entries.forEach(function (entry) {
+      var realizedPnl = null;
+
       if (entry.side === 'buy') {
         var newQty = qty + entry.qty;
         avg = newQty > 0 ? (qty * avg + entry.qty * entry.price) / newQty : avg;
         qty = newQty;
+
+        var buyAmount = entry.price * entry.qty;
+        var buyComm = calcCommission(buyAmount);
+        var costTotal = buyAmount + buyComm;
+        var newAddQty = addQty + entry.qty;
+        addAvg = newAddQty > 0
+          ? (addQty * addAvg + costTotal) / newAddQty
+          : 0;
+        addQty = newAddQty;
       } else {
         qty = qty - entry.qty;
+
+        var sellAmount = entry.price * entry.qty;
+        var fromAdd = Math.min(entry.qty, addQty);
+        if (fromAdd > 0 && addAvg > 0) {
+          var gross = fromAdd * (entry.price - addAvg);
+          var sellComm = calcCommission(sellAmount);
+          var sellTax = calcSellTax(sellAmount);
+          realizedPnl = Math.round(gross - sellComm - sellTax);
+          totalRealized += realizedPnl;
+        }
+        addQty = Math.max(0, addQty - entry.qty);
+        if (addQty === 0) addAvg = 0;
       }
+
       rows.push({
         kind: 'entry',
         label: entry.side === 'buy' ? '매수' : '매도',
@@ -129,11 +200,14 @@
         note: entry.note || '',
         qtyAfter: qty,
         avgAfter: avg,
+        addQtyAfter: addQty,
+        addAvgAfter: addQty > 0 ? addAvg : null,
+        realizedPnl: realizedPnl,
         entryId: entry.id,
       });
     });
 
-    return rows;
+    return { rows: rows, totalRealized: totalRealized };
   }
 
   function setFormEnabled(enabled) {
@@ -166,17 +240,26 @@
       return;
     }
 
-    var rows = computeJournal(journalBase, journalEntries);
+    var result = computeJournal(journalBase, journalEntries);
+    var rows = result.rows;
     var last = rows[rows.length - 1];
 
     elSummary.hidden = false;
     elSumQty.textContent = fmtQty(last.qtyAfter) + '주';
     elSumAvg.textContent = fmt(last.avgAfter) + '원';
+    elSumAddQty.textContent = last.addQtyAfter > 0
+      ? fmtQty(last.addQtyAfter) + '주'
+      : '—';
+    elSumAddAvg.textContent = last.addAvgAfter != null
+      ? fmt(last.addAvgAfter) + '원'
+      : '—';
+    setSummaryPnl(elSumRealized, result.totalRealized);
 
     var html = '<div class="tj-table-wrap"><table class="tj-table"><thead><tr>'
       + '<th>#</th><th>구분</th><th class="num">가격</th><th class="num">수량</th>'
       + '<th>날짜</th><th>메모</th>'
-      + '<th class="num">보유</th><th class="num">평단</th><th></th>'
+      + '<th class="num">보유</th><th class="num">전체평단</th>'
+      + '<th class="num">추가보유</th><th class="num">추가평단</th><th class="num">실현손익</th><th></th>'
       + '</tr></thead><tbody>';
 
     rows.forEach(function (row, idx) {
@@ -192,6 +275,16 @@
         + escapeHtml(row.note || '—') + '</span></td>';
       html += '<td class="num">' + fmtQty(row.qtyAfter) + '</td>';
       html += '<td class="num">' + fmt(row.avgAfter) + '</td>';
+      html += '<td class="num">' + (row.addQtyAfter > 0 ? fmtQty(row.addQtyAfter) : '—') + '</td>';
+      html += '<td class="num">' + (row.addAvgAfter != null ? fmt(row.addAvgAfter) : '—') + '</td>';
+      html += '<td class="num">';
+      if (row.realizedPnl != null) {
+        html += '<span class="tj-pnl ' + pnlClass(row.realizedPnl) + '">'
+          + fmtPnl(row.realizedPnl) + '</span>';
+      } else {
+        html += '—';
+      }
+      html += '</td>';
       html += '<td>';
       if (!isBase && row.entryId) {
         html += '<button type="button" class="tj-del-btn" data-id="' + escapeAttr(row.entryId)
@@ -305,7 +398,7 @@
     for (var i = 0; i < journalEntries.length; i++) {
       var simBase = { baseQty: baseQty, baseAvg: baseAvg, note: note };
       var simEntries = journalEntries.slice(0, i + 1);
-      var simRows = computeJournal(simBase, simEntries);
+      var simRows = computeJournal(simBase, simEntries).rows;
       var last = simRows[simRows.length - 1];
       if (last.qtyAfter < 0) {
         setMsg(elBaseMsg, '시작 수량이 너무 적습니다. 기록 #' + (i + 1) + ' 매도를 처리할 수 없습니다.');
@@ -351,8 +444,8 @@
       return;
     }
 
-    var rows = computeJournal(journalBase, journalEntries);
-    var last = rows[rows.length - 1];
+    var result = computeJournal(journalBase, journalEntries);
+    var last = result.rows[result.rows.length - 1];
 
     if (currentSide === 'sell' && qty > last.qtyAfter) {
       setMsg(elEntryMsg, '매도 수량이 보유(' + fmtQty(last.qtyAfter) + '주)을 초과합니다.');
