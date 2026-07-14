@@ -440,7 +440,7 @@
           <div class="ot-actions">
             <button type="button" class="ot-btn ot-btn-visit${sold ? ' is-on' : ''}"
               data-action="visit"
-              aria-pressed="${sold ? 'true' : 'false'}">방문</button>
+              aria-pressed="${sold ? 'true' : 'false'}">${sold ? '상점 구매 취소' : '상점 구매'}</button>
           </div>`;
         panelEl.dataset.portId = tracked.id;
     }
@@ -465,6 +465,7 @@
         if (visitBtn) {
             visitBtn.classList.toggle('is-on', sold);
             visitBtn.setAttribute('aria-pressed', sold ? 'true' : 'false');
+            visitBtn.textContent = sold ? '상점 구매 취소' : '상점 구매';
         }
 
         // 입력 중이면 덮어쓰지 않음
@@ -723,8 +724,8 @@
                     });
                     await reload(true);
                     setStatus(turnOn
-                        ? `「${tracked.portName}」방문 표시했습니다. (타이머는 그대로)`
-                        : `「${tracked.portName}」방문 표시를 해제했습니다.`);
+                        ? `「${tracked.portName}」상점 구매를 표시했습니다.`
+                        : `「${tracked.portName}」상점 구매를 취소했습니다.`);
                     return;
                 }
 
