@@ -407,13 +407,39 @@
         return window.originDb.listPorts();
     }
 
+    /** DB에 남은 구버전 항구명 → 현행 지명 */
+    async function migratePortNames(list) {
+        const rename = window.renameOriginPort || (n => n);
+        let changed = false;
+        for (const port of list) {
+            const neu = rename(port.portName);
+            if (neu === port.portName) continue;
+            const clash = list.find(p => p.portName === neu && p.id !== port.id);
+            if (clash) {
+                // 신이름이 이미 있으면 구 레코드만 삭제
+                await window.originDb.deletePort(port.id);
+            } else {
+                await window.originDb.savePort({
+                    ...port,
+                    portName: neu,
+                    intervalMin: INTERVAL_MIN,
+                });
+            }
+            changed = true;
+        }
+        if (!changed) return list;
+        return window.originDb.listPorts();
+    }
+
     async function reload(keepSelection) {
         const prev = keepSelection ? selectedName : null;
         try {
             let list = await window.originDb.listPorts();
+            list = await migratePortNames(list);
             list = await ensureOdessa(list);
             ports = list;
-            if (prev) selectedName = prev;
+            const rename = window.renameOriginPort || (n => n);
+            if (prev) selectedName = rename(prev);
             else if (!selectedName && findPortByName(DEFAULT_PORT)) selectedName = DEFAULT_PORT;
             refreshAll();
             if (window.originDb.isLocal) {
