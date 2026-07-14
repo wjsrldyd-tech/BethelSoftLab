@@ -15,17 +15,14 @@
     const mapEl      = $('#ot-map');
     const panelEl    = $('#ot-panel');
     const regListEl  = $('#ot-reg-list');
-    const regBoxEl   = $('#ot-registered');
-    const regToggle  = $('#ot-reg-toggle');
-    const regCountEl = $('#ot-reg-count');
     const statusEl   = $('#ot-status');
-    const viewSelect = $('#ot-view-select');
+    const viewTabsEl = $('#ot-view-tabs');
+    const mapPaneEl  = document.querySelector('.ot-map-pane');
 
     let ports = [];
     let selectedName = null;
     let selectedViewId = DEFAULT_VIEW;
     let tickTimer = null;
-    let regOpen = false;
 
     function currentMapPins() {
         if (typeof window.getOriginMapPins === 'function') {
@@ -122,31 +119,44 @@
     // ─── 해역 선택 ───────────────────────────────────────────────────
 
     function renderViewTabs() {
-        if (!viewSelect || MAP_VIEWS.length === 0) return;
-        viewSelect.innerHTML = MAP_VIEWS.map(v =>
-            `<option value="${escapeAttr(v.id)}"${v.id === selectedViewId ? ' selected' : ''}>${escapeHtml(v.label)}</option>`
-        ).join('');
+        if (!viewTabsEl || MAP_VIEWS.length === 0) return;
+        viewTabsEl.innerHTML = MAP_VIEWS.map(v => `
+          <button type="button" class="ot-view-tab${v.id === selectedViewId ? ' is-active' : ''}"
+            data-view-id="${escapeAttr(v.id)}">${escapeHtml(v.label)}</button>
+        `).join('');
+    }
+
+    function updateNavButtons() {
+        const n = typeof window.getOriginMapNeighbors === 'function'
+            ? window.getOriginMapNeighbors(selectedViewId)
+            : {};
+        if (!mapPaneEl) return;
+        mapPaneEl.querySelectorAll('.ot-nav').forEach(btn => {
+            const dir = btn.dataset.nav;
+            const target = n[dir] || null;
+            btn.disabled = !target;
+            btn.dataset.target = target || '';
+            if (target) {
+                const view = MAP_VIEWS.find(v => v.id === target);
+                btn.title = view ? view.label : dir;
+            } else {
+                btn.title = '';
+            }
+        });
     }
 
     function selectView(viewId) {
+        if (!viewId) return;
         selectedViewId = viewId;
-        if (viewSelect) viewSelect.value = viewId;
+        renderViewTabs();
+        updateNavButtons();
         renderMap();
         const view = currentView();
         setStatus(`${view.label} · 기준 ${view.anchor || '—'}`);
     }
 
     function updateRegCount() {
-        if (regCountEl) regCountEl.textContent = String(ports.length);
-    }
-
-    function setRegOpen(open) {
-        regOpen = open;
-        if (regBoxEl) regBoxEl.classList.toggle('is-open', open);
-        if (regToggle) {
-            regToggle.classList.toggle('is-active', open);
-            regToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-        }
+        // no-op (등록 목록은 왼쪽 패널에 상시 표시)
     }
 
     // ─── 맵 ─────────────────────────────────────────────────────────
@@ -431,14 +441,21 @@
 
     // ─── 이벤트 ──────────────────────────────────────────────────────
 
-    if (viewSelect) {
-        viewSelect.addEventListener('change', () => {
-            selectView(viewSelect.value);
+    if (viewTabsEl) {
+        viewTabsEl.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-view-id]');
+            if (!btn) return;
+            selectView(btn.dataset.viewId);
         });
     }
 
-    if (regToggle) {
-        regToggle.addEventListener('click', () => setRegOpen(!regOpen));
+    if (mapPaneEl) {
+        mapPaneEl.addEventListener('click', (e) => {
+            const nav = e.target.closest('.ot-nav');
+            if (!nav || nav.disabled) return;
+            const target = nav.dataset.target;
+            if (target) selectView(target);
+        });
     }
 
     if (mapEl) {

@@ -250,7 +250,7 @@
         { name: '에도', region: '극동남아시아' },
         { name: '나가사키', region: '극동남아시아' },
         { name: '사카이', region: '극동남아시아' },
-        { name: '수이', region: '극동남아시아' },
+        { name: '나하', region: '극동남아시아' },
         { name: '에조', region: '극동남아시아' },
 
         // 태평양

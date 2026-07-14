@@ -20,17 +20,18 @@
         background: #000;
       }
 
-      /* ===== 얇은 툴바 ===== */
+      /* ===== 상단 메뉴 ===== */
       .ot-toolbar {
         flex: 0 0 auto;
         display: flex;
         align-items: center;
-        gap: 0.55rem;
-        padding: 0.45rem 0.65rem;
+        gap: 0.65rem;
+        padding: 0.55rem 0.85rem;
         border-bottom: 1px solid var(--border);
         background: #0c0c10;
         z-index: 20;
-        min-height: 44px;
+        min-height: 48px;
+        flex-wrap: wrap;
       }
 
       .ot-toolbar .back-link {
@@ -41,33 +42,48 @@
 
       .ot-toolbar-title {
         flex-shrink: 0;
-        font-size: 0.88rem;
+        font-size: 1.05rem;
         font-weight: 600;
         color: var(--text-h);
         white-space: nowrap;
       }
 
-      .ot-view-select {
-        min-width: 9rem;
-        max-width: 14rem;
-        background: var(--bg);
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        color: var(--text-h);
-        font-size: 0.82rem;
-        font-family: inherit;
-        padding: 0.35rem 0.55rem;
-        outline: none;
+      .ot-view-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+        flex: 1 1 auto;
+        min-width: 0;
       }
 
-      .ot-view-select:focus {
+      .ot-view-tab {
+        padding: 0.32rem 0.6rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: var(--bg-card);
+        color: var(--text);
+        font-size: 0.76rem;
+        font-family: inherit;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+
+      .ot-view-tab:hover {
+        background: var(--bg-card-hover);
+        color: var(--text-h);
+      }
+
+      .ot-view-tab.is-active {
         border-color: var(--origin);
+        color: #7dd3fc;
+        background: rgba(14, 165, 233, 0.12);
       }
 
       .ot-status {
-        flex: 1 1 auto;
+        flex: 0 1 auto;
         min-width: 0;
-        font-size: 0.78rem;
+        max-width: 14rem;
+        font-size: 0.76rem;
         color: var(--text);
         white-space: nowrap;
         overflow: hidden;
@@ -76,158 +92,53 @@
 
       .ot-status.is-error { color: #f87171; }
 
-      .ot-toolbar-btn {
-        flex-shrink: 0;
-        padding: 0.35rem 0.7rem;
-        border-radius: 8px;
-        border: 1px solid var(--border);
-        background: var(--bg-card);
-        color: var(--text-h);
-        font-size: 0.8rem;
-        font-family: inherit;
-        cursor: pointer;
-      }
-
-      .ot-toolbar-btn:hover { background: var(--bg-card-hover); }
-      .ot-toolbar-btn.is-active {
-        border-color: var(--origin);
-        color: #7dd3fc;
-      }
-
-      /* ===== 맵 스테이지 (나머지 전부) ===== */
-      .ot-stage {
-        position: relative;
+      /* ===== 좌우 본문 ===== */
+      .ot-main {
         flex: 1 1 auto;
         min-height: 0;
-        overflow: hidden;
+        display: grid;
+        grid-template-columns: minmax(280px, 340px) 1fr;
       }
 
-      .ot-map {
-        position: absolute;
-        inset: 0;
-        background: #12151c;
+      @media (max-width: 860px) {
+        .ot-main {
+          grid-template-columns: 1fr;
+          grid-template-rows: minmax(220px, 38%) 1fr;
+        }
       }
 
-      .ot-map-label {
-        position: absolute;
-        top: 0.65rem;
-        right: 0.75rem;
-        left: auto;
-        z-index: 2;
-        font-size: 0.72rem;
-        font-weight: 600;
-        color: rgba(160, 160, 171, 0.65);
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-        pointer-events: none;
-      }
-
-      .ot-pin {
-        position: absolute;
-        transform: translate(-50%, -100%);
-        z-index: 3;
+      /* ===== 왼쪽 정보 ===== */
+      .ot-side {
         display: flex;
         flex-direction: column;
-        align-items: center;
-        gap: 0.15rem;
-        border: none;
-        background: none;
-        padding: 0;
-        cursor: pointer;
-        font-family: inherit;
-        color: inherit;
+        gap: 0.65rem;
+        min-height: 0;
+        padding: 0.75rem;
+        border-right: 1px solid var(--border);
+        background: #0a0a0e;
+        overflow: auto;
       }
-
-      .ot-pin-marker {
-        width: 12px;
-        height: 12px;
-        border-radius: 50% 50% 50% 0;
-        transform: rotate(-45deg);
-        background: #94a3b8;
-        border: 2px solid #e2e8f0;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
-      }
-
-      .ot-pin.is-tracked .ot-pin-marker {
-        background: #0ea5e9;
-        border-color: #7dd3fc;
-      }
-
-      .ot-pin.is-ready .ot-pin-marker {
-        background: #22c55e;
-        border-color: #86efac;
-      }
-
-      .ot-pin.is-active .ot-pin-marker {
-        box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.5);
-      }
-
-      .ot-pin-name {
-        margin-top: 3px;
-        font-size: 0.95rem;
-        font-weight: 650;
-        color: #f5f5f7;
-        white-space: nowrap;
-        background: #1a1c24;
-        padding: 0.2rem 0.5rem;
-        border-radius: 5px;
-        border: 1px solid #3a3a44;
-        letter-spacing: -0.01em;
-      }
-
-      .ot-pin-time {
-        font-size: 0.84rem;
-        font-weight: 700;
-        font-variant-numeric: tabular-nums;
-        color: #7dd3fc;
-        background: #1a1c24;
-        padding: 0.1rem 0.4rem;
-        border-radius: 4px;
-        border: 1px solid #2a2a32;
-      }
-
-      .ot-pin.is-ready .ot-pin-time { color: #86efac; }
-      .ot-pin:hover .ot-pin-name { border-color: var(--origin); color: #fff; }
-
-      /* ===== 플로팅 패널 ===== */
-      .ot-dock {
-        position: absolute;
-        top: 0.65rem;
-        left: 0.65rem;
-        z-index: 10;
-        width: min(320px, calc(100% - 1.3rem));
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-        max-height: calc(100% - 1.3rem);
-        pointer-events: none;
-      }
-
-      .ot-dock > * { pointer-events: auto; }
 
       .ot-panel {
-        background: rgba(20, 20, 24, 0.94);
+        background: var(--bg-card);
         border: 1px solid var(--border);
         border-radius: 12px;
-        padding: 0.9rem 1rem;
+        padding: 0.95rem 1rem;
         display: flex;
         flex-direction: column;
         gap: 0.75rem;
-        backdrop-filter: blur(8px);
-        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
       }
 
       .ot-panel.is-ready {
         border-color: var(--origin);
-        box-shadow: 0 0 0 1px rgba(14, 165, 233, 0.25), 0 8px 28px rgba(0, 0, 0, 0.45);
+        box-shadow: 0 0 0 1px rgba(14, 165, 233, 0.25);
       }
 
       .ot-panel-empty {
-        color: var(--text);
-        font-size: 0.85rem;
-        line-height: 1.5;
         margin: 0;
-        text-align: left;
+        color: var(--text);
+        font-size: 0.88rem;
+        line-height: 1.5;
       }
 
       .ot-card-head {
@@ -239,7 +150,7 @@
 
       .ot-port-name {
         margin: 0;
-        font-size: 1.15rem;
+        font-size: 1.2rem;
         font-weight: 600;
         color: var(--text-h);
       }
@@ -268,19 +179,19 @@
       }
 
       .ot-countdown {
-        font-size: 2.1rem;
+        font-size: 2.2rem;
         font-weight: 700;
         font-variant-numeric: tabular-nums;
         letter-spacing: 0.04em;
         color: var(--text-h);
         line-height: 1;
-        min-width: 4.8rem;
+        min-width: 5rem;
       }
 
       .ot-panel.is-ready .ot-countdown { color: #86efac; }
 
       .ot-meta {
-        font-size: 0.82rem;
+        font-size: 0.84rem;
         color: var(--text);
         display: flex;
         flex-direction: column;
@@ -367,21 +278,18 @@
       .ot-btn-ghost { color: var(--text); }
 
       .ot-registered {
-        background: rgba(20, 20, 24, 0.94);
+        background: var(--bg-card);
         border: 1px solid var(--border);
         border-radius: 12px;
-        padding: 0.65rem 0.8rem;
-        max-height: 9.5rem;
+        padding: 0.7rem 0.85rem;
         overflow: auto;
-        backdrop-filter: blur(8px);
-        display: none;
+        flex: 1 1 auto;
+        min-height: 0;
       }
 
-      .ot-registered.is-open { display: block; }
-
       .ot-registered-title {
-        margin: 0 0 0.4rem;
-        font-size: 0.7rem;
+        margin: 0 0 0.45rem;
+        font-size: 0.72rem;
         font-weight: 600;
         color: var(--text);
         letter-spacing: 0.04em;
@@ -402,13 +310,13 @@
         align-items: center;
         justify-content: space-between;
         gap: 0.5rem;
-        padding: 0.35rem 0.5rem;
+        padding: 0.4rem 0.5rem;
         border-radius: 8px;
         border: 1px solid transparent;
         background: transparent;
         color: var(--text-h);
         font: inherit;
-        font-size: 0.82rem;
+        font-size: 0.84rem;
         cursor: pointer;
         text-align: left;
         width: 100%;
@@ -425,21 +333,164 @@
         font-variant-numeric: tabular-nums;
         font-weight: 600;
         color: #7dd3fc;
-        font-size: 0.78rem;
+        font-size: 0.8rem;
+      }
+
+      /* ===== 오른쪽 지도 ===== */
+      .ot-map-pane {
+        position: relative;
+        min-width: 0;
+        min-height: 0;
+        background: #12151c;
+      }
+
+      .ot-map {
+        position: absolute;
+        inset: 0;
+        background: #12151c;
+      }
+
+      .ot-map-label {
+        position: absolute;
+        top: 0.65rem;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 2;
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: rgba(160, 160, 171, 0.7);
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        pointer-events: none;
+      }
+
+      .ot-pin {
+        position: absolute;
+        transform: translate(-50%, -100%);
+        z-index: 3;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.15rem;
+        border: none;
+        background: none;
+        padding: 0;
+        cursor: pointer;
+        font-family: inherit;
+        color: inherit;
+      }
+
+      .ot-pin-marker {
+        width: 12px;
+        height: 12px;
+        border-radius: 50% 50% 50% 0;
+        transform: rotate(-45deg);
+        background: #94a3b8;
+        border: 2px solid #e2e8f0;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+      }
+
+      .ot-pin.is-tracked .ot-pin-marker {
+        background: #0ea5e9;
+        border-color: #7dd3fc;
+      }
+
+      .ot-pin.is-ready .ot-pin-marker {
+        background: #22c55e;
+        border-color: #86efac;
+      }
+
+      .ot-pin.is-active .ot-pin-marker {
+        box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.5);
+      }
+
+      .ot-pin-name {
+        margin-top: 3px;
+        font-size: 0.95rem;
+        font-weight: 650;
+        color: #f5f5f7;
+        white-space: nowrap;
+        background: #1a1c24;
+        padding: 0.2rem 0.5rem;
+        border-radius: 5px;
+        border: 1px solid #3a3a44;
+      }
+
+      .ot-pin-time {
+        font-size: 0.84rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        color: #7dd3fc;
+        background: #1a1c24;
+        padding: 0.1rem 0.4rem;
+        border-radius: 4px;
+        border: 1px solid #2a2a32;
+      }
+
+      .ot-pin.is-ready .ot-pin-time { color: #86efac; }
+      .ot-pin:hover .ot-pin-name { border-color: var(--origin); color: #fff; }
+
+      /* 사방 이동 버튼 */
+      .ot-nav {
+        position: absolute;
+        z-index: 8;
+        width: 2.4rem;
+        height: 2.4rem;
+        border-radius: 50%;
+        border: 1px solid var(--border);
+        background: rgba(20, 22, 28, 0.92);
+        color: var(--text-h);
+        font-size: 1.15rem;
+        line-height: 1;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        font-family: inherit;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+      }
+
+      .ot-nav:hover:not(:disabled) {
+        border-color: var(--origin);
+        color: #7dd3fc;
+        background: rgba(14, 165, 233, 0.12);
+      }
+
+      .ot-nav:disabled {
+        opacity: 0.28;
+        cursor: default;
+      }
+
+      .ot-nav-up {
+        top: 0.55rem;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+
+      .ot-nav-down {
+        bottom: 0.55rem;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+
+      .ot-nav-left {
+        left: 0.55rem;
+        top: 50%;
+        transform: translateY(-50%);
+      }
+
+      .ot-nav-right {
+        right: 0.55rem;
+        top: 50%;
+        transform: translateY(-50%);
       }
 
       @media (max-width: 560px) {
-        .ot-toolbar-title { display: none; }
-        .ot-countdown { font-size: 1.85rem; }
+        .ot-toolbar-title { font-size: 0.95rem; }
+        .ot-countdown { font-size: 1.9rem; }
         .ot-btn-danger { margin-left: 0; }
-        .ot-dock {
-          top: auto;
-          bottom: 0.5rem;
-          left: 0.5rem;
-          right: 0.5rem;
-          width: auto;
-          max-height: 45%;
-        }
+        .ot-view-tabs { display: none; }
       }
     </style>
   </head>
@@ -448,43 +499,32 @@
       <header class="ot-toolbar">
         <a href="game.html" class="back-link">← 게임</a>
         <span class="ot-toolbar-title">교역소 타이머</span>
-        <label class="visually-hidden" for="ot-view-select">해역</label>
-        <select id="ot-view-select" class="ot-view-select" aria-label="해역 선택"></select>
+        <nav id="ot-view-tabs" class="ot-view-tabs" aria-label="해역 메뉴"></nav>
         <p id="ot-status" class="ot-status" aria-live="polite"></p>
-        <button type="button" id="ot-reg-toggle" class="ot-toolbar-btn" aria-expanded="false">
-          등록 <span id="ot-reg-count">0</span>
-        </button>
       </header>
 
-      <div class="ot-stage">
-        <div id="ot-map" class="ot-map" aria-label="항구 맵">
-          <span class="ot-map-label">동지중해 · 흑해</span>
-        </div>
-
-        <aside class="ot-dock">
+      <div class="ot-main">
+        <aside class="ot-side">
           <div id="ot-panel" class="ot-panel" aria-live="polite">
             <p class="ot-panel-empty">맵에서 항구를 선택하세요.</p>
           </div>
-          <div id="ot-registered" class="ot-registered">
+          <div class="ot-registered">
             <h2 class="ot-registered-title">등록된 교역소</h2>
             <ul id="ot-reg-list" class="ot-reg-list"></ul>
           </div>
         </aside>
+
+        <div class="ot-map-pane">
+          <div id="ot-map" class="ot-map" aria-label="항구 맵">
+            <span class="ot-map-label">동지중해 · 흑해</span>
+          </div>
+          <button type="button" class="ot-nav ot-nav-up" data-nav="up" aria-label="북쪽 해역" title="위">↑</button>
+          <button type="button" class="ot-nav ot-nav-down" data-nav="down" aria-label="남쪽 해역" title="아래">↓</button>
+          <button type="button" class="ot-nav ot-nav-left" data-nav="left" aria-label="서쪽 해역" title="왼쪽">←</button>
+          <button type="button" class="ot-nav ot-nav-right" data-nav="right" aria-label="동쪽 해역" title="오른쪽">→</button>
+        </div>
       </div>
     </div>
-
-    <style>
-      .visually-hidden {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        padding: 0;
-        margin: -1px;
-        overflow: hidden;
-        clip: rect(0, 0, 0, 0);
-        border: 0;
-      }
-    </style>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-config.js"></script>

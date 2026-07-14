@@ -236,26 +236,28 @@
             anchor: '한양',
             regions: ['동아시아', '극동서아시아', '극동남아시아'],
             ports: {
-                북경: { x: 48, y: 22 },
-                서안: { x: 28, y: 36 },
-                중경: { x: 32, y: 48 },
-                항주: { x: 58, y: 48 },
-                천주: { x: 62, y: 58 },
-                마카오: { x: 52, y: 68 },
-                연운: { x: 56, y: 32 },
-                한양: { x: 72, y: 34 },
-                동래: { x: 78, y: 42 },
-                영일: { x: 80, y: 36 },
-                덕원: { x: 76, y: 28 },
-                제주: { x: 70, y: 52 },
-                에도: { x: 92, y: 38 },
-                사카이: { x: 86, y: 44 },
-                나가사키: { x: 78, y: 54 },
-                수이: { x: 84, y: 32 },
-                에조: { x: 90, y: 18 },
-                하노이: { x: 42, y: 78 },
-                오호츠크: { x: 88, y: 8 },
-                율도: { x: 68, y: 48 },
+                북경: { x: 42, y: 18 },
+                서안: { x: 22, y: 32 },
+                중경: { x: 28, y: 42 },
+                항주: { x: 50, y: 38 },
+                천주: { x: 54, y: 50 },
+                마카오: { x: 46, y: 78 },
+                연운: { x: 48, y: 28 },
+                한양: { x: 68, y: 30 },
+                동래: { x: 74, y: 38 },
+                영일: { x: 76, y: 32 },
+                덕원: { x: 72, y: 24 },
+                제주: { x: 70, y: 46 },
+                에도: { x: 96, y: 34 },
+                사카이: { x: 90, y: 40 },
+                나가사키: { x: 84, y: 48 },
+                // 류큐: 대만(타이난) 동쪽, 규슈(나가사키) 남쪽
+                타이난: { x: 64, y: 70 },
+                나하: { x: 80, y: 72 },
+                에조: { x: 94, y: 14 },
+                하노이: { x: 36, y: 86 },
+                오호츠크: { x: 92, y: 6 },
+                율도: { x: 66, y: 44 },
             },
         },
         {
@@ -344,6 +346,30 @@
         },
     ];
 
+    // 해역 그래프: 상하좌우 인접 (실제 지리 감각 근사)
+    const NEIGHBORS = {
+        eastmed:       { up: 'northsea',    down: 'eafrica',      left: 'gibraltar',  right: 'indian' },
+        gibraltar:     { up: 'northsea',    down: 'wafrica',      left: 'caribbean',  right: 'eastmed' },
+        northsea:      { up: null,          down: 'gibraltar',    left: 'northamerica', right: 'eastasia' },
+        wafrica:       { up: 'gibraltar',   down: 'eafrica',      left: 'southamerica', right: 'eafrica' },
+        eafrica:       { up: 'eastmed',     down: 'australia',    left: 'wafrica',    right: 'indian' },
+        indian:        { up: 'eastasia',    down: 'australia',    left: 'eastmed',    right: 'seasia' },
+        seasia:        { up: 'eastasia',    down: 'australia',    left: 'indian',     right: null },
+        eastasia:      { up: null,          down: 'seasia',       left: 'northsea',   right: null },
+        caribbean:     { up: 'northamerica', down: 'southamerica', left: null,        right: 'gibraltar' },
+        southamerica:  { up: 'caribbean',   down: null,           left: null,         right: 'wafrica' },
+        australia:     { up: 'seasia',      down: null,           left: 'eafrica',    right: null },
+        northamerica:  { up: null,          down: 'caribbean',    left: null,         right: 'northsea' },
+    };
+
+    // 화면 여백 (%): 핀 라벨이 위로/아래로 나가도 잘리지 않게
+    const FIT = {
+        left: 6,
+        right: 94,
+        top: 16,    // 가장 북쪽 항구 위 여백
+        bottom: 88, // 아래까지 펼쳐 빈 공간 줄임
+    };
+
     function regionByName() {
         const map = Object.create(null);
         for (const p of window.ORIGIN_PORTS || []) {
@@ -352,13 +378,44 @@
         return map;
     }
 
+    /** 해역 좌표를 맵 영역에 맞게 균등 스케일 (상단 치우침·하단 공백 완화) */
+    function fitPorts(ports) {
+        const names = Object.keys(ports);
+        if (names.length === 0) return {};
+
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        for (const name of names) {
+            const p = ports[name];
+            if (p.x < minX) minX = p.x;
+            if (p.x > maxX) maxX = p.x;
+            if (p.y < minY) minY = p.y;
+            if (p.y > maxY) maxY = p.y;
+        }
+
+        const spanX = Math.max(maxX - minX, 8);
+        const spanY = Math.max(maxY - minY, 8);
+        const outW = FIT.right - FIT.left;
+        const outH = FIT.bottom - FIT.top;
+
+        const fitted = {};
+        for (const name of names) {
+            const p = ports[name];
+            fitted[name] = {
+                x: FIT.left + ((p.x - minX) / spanX) * outW,
+                y: FIT.top + ((p.y - minY) / spanY) * outH,
+            };
+        }
+        return fitted;
+    }
+
     function pinsForView(view) {
         const regions = regionByName();
-        return Object.keys(view.ports).map(name => ({
+        const fitted = fitPorts(view.ports);
+        return Object.keys(fitted).map(name => ({
             name,
             region: regions[name] || '',
-            x: view.ports[name].x,
-            y: view.ports[name].y,
+            x: fitted[name].x,
+            y: fitted[name].y,
             mapId: view.id,
         }));
     }
@@ -367,11 +424,16 @@
         return VIEWS.find(v => v.id === id) || VIEWS[0];
     }
 
+    function getNeighbors(viewId) {
+        return NEIGHBORS[viewId] || { up: null, down: null, left: null, right: null };
+    }
+
     window.ORIGIN_MAP_VIEWS = VIEWS;
     window.getOriginMapView = getView;
     window.getOriginMapPins = function (viewId) {
         return pinsForView(getView(viewId));
     };
+    window.getOriginMapNeighbors = getNeighbors;
 
     // 하위 호환: 기존 동지중해 상수
     window.ORIGIN_EASTMED_PORTS = pinsForView(getView('eastmed'));
