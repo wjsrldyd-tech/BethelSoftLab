@@ -15,7 +15,6 @@
     const $ = (sel) => document.querySelector(sel);
     const mapEl      = $('#ot-map');
     const panelEl    = $('#ot-panel');
-    const regListEl  = $('#ot-reg-list');
     const statusEl   = $('#ot-status');
     const viewTabsEl = $('#ot-view-tabs');
     const mapPaneEl  = document.querySelector('.ot-map-pane');
@@ -105,14 +104,6 @@
         return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
     }
 
-    function formatClock(ms) {
-        const d = new Date(ms);
-        const hh = String(d.getHours()).padStart(2, '0');
-        const mm = String(d.getMinutes()).padStart(2, '0');
-        const ss = String(d.getSeconds()).padStart(2, '0');
-        return hh + ':' + mm + ':' + ss;
-    }
-
     function remainingToAnchor(remainingMs, now = Date.now()) {
         const nextReset = now + remainingMs;
         return new Date(nextReset - INTERVAL_MS).toISOString();
@@ -157,6 +148,50 @@
         return ports.find(p => p.portName === name) || null;
     }
 
+    /** 방문(매진) 표시가 유지되는 시각 — 다음 30분 리셋 시각 */
+    function soldOutUntilMs(port) {
+        if (!port || !port.soldOut) return 0;
+        const markedAt = port.soldOutAt ? parseAnchorMs(port.soldOutAt) : Date.now();
+        let until = getNextResetMs(port.anchorAt, markedAt);
+        // 리셋 직전·직후 방문이면 다음 주기까지 매진 유지
+        if (until - markedAt <= 2000) until += INTERVAL_MS;
+        return until;
+    }
+
+    function isSoldOut(port, now = Date.now()) {
+        if (!port || !port.soldOut) return false;
+        return now < soldOutUntilMs(port);
+    }
+
+    let soldOutFlushInFlight = false;
+
+    /** 리셋 시각이 지난 매진 표시를 DB에서 해제 */
+    async function flushExpiredSoldOut() {
+        if (soldOutFlushInFlight) return;
+        const now = Date.now();
+        const expired = ports.filter(p => p.soldOut && !isSoldOut(p, now));
+        if (!expired.length) return;
+
+        soldOutFlushInFlight = true;
+        try {
+            for (const port of expired) {
+                await window.originDb.savePort({
+                    ...port,
+                    soldOut: false,
+                    soldOutAt: null,
+                    intervalMin: INTERVAL_MIN,
+                });
+                port.soldOut = false;
+                port.soldOutAt = null;
+            }
+            refreshAll();
+        } catch (err) {
+            console.error('[OriginTimer] 매진 해제 실패', err);
+        } finally {
+            soldOutFlushInFlight = false;
+        }
+    }
+
     // ─── 해역 선택 ───────────────────────────────────────────────────
 
     function renderViewTabs() {
@@ -196,10 +231,6 @@
         setStatus(`${view.label} · 기준 ${view.anchor || '—'}`);
     }
 
-    function updateRegCount() {
-        // no-op (등록 목록은 왼쪽 패널에 상시 표시)
-    }
-
     // ─── 맵 ─────────────────────────────────────────────────────────
 
     function mapCanvasEl() {
@@ -217,11 +248,13 @@
             const tracked = findPortByName(loc.name);
             const rem = tracked ? getRemainingMs(tracked.anchorAt, now) : null;
             const ready = tracked && rem <= 1000;
+            const sold = tracked && isSoldOut(tracked, now);
             const active = selectedName === loc.name;
             const classes = [
                 'ot-pin',
                 tracked ? 'is-tracked' : '',
-                ready ? 'is-ready' : '',
+                sold ? 'is-sold-out' : '',
+                ready && !sold ? 'is-ready' : '',
                 active ? 'is-active' : '',
             ].filter(Boolean).join(' ');
 
@@ -319,14 +352,16 @@
 
             let timeEl = pin.querySelector('[data-pin-time]');
             if (!tracked) {
-                pin.classList.remove('is-ready');
+                pin.classList.remove('is-ready', 'is-sold-out');
                 if (timeEl) timeEl.remove();
                 return;
             }
 
             const rem = getRemainingMs(tracked.anchorAt, now);
+            const sold = isSoldOut(tracked, now);
             const ready = rem <= 1000;
-            pin.classList.toggle('is-ready', ready);
+            pin.classList.toggle('is-sold-out', sold);
+            pin.classList.toggle('is-ready', ready && !sold);
 
             if (!timeEl) {
                 timeEl = document.createElement('span');
@@ -338,59 +373,13 @@
         });
     }
 
-    // ─── 등록 목록 ───────────────────────────────────────────────────
-
-    function renderRegList() {
-        if (!regListEl) return;
-        const now = Date.now();
-        updateRegCount();
-
-        if (ports.length === 0) {
-            regListEl.innerHTML = '<li style="color:var(--text);font-size:0.85rem;padding:0.25rem;">없음</li>';
-            return;
-        }
-
-        const sorted = ports.slice().sort((a, b) =>
-            getRemainingMs(a.anchorAt, now) - getRemainingMs(b.anchorAt, now)
-        );
-
-        regListEl.innerHTML = sorted.map(port => {
-            const rem = getRemainingMs(port.anchorAt, now);
-            const ready = rem <= 1000;
-            const active = selectedName === port.portName;
-            return `
-              <li>
-                <button type="button"
-                  class="ot-reg-item${ready ? ' is-ready' : ''}${active ? ' is-active' : ''}"
-                  data-port-name="${escapeAttr(port.portName)}">
-                  <span>${escapeHtml(port.portName)}</span>
-                  <span class="ot-reg-time" data-reg-time="${escapeAttr(port.id)}">${formatCountdown(rem)}</span>
-                </button>
-              </li>`;
-        }).join('');
-    }
-
-    function tickRegList() {
-        const now = Date.now();
-        regListEl.querySelectorAll('.ot-reg-item').forEach(btn => {
-            const port = findPortByName(btn.dataset.portName);
-            if (!port) return;
-            const rem = getRemainingMs(port.anchorAt, now);
-            const ready = rem <= 1000;
-            btn.classList.toggle('is-ready', ready);
-            btn.classList.toggle('is-active', selectedName === port.portName);
-            const t = btn.querySelector('[data-reg-time]');
-            if (t) t.textContent = formatCountdown(rem);
-        });
-    }
-
     // ─── 패널 ────────────────────────────────────────────────────────
 
     function renderPanel() {
         if (!panelEl) return;
 
         if (!selectedName) {
-            panelEl.classList.remove('is-ready');
+            panelEl.classList.remove('is-ready', 'is-sold-out');
             panelEl.innerHTML = '<p class="ot-panel-empty">맵에서 항구를 선택하세요.</p>';
             return;
         }
@@ -400,13 +389,12 @@
 
         // 미등록 — 지금 입장
         if (!tracked) {
-            panelEl.classList.remove('is-ready');
+            panelEl.classList.remove('is-ready', 'is-sold-out');
             panelEl.innerHTML = `
               <div class="ot-card-head">
                 <h2 class="ot-port-name">${escapeHtml(selectedName)}</h2>
                 <span class="ot-badge">미등록</span>
               </div>
-              <p class="ot-field-hint" style="margin:0;">이 항구 교역소에 처음 입장한 시각을 기록합니다.</p>
               <div class="ot-actions">
                 <button type="button" class="ot-btn ot-btn-primary" data-action="enter">지금 입장</button>
               </div>`;
@@ -414,27 +402,26 @@
         }
 
         const rem = getRemainingMs(tracked.anchorAt, now);
-        const next = getNextResetMs(tracked.anchorAt, now);
+        const sold = isSoldOut(tracked, now);
         const ready = rem <= 1000;
         const remVal = formatCountdown(rem);
 
-        panelEl.classList.toggle('is-ready', ready);
+        panelEl.classList.toggle('is-ready', ready && !sold);
+        panelEl.classList.toggle('is-sold-out', sold);
         panelEl.innerHTML = `
           <div class="ot-card-head">
             <h2 class="ot-port-name">${escapeHtml(tracked.portName)}</h2>
-            <span class="ot-badge" data-role="badge">${ready ? '재고 리셋됨' : '대기중'}</span>
+            <div class="ot-head-actions">
+              <button type="button" class="ot-btn ot-btn-accent" data-action="gem-reset">초기화</button>
+              <button type="button" class="ot-btn ot-btn-danger" data-action="delete">삭제</button>
+            </div>
           </div>
 
           <div class="ot-countdown-row">
             <div class="ot-countdown" data-role="countdown">${remVal}</div>
-            <div class="ot-meta">
-              <div>다음 리셋 <strong data-role="next">${formatClock(next)}</strong></div>
-              <div class="ot-hint" data-role="hint">${ready ? '구매 가능' : '후 재고 초기화'}</div>
-            </div>
           </div>
 
           <div class="ot-field">
-            <label class="ot-label" for="ot-remain-input">남은 시간 (게임 기준)</label>
             <div class="ot-field-row">
               <input type="text" id="ot-remain-input"
                 class="ot-input ot-input-remaining"
@@ -443,16 +430,17 @@
                 placeholder="28:13"
                 value="${escapeAttr(remVal)}"
                 maxlength="5"
-                autocomplete="off" />
+                autocomplete="off"
+                aria-label="남은 시간" />
               <button type="button" class="ot-btn ot-btn-ghost" data-action="sync">현재</button>
               <button type="button" class="ot-btn ot-btn-primary" data-action="apply">적용</button>
             </div>
-            <span class="ot-field-hint">MM:SS · 0:00 = 방금 리셋, 30:00 = 방금 입장</span>
           </div>
 
           <div class="ot-actions">
-            <button type="button" class="ot-btn ot-btn-accent" data-action="gem-reset">재화 초기화</button>
-            <button type="button" class="ot-btn ot-btn-danger" data-action="delete">삭제</button>
+            <button type="button" class="ot-btn ot-btn-visit${sold ? ' is-on' : ''}"
+              data-action="visit"
+              aria-pressed="${sold ? 'true' : 'false'}">방문</button>
           </div>`;
         panelEl.dataset.portId = tracked.id;
     }
@@ -464,20 +452,20 @@
 
         const now = Date.now();
         const rem = getRemainingMs(tracked.anchorAt, now);
-        const next = getNextResetMs(tracked.anchorAt, now);
+        const sold = isSoldOut(tracked, now);
         const ready = rem <= 1000;
 
-        panelEl.classList.toggle('is-ready', ready);
+        panelEl.classList.toggle('is-ready', ready && !sold);
+        panelEl.classList.toggle('is-sold-out', sold);
         const cd = panelEl.querySelector('[data-role="countdown"]');
-        const nx = panelEl.querySelector('[data-role="next"]');
-        const badge = panelEl.querySelector('[data-role="badge"]');
-        const hint = panelEl.querySelector('[data-role="hint"]');
         const remInput = panelEl.querySelector('[data-role="remaining"]');
+        const visitBtn = panelEl.querySelector('[data-action="visit"]');
 
         if (cd) cd.textContent = formatCountdown(rem);
-        if (nx) nx.textContent = formatClock(next);
-        if (badge) badge.textContent = ready ? '재고 리셋됨' : '대기중';
-        if (hint) hint.textContent = ready ? '구매 가능' : '후 재고 초기화';
+        if (visitBtn) {
+            visitBtn.classList.toggle('is-on', sold);
+            visitBtn.setAttribute('aria-pressed', sold ? 'true' : 'false');
+        }
 
         // 입력 중이면 덮어쓰지 않음
         if (remInput && document.activeElement !== remInput) {
@@ -488,19 +476,17 @@
     function selectPort(name) {
         selectedName = name;
         renderMap();
-        renderRegList();
         renderPanel();
     }
 
     function refreshAll() {
         renderMap();
-        renderRegList();
         renderPanel();
     }
 
     function tickAll() {
+        flushExpiredSoldOut();
         tickMapPins();
-        tickRegList();
         tickPanel();
     }
 
@@ -514,6 +500,8 @@
             portName: DEFAULT_PORT,
             anchorAt: new Date().toISOString(),
             intervalMin: INTERVAL_MIN,
+            soldOut: false,
+            soldOutAt: null,
         });
         setStatus(`「${DEFAULT_PORT}」항구를 추가했습니다.`);
         return window.originDb.listPorts();
@@ -549,7 +537,11 @@
             let list = await window.originDb.listPorts();
             list = await migratePortNames(list);
             list = await ensureOdessa(list);
-            ports = list;
+            ports = list.map(p => ({
+                ...p,
+                soldOut: !!p.soldOut,
+                soldOutAt: p.soldOutAt || null,
+            }));
             const rename = window.renameOriginPort || (n => n);
             if (prev) selectedName = rename(prev);
             else if (!selectedName && findPortByName(DEFAULT_PORT)) selectedName = DEFAULT_PORT;
@@ -565,13 +557,16 @@
         }
     }
 
-    async function saveAnchor(id, iso) {
+    async function saveAnchor(id, iso, opts) {
         const port = ports.find(p => p.id === id);
         if (!port) return;
+        const clearSold = opts && opts.clearSoldOut;
         await window.originDb.savePort({
             ...port,
             anchorAt: iso,
             intervalMin: INTERVAL_MIN,
+            soldOut: clearSold ? false : !!port.soldOut,
+            soldOutAt: clearSold ? null : (port.soldOutAt || null),
         });
         await reload(true);
         setStatus(`「${port.portName}」남은 시간을 반영했습니다.`);
@@ -674,14 +669,6 @@
         editCancelBtn.addEventListener('click', () => { exitEditMode(false); });
     }
 
-    if (regListEl) {
-        regListEl.addEventListener('click', (e) => {
-            const btn = e.target.closest('[data-port-name]');
-            if (!btn) return;
-            selectPort(btn.dataset.portName);
-        });
-    }
-
     if (panelEl) {
         panelEl.addEventListener('click', async (e) => {
             const btn = e.target.closest('[data-action]');
@@ -696,6 +683,8 @@
                         portName: selectedName,
                         anchorAt: new Date().toISOString(),
                         intervalMin: INTERVAL_MIN,
+                        soldOut: false,
+                        soldOutAt: null,
                     });
                     await reload(true);
                     setStatus(`「${selectedName}」지금 입장으로 등록했습니다.`);
@@ -723,12 +712,28 @@
                     return;
                 }
 
+                if (action === 'visit') {
+                    btn.disabled = true;
+                    const turnOn = !isSoldOut(tracked);
+                    await window.originDb.savePort({
+                        ...tracked,
+                        intervalMin: INTERVAL_MIN,
+                        soldOut: turnOn,
+                        soldOutAt: turnOn ? new Date().toISOString() : null,
+                    });
+                    await reload(true);
+                    setStatus(turnOn
+                        ? `「${tracked.portName}」방문 표시했습니다. (타이머는 그대로)`
+                        : `「${tracked.portName}」방문 표시를 해제했습니다.`);
+                    return;
+                }
+
                 if (action === 'gem-reset') {
                     if (!confirm(`「${tracked.portName}」재화로 재고를 초기화했습니까?\n30분 주기가 지금부터 다시 시작됩니다.`)) {
                         return;
                     }
                     btn.disabled = true;
-                    await saveAnchor(tracked.id, new Date().toISOString());
+                    await saveAnchor(tracked.id, new Date().toISOString(), { clearSoldOut: true });
                     setStatus(`「${tracked.portName}」재화 초기화 — 30분 주기를 지금부터 다시 시작합니다.`);
                     return;
                 }

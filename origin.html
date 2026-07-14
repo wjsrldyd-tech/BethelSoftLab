@@ -134,6 +134,11 @@
         box-shadow: 0 0 0 1px rgba(14, 165, 233, 0.25);
       }
 
+      .ot-panel.is-sold-out {
+        border-color: rgba(251, 146, 60, 0.45);
+        box-shadow: 0 0 0 1px rgba(251, 146, 60, 0.2);
+      }
+
       .ot-panel-empty {
         margin: 0;
         color: var(--text);
@@ -146,6 +151,22 @@
         align-items: center;
         justify-content: space-between;
         gap: 0.5rem;
+      }
+
+      .ot-head-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        flex-shrink: 0;
+      }
+
+      .ot-head-actions .ot-btn {
+        padding: 0.28rem 0.55rem;
+        font-size: 0.74rem;
+      }
+
+      .ot-head-actions .ot-btn-danger {
+        margin-left: 0;
       }
 
       .ot-port-name {
@@ -169,6 +190,12 @@
         border-color: rgba(34, 197, 94, 0.4);
         background: rgba(34, 197, 94, 0.12);
         color: #86efac;
+      }
+
+      .ot-panel.is-sold-out .ot-badge {
+        border-color: rgba(251, 146, 60, 0.45);
+        background: rgba(251, 146, 60, 0.14);
+        color: #fdba74;
       }
 
       .ot-countdown-row {
@@ -256,6 +283,10 @@
         flex-wrap: wrap;
       }
 
+      .ot-actions:has(.ot-btn-visit) {
+        margin-top: 0.15rem;
+      }
+
       .ot-btn {
         padding: 0.42rem 0.75rem;
         border-radius: 8px;
@@ -273,68 +304,27 @@
       .ot-btn-primary:hover { background: rgba(14, 165, 233, 0.12); }
       .ot-btn-accent { border-color: #f59e0b; color: #fcd34d; }
       .ot-btn-accent:hover { background: rgba(245, 158, 11, 0.12); }
-      .ot-btn-danger { border-color: rgba(248, 113, 113, 0.45); color: #fca5a5; margin-left: auto; }
+      .ot-btn-visit {
+        width: 100%;
+        padding: 0.85rem 1rem;
+        font-size: 1.05rem;
+        font-weight: 650;
+        letter-spacing: 0.06em;
+        border-color: #fb923c;
+        color: #fdba74;
+        border-radius: 10px;
+      }
+      .ot-btn-visit:hover { background: rgba(251, 146, 60, 0.12); }
+      .ot-btn-visit.is-on {
+        background: rgba(251, 146, 60, 0.22);
+        border-color: #fb923c;
+        color: #ffedd5;
+        box-shadow: inset 0 0 0 1px rgba(251, 146, 60, 0.35);
+      }
+      .ot-btn-visit.is-on:hover { background: rgba(251, 146, 60, 0.3); }
+      .ot-btn-danger { border-color: rgba(248, 113, 113, 0.45); color: #fca5a5; }
       .ot-btn-danger:hover { background: rgba(248, 113, 113, 0.1); }
       .ot-btn-ghost { color: var(--text); }
-
-      .ot-registered {
-        background: var(--bg-card);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 0.7rem 0.85rem;
-        overflow: auto;
-        flex: 1 1 auto;
-        min-height: 0;
-      }
-
-      .ot-registered-title {
-        margin: 0 0 0.45rem;
-        font-size: 0.72rem;
-        font-weight: 600;
-        color: var(--text);
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-      }
-
-      .ot-reg-list {
-        list-style: none;
-        margin: 0;
-        padding: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-      }
-
-      .ot-reg-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 0.5rem;
-        padding: 0.4rem 0.5rem;
-        border-radius: 8px;
-        border: 1px solid transparent;
-        background: transparent;
-        color: var(--text-h);
-        font: inherit;
-        font-size: 0.84rem;
-        cursor: pointer;
-        text-align: left;
-        width: 100%;
-      }
-
-      .ot-reg-item:hover,
-      .ot-reg-item.is-active {
-        background: var(--bg-card-hover);
-        border-color: var(--border);
-      }
-
-      .ot-reg-item.is-ready .ot-reg-time { color: #86efac; }
-      .ot-reg-time {
-        font-variant-numeric: tabular-nums;
-        font-weight: 600;
-        color: #7dd3fc;
-        font-size: 0.8rem;
-      }
 
       /* ===== 오른쪽 지도 ===== */
       .ot-map-pane {
@@ -431,6 +421,11 @@
         border-color: #86efac;
       }
 
+      .ot-pin.is-sold-out .ot-pin-marker {
+        background: #fb923c;
+        border-color: #fdba74;
+      }
+
       .ot-pin.is-active .ot-pin-marker {
         box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.5);
       }
@@ -459,6 +454,7 @@
       }
 
       .ot-pin.is-ready .ot-pin-time { color: #86efac; }
+      .ot-pin.is-sold-out .ot-pin-time { color: #fdba74; }
       .ot-pin:hover .ot-pin-name { border-color: var(--origin); color: #fff; }
 
       .ot-map.is-edit-mode .ot-pin {
@@ -623,10 +619,6 @@
         <aside class="ot-side">
           <div id="ot-panel" class="ot-panel" aria-live="polite">
             <p class="ot-panel-empty">맵에서 항구를 선택하세요.</p>
-          </div>
-          <div class="ot-registered">
-            <h2 class="ot-registered-title">등록된 교역소</h2>
-            <ul id="ot-reg-list" class="ot-reg-list"></ul>
           </div>
         </aside>
 

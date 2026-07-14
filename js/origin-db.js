@@ -33,6 +33,8 @@
             portName:    row.port_name,
             anchorAt:    row.anchor_at,
             intervalMin: row.interval_min ?? 30,
+            soldOut:     !!row.sold_out,
+            soldOutAt:   row.sold_out_at || null,
             createdAt:   row.created_at,
             updatedAt:   row.updated_at,
         };
@@ -89,6 +91,12 @@
                 ? port.anchorAt.toISOString()
                 : port.anchorAt,
             interval_min: port.intervalMin ?? 30,
+            sold_out:     !!port.soldOut,
+            sold_out_at:  port.soldOut
+                ? (port.soldOutAt instanceof Date
+                    ? port.soldOutAt.toISOString()
+                    : (port.soldOutAt || new Date().toISOString()))
+                : null,
             updated_at:   new Date().toISOString(),
         };
         const { error } = await client
@@ -168,6 +176,8 @@
             savePort: async (port) => {
                 const all = loadAll();
                 const id = port.id || genId('op');
+                const prev = all.find(e => e.id === id);
+                const soldOut = port.soldOut != null ? !!port.soldOut : !!(prev && prev.soldOut);
                 const row = {
                     id,
                     tenantId: getTenantId(),
@@ -176,8 +186,14 @@
                         ? port.anchorAt.toISOString()
                         : port.anchorAt,
                     intervalMin: port.intervalMin ?? 30,
+                    soldOut,
+                    soldOutAt: soldOut
+                        ? (port.soldOutAt instanceof Date
+                            ? port.soldOutAt.toISOString()
+                            : (port.soldOutAt || (prev && prev.soldOutAt) || new Date().toISOString()))
+                        : null,
                     updatedAt: new Date().toISOString(),
-                    createdAt: port.createdAt || new Date().toISOString(),
+                    createdAt: (prev && prev.createdAt) || port.createdAt || new Date().toISOString(),
                 };
                 const idx = all.findIndex(e => e.id === id);
                 if (idx >= 0) all[idx] = { ...all[idx], ...row };
