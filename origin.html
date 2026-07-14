@@ -290,6 +290,13 @@
       }
 
       /* ===== 맵 ===== */
+      .ot-map-column {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        min-height: 0;
+      }
+
       .ot-map-wrap {
         position: relative;
         border: 1px solid var(--border);
@@ -406,6 +413,36 @@
         color: #fff;
       }
 
+      .ot-view-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        margin-bottom: 0.55rem;
+      }
+
+      .ot-view-tab {
+        padding: 0.35rem 0.65rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: var(--bg-card);
+        color: var(--text);
+        font-size: 0.78rem;
+        font-family: inherit;
+        cursor: pointer;
+        transition: background 0.15s, border-color 0.15s, color 0.15s;
+      }
+
+      .ot-view-tab:hover {
+        background: var(--bg-card-hover);
+        color: var(--text-h);
+      }
+
+      .ot-view-tab.is-active {
+        border-color: var(--origin);
+        color: #7dd3fc;
+        background: rgba(14, 165, 233, 0.12);
+      }
+
       @media (max-width: 560px) {
         .ot-countdown { font-size: 2rem; }
         .ot-btn-danger { margin-left: 0; }
@@ -419,7 +456,7 @@
         <div>
           <a href="game.html" class="back-link">← 게임으로</a>
           <h1 class="ot-title">교역소 타이머</h1>
-          <p class="ot-sub">동지중해 · 위치를 눌러 타이머 · 재고 30분 리셋</p>
+          <p class="ot-sub">해역 맵 · 항구를 눌러 타이머 · 재고 30분 리셋</p>
         </div>
       </header>
 
@@ -437,9 +474,12 @@
           </div>
         </aside>
 
-        <div class="ot-map-wrap">
-          <div id="ot-map" class="ot-map" aria-label="동지중해 항구 맵">
-            <span class="ot-map-label">동지중해 · 흑해</span>
+        <div class="ot-map-column">
+          <div id="ot-view-tabs" class="ot-view-tabs" aria-label="해역 선택"></div>
+          <div class="ot-map-wrap">
+            <div id="ot-map" class="ot-map" aria-label="항구 맵">
+              <span class="ot-map-label">동지중해 · 흑해</span>
+            </div>
           </div>
         </div>
       </div>
@@ -448,7 +488,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-config.js"></script>
     <script src="js/origin-db.js"></script>
-    <script src="js/origin-ports-eastmed.js"></script>
+    <script src="js/origin-ports-data.js"></script>
+    <script src="js/origin-ports-coords.js"></script>
     <script src="js/origin-timer.js"></script>
   </body>
 </html>

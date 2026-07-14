@@ -1,6 +1,6 @@
 // =============== origin-timer.js ===============
 // 대항해시대 오리진 교역소 재고 타이머 UI
-// 절대 시각(anchor_at) 기준 30분 주기 · 동지중해 맵 핀
+// 절대 시각(anchor_at) 기준 30분 주기 · 해역별 맵 핀
 
 (function () {
     'use strict';
@@ -8,17 +8,34 @@
     const INTERVAL_MIN = 30;
     const INTERVAL_MS  = INTERVAL_MIN * 60 * 1000;
     const DEFAULT_PORT = '오데사';
-    const MAP_PORTS = window.ORIGIN_EASTMED_PORTS || [];
+    const DEFAULT_VIEW = 'eastmed';
+    const MAP_VIEWS = window.ORIGIN_MAP_VIEWS || [];
 
     const $ = (sel) => document.querySelector(sel);
-    const mapEl    = $('#ot-map');
-    const panelEl  = $('#ot-panel');
+    const mapEl     = $('#ot-map');
+    const panelEl   = $('#ot-panel');
     const regListEl = $('#ot-reg-list');
-    const statusEl = $('#ot-status');
+    const statusEl  = $('#ot-status');
+    const viewTabsEl = $('#ot-view-tabs');
 
     let ports = [];
-    let selectedName = null; // 맵 항구 이름
+    let selectedName = null;
+    let selectedViewId = DEFAULT_VIEW;
     let tickTimer = null;
+
+    function currentMapPins() {
+        if (typeof window.getOriginMapPins === 'function') {
+            return window.getOriginMapPins(selectedViewId);
+        }
+        return window.ORIGIN_EASTMED_PORTS || [];
+    }
+
+    function currentView() {
+        if (typeof window.getOriginMapView === 'function') {
+            return window.getOriginMapView(selectedViewId);
+        }
+        return MAP_VIEWS[0] || { id: DEFAULT_VIEW, label: '동지중해·흑해', anchor: DEFAULT_PORT };
+    }
 
     // ─── 시간 계산 ───────────────────────────────────────────────────
 
@@ -98,15 +115,33 @@
         return ports.find(p => p.portName === name) || null;
     }
 
+    // ─── 해역 탭 ─────────────────────────────────────────────────────
+
+    function renderViewTabs() {
+        if (!viewTabsEl || MAP_VIEWS.length === 0) return;
+        viewTabsEl.innerHTML = MAP_VIEWS.map(v => `
+          <button type="button" class="ot-view-tab${v.id === selectedViewId ? ' is-active' : ''}"
+            data-view-id="${escapeAttr(v.id)}">${escapeHtml(v.label)}</button>
+        `).join('');
+    }
+
+    function selectView(viewId) {
+        selectedViewId = viewId;
+        renderViewTabs();
+        renderMap();
+        const view = currentView();
+        setStatus(`${view.label} · 기준: ${view.anchor || '—'}`);
+    }
+
     // ─── 맵 ─────────────────────────────────────────────────────────
 
     function renderMap() {
         if (!mapEl) return;
         const now = Date.now();
-        const label = mapEl.querySelector('.ot-map-label');
-        const labelHtml = label ? label.outerHTML : '<span class="ot-map-label">동지중해 · 흑해</span>';
+        const view = currentView();
+        const labelHtml = `<span class="ot-map-label">${escapeHtml(view.label)}${view.anchor ? ' · 기준 ' + escapeHtml(view.anchor) : ''}</span>`;
 
-        const pins = MAP_PORTS.map(loc => {
+        const pins = currentMapPins().map(loc => {
             const tracked = findPortByName(loc.name);
             const rem = tracked ? getRemainingMs(tracked.anchorAt, now) : null;
             const ready = tracked && rem <= 1000;
@@ -379,6 +414,14 @@
 
     // ─── 이벤트 ──────────────────────────────────────────────────────
 
+    if (viewTabsEl) {
+        viewTabsEl.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-view-id]');
+            if (!btn) return;
+            selectView(btn.dataset.viewId);
+        });
+    }
+
     if (mapEl) {
         mapEl.addEventListener('click', (e) => {
             const pin = e.target.closest('.ot-pin');
@@ -479,6 +522,7 @@
             setStatus('originDb가 없습니다. 스크립트 로드 순서를 확인하세요.', true);
             return;
         }
+        renderViewTabs();
         await reload(false);
         tickTimer = setInterval(tickAll, 1000);
     }
