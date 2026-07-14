@@ -430,6 +430,86 @@
       .ot-pin.is-ready .ot-pin-time { color: #86efac; }
       .ot-pin:hover .ot-pin-name { border-color: var(--origin); color: #fff; }
 
+      .ot-map.is-edit-mode .ot-pin {
+        cursor: grab;
+        touch-action: none;
+        user-select: none;
+      }
+
+      .ot-map.is-edit-mode .ot-pin.is-dragging {
+        cursor: grabbing;
+        z-index: 20;
+        opacity: 0.92;
+      }
+
+      .ot-map.is-edit-mode .ot-pin.is-dragging .ot-pin-name {
+        border-color: #f59e0b;
+        color: #fef3c7;
+      }
+
+      .ot-edit-hint {
+        display: none;
+        position: absolute;
+        bottom: 0.7rem;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 9;
+        padding: 0.4rem 0.85rem;
+        border-radius: 6px;
+        border: 1px solid rgba(245, 158, 11, 0.45);
+        background: rgba(30, 24, 12, 0.92);
+        color: #fbbf24;
+        font-size: 0.8rem;
+        font-weight: 600;
+        pointer-events: none;
+        white-space: nowrap;
+      }
+
+      .ot-map-pane.is-edit-mode .ot-edit-hint { display: block; }
+
+      .ot-edit-controls {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        margin-left: auto;
+        flex-shrink: 0;
+      }
+
+      .ot-edit-btn {
+        padding: 0.35rem 0.7rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        font-family: inherit;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: var(--bg-card);
+        color: var(--text-h);
+        cursor: pointer;
+      }
+
+      .ot-edit-btn:hover {
+        border-color: var(--origin);
+        background: rgba(14, 165, 233, 0.1);
+      }
+
+      .ot-edit-btn.is-active {
+        border-color: #f59e0b;
+        background: rgba(245, 158, 11, 0.15);
+        color: #fbbf24;
+      }
+
+      .ot-edit-btn-save {
+        border-color: rgba(34, 197, 94, 0.45);
+        color: #86efac;
+      }
+
+      .ot-edit-btn-cancel {
+        border-color: rgba(248, 113, 113, 0.4);
+        color: #fca5a5;
+      }
+
+      .ot-edit-btn[hidden] { display: none; }
+
       /* 사방 이동 버튼 */
       .ot-nav {
         position: absolute;
@@ -501,6 +581,11 @@
         <span class="ot-toolbar-title">교역소 타이머</span>
         <nav id="ot-view-tabs" class="ot-view-tabs" aria-label="해역 메뉴"></nav>
         <p id="ot-status" class="ot-status" aria-live="polite"></p>
+        <div class="ot-edit-controls">
+          <button type="button" id="ot-edit-toggle" class="ot-edit-btn" aria-pressed="false">위치 수정</button>
+          <button type="button" id="ot-edit-save" class="ot-edit-btn ot-edit-btn-save" hidden>저장</button>
+          <button type="button" id="ot-edit-cancel" class="ot-edit-btn ot-edit-btn-cancel" hidden>취소</button>
+        </div>
       </header>
 
       <div class="ot-main">
@@ -518,6 +603,7 @@
           <div id="ot-map" class="ot-map" aria-label="항구 맵">
             <span class="ot-map-label">동지중해 · 흑해</span>
           </div>
+          <div class="ot-edit-hint" aria-hidden="true">위치 수정 모드 — 핀을 드래그한 뒤 저장하세요</div>
           <button type="button" class="ot-nav ot-nav-up" data-nav="up" aria-label="북쪽 해역" title="위">↑</button>
           <button type="button" class="ot-nav ot-nav-down" data-nav="down" aria-label="남쪽 해역" title="아래">↓</button>
           <button type="button" class="ot-nav ot-nav-left" data-nav="left" aria-label="서쪽 해역" title="왼쪽">←</button>

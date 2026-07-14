@@ -10,6 +10,8 @@
     const DEFAULT_PORT = '오데사';
     const DEFAULT_VIEW = 'eastmed';
     const MAP_VIEWS = window.ORIGIN_MAP_VIEWS || [];
+    const PIN_OVERRIDE_KEY = 'origin_pin_overrides_v1';
+    const DRAG_THRESHOLD = 4;
 
     const $ = (sel) => document.querySelector(sel);
     const mapEl      = $('#ot-map');
@@ -18,17 +20,71 @@
     const statusEl   = $('#ot-status');
     const viewTabsEl = $('#ot-view-tabs');
     const mapPaneEl  = document.querySelector('.ot-map-pane');
+    const editToggleBtn = $('#ot-edit-toggle');
+    const editSaveBtn   = $('#ot-edit-save');
+    const editCancelBtn = $('#ot-edit-cancel');
 
     let ports = [];
     let selectedName = null;
     let selectedViewId = DEFAULT_VIEW;
     let tickTimer = null;
 
+    /** @type {Record<string, Record<string, {x:number,y:number}>>} */
+    let pinOverrides = loadPinOverrides();
+    let editMode = false;
+    /** 수정 중 작업 복사본 (저장 전) */
+    let editDraft = null;
+    let dragState = null;
+    let suppressPinClick = false;
+
+    function loadPinOverrides() {
+        try {
+            const raw = localStorage.getItem(PIN_OVERRIDE_KEY);
+            if (!raw) return {};
+            const data = JSON.parse(raw);
+            return data && typeof data === 'object' ? data : {};
+        } catch {
+            return {};
+        }
+    }
+
+    function savePinOverrides(data) {
+        localStorage.setItem(PIN_OVERRIDE_KEY, JSON.stringify(data));
+    }
+
+    function cloneOverrides(src) {
+        return JSON.parse(JSON.stringify(src || {}));
+    }
+
+    function activeOverrides() {
+        return editMode && editDraft ? editDraft : pinOverrides;
+    }
+
     function currentMapPins() {
         if (typeof window.getOriginMapPins === 'function') {
             return window.getOriginMapPins(selectedViewId);
         }
         return window.ORIGIN_EASTMED_PORTS || [];
+    }
+
+    /** 기본 좌표 + (저장된/편집 중) 오버라이드 */
+    function displayPins() {
+        const base = currentMapPins();
+        const ov = activeOverrides()[selectedViewId] || {};
+        return base.map(loc => {
+            const o = ov[loc.name];
+            if (!o) return loc;
+            return { ...loc, x: o.x, y: o.y };
+        });
+    }
+
+    function setPinOverride(viewId, name, x, y) {
+        const target = editMode ? editDraft : pinOverrides;
+        if (!target[viewId]) target[viewId] = {};
+        target[viewId][name] = {
+            x: Math.round(x * 100) / 100,
+            y: Math.round(y * 100) / 100,
+        };
     }
 
     function currentView() {
@@ -167,7 +223,7 @@
         const view = currentView();
         const labelHtml = `<span class="ot-map-label">${escapeHtml(view.label)}${view.anchor ? ' · 기준 ' + escapeHtml(view.anchor) : ''}</span>`;
 
-        const pins = currentMapPins().map(loc => {
+        const pins = displayPins().map(loc => {
             const tracked = findPortByName(loc.name);
             const rem = tracked ? getRemainingMs(tracked.anchorAt, now) : null;
             const ready = tracked && rem <= 1000;
@@ -195,6 +251,46 @@
         }).join('');
 
         mapEl.innerHTML = labelHtml + pins;
+        mapEl.classList.toggle('is-edit-mode', editMode);
+        if (mapPaneEl) mapPaneEl.classList.toggle('is-edit-mode', editMode);
+    }
+
+    function updateEditChrome() {
+        if (editToggleBtn) {
+            editToggleBtn.classList.toggle('is-active', editMode);
+            editToggleBtn.setAttribute('aria-pressed', editMode ? 'true' : 'false');
+            editToggleBtn.hidden = editMode;
+        }
+        if (editSaveBtn) editSaveBtn.hidden = !editMode;
+        if (editCancelBtn) editCancelBtn.hidden = !editMode;
+        if (mapEl) mapEl.classList.toggle('is-edit-mode', editMode);
+        if (mapPaneEl) mapPaneEl.classList.toggle('is-edit-mode', editMode);
+    }
+
+    function enterEditMode() {
+        if (editMode) return;
+        editMode = true;
+        editDraft = cloneOverrides(pinOverrides);
+        updateEditChrome();
+        renderMap();
+        setStatus('위치 수정 모드 — 핀을 드래그한 뒤 저장하세요.');
+    }
+
+    function exitEditMode(save) {
+        if (!editMode) return;
+        if (save) {
+            pinOverrides = cloneOverrides(editDraft);
+            savePinOverrides(pinOverrides);
+            setStatus('핀 위치를 저장했습니다. (이 브라우저에 보관)');
+        } else {
+            setStatus('위치 수정을 취소했습니다.');
+        }
+        editMode = false;
+        editDraft = null;
+        dragState = null;
+        updateEditChrome();
+        renderMap();
+        tickMapPins();
     }
 
     function tickMapPins() {
@@ -486,10 +582,79 @@
 
     if (mapEl) {
         mapEl.addEventListener('click', (e) => {
+            if (suppressPinClick) {
+                suppressPinClick = false;
+                e.preventDefault();
+                return;
+            }
             const pin = e.target.closest('.ot-pin');
             if (!pin) return;
             selectPort(pin.dataset.portName);
         });
+
+        mapEl.addEventListener('pointerdown', (e) => {
+            if (!editMode) return;
+            const pin = e.target.closest('.ot-pin');
+            if (!pin) return;
+            e.preventDefault();
+            const rect = mapEl.getBoundingClientRect();
+            dragState = {
+                pin,
+                pointerId: e.pointerId,
+                name: pin.dataset.portName,
+                startX: e.clientX,
+                startY: e.clientY,
+                moved: false,
+                mapW: rect.width,
+                mapH: rect.height,
+                mapLeft: rect.left,
+                mapTop: rect.top,
+            };
+            try { pin.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+        });
+
+        mapEl.addEventListener('pointermove', (e) => {
+            if (!dragState || e.pointerId !== dragState.pointerId) return;
+            const dx = e.clientX - dragState.startX;
+            const dy = e.clientY - dragState.startY;
+            if (!dragState.moved && Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
+            dragState.moved = true;
+            dragState.pin.classList.add('is-dragging');
+
+            const x = ((e.clientX - dragState.mapLeft) / dragState.mapW) * 100;
+            const y = ((e.clientY - dragState.mapTop) / dragState.mapH) * 100;
+            const clampedX = Math.min(98, Math.max(2, x));
+            const clampedY = Math.min(98, Math.max(2, y));
+            dragState.pin.style.left = clampedX + '%';
+            dragState.pin.style.top = clampedY + '%';
+            setPinOverride(selectedViewId, dragState.name, clampedX, clampedY);
+        });
+
+        function endDrag(e) {
+            if (!dragState || e.pointerId !== dragState.pointerId) return;
+            const { pin, moved, name } = dragState;
+            pin.classList.remove('is-dragging');
+            try { pin.releasePointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+            dragState = null;
+            if (moved) {
+                suppressPinClick = true;
+                selectPort(name);
+                setStatus(`「${name}」위치 이동 — 저장을 누르면 반영됩니다.`);
+            }
+        }
+
+        mapEl.addEventListener('pointerup', endDrag);
+        mapEl.addEventListener('pointercancel', endDrag);
+    }
+
+    if (editToggleBtn) {
+        editToggleBtn.addEventListener('click', () => enterEditMode());
+    }
+    if (editSaveBtn) {
+        editSaveBtn.addEventListener('click', () => exitEditMode(true));
+    }
+    if (editCancelBtn) {
+        editCancelBtn.addEventListener('click', () => exitEditMode(false));
     }
 
     if (regListEl) {
