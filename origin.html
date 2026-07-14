@@ -3,343 +3,121 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>대항해시대 오리진 - 교역소 타이머 - BethelSoftLab</title>
+    <title>교역소 타이머 · 오리진 - BethelSoftLab</title>
     <link rel="stylesheet" href="css/style.css" />
     <style>
-      .ot-page {
-        min-height: 100svh;
+      html, body {
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background: #000;
+      }
+
+      .ot-app {
+        height: 100svh;
         display: flex;
         flex-direction: column;
-        padding: var(--page-padding-y) var(--page-padding-x);
-        gap: 0.85rem;
-        width: 100%;
+        background: #000;
       }
 
-      .ot-header {
+      /* ===== 얇은 툴바 ===== */
+      .ot-toolbar {
+        flex: 0 0 auto;
         display: flex;
-        align-items: flex-end;
-        justify-content: space-between;
-        gap: 0.75rem;
-        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.55rem;
+        padding: 0.45rem 0.65rem;
+        border-bottom: 1px solid var(--border);
+        background: #0c0c10;
+        z-index: 20;
+        min-height: 44px;
       }
 
-      .ot-title {
-        margin: 0.85rem 0 0;
-        font-size: 1.8rem;
+      .ot-toolbar .back-link {
+        flex-shrink: 0;
+        padding: 0.35rem 0.65rem;
+        font-size: 0.82rem;
+      }
+
+      .ot-toolbar-title {
+        flex-shrink: 0;
+        font-size: 0.88rem;
         font-weight: 600;
         color: var(--text-h);
+        white-space: nowrap;
       }
 
-      .ot-sub {
-        margin: 0.25rem 0 0;
-        font-size: 0.88rem;
-        color: var(--text);
+      .ot-view-select {
+        min-width: 9rem;
+        max-width: 14rem;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text-h);
+        font-size: 0.82rem;
+        font-family: inherit;
+        padding: 0.35rem 0.55rem;
+        outline: none;
+      }
+
+      .ot-view-select:focus {
+        border-color: var(--origin);
       }
 
       .ot-status {
-        min-height: 1.2rem;
-        font-size: 0.85rem;
+        flex: 1 1 auto;
+        min-width: 0;
+        font-size: 0.78rem;
         color: var(--text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .ot-status.is-error { color: #f87171; }
 
-      .ot-main {
-        display: grid;
-        grid-template-columns: minmax(280px, 340px) 1fr;
-        gap: 1rem;
-        flex: 1;
-        min-height: 0;
-        align-items: stretch;
-      }
-
-      @media (max-width: 900px) {
-        .ot-main {
-          grid-template-columns: 1fr;
-        }
-      }
-
-      /* ===== 패널 ===== */
-      .ot-side {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-        min-width: 0;
-      }
-
-      .ot-panel {
+      .ot-toolbar-btn {
+        flex-shrink: 0;
+        padding: 0.35rem 0.7rem;
+        border-radius: 8px;
+        border: 1px solid var(--border);
         background: var(--bg-card);
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        padding: 1.1rem 1.2rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.9rem;
-        flex: 1;
-      }
-
-      .ot-panel.is-ready {
-        border-color: var(--origin);
-        box-shadow: 0 0 0 1px rgba(14, 165, 233, 0.25);
-      }
-
-      .ot-panel-empty {
-        color: var(--text);
-        font-size: 0.9rem;
-        line-height: 1.55;
-        margin: auto 0;
-        text-align: center;
-        padding: 1.5rem 0.5rem;
-      }
-
-      .ot-card-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 0.75rem;
-      }
-
-      .ot-port-name {
-        margin: 0;
-        font-size: 1.25rem;
-        font-weight: 600;
         color: var(--text-h);
-      }
-
-      .ot-badge {
-        font-size: 0.75rem;
-        padding: 0.2rem 0.55rem;
-        border-radius: 999px;
-        border: 1px solid rgba(14, 165, 233, 0.35);
-        background: rgba(14, 165, 233, 0.12);
-        color: #7dd3fc;
-        white-space: nowrap;
-      }
-
-      .ot-panel.is-ready .ot-badge {
-        border-color: rgba(34, 197, 94, 0.4);
-        background: rgba(34, 197, 94, 0.12);
-        color: #86efac;
-      }
-
-      .ot-countdown-row {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        flex-wrap: wrap;
-      }
-
-      .ot-countdown {
-        font-size: 2.4rem;
-        font-weight: 700;
-        font-variant-numeric: tabular-nums;
-        letter-spacing: 0.04em;
-        color: var(--text-h);
-        line-height: 1;
-        min-width: 5.2rem;
-      }
-
-      .ot-panel.is-ready .ot-countdown { color: #86efac; }
-
-      .ot-meta {
-        font-size: 0.88rem;
-        color: var(--text);
-        display: flex;
-        flex-direction: column;
-        gap: 0.2rem;
-      }
-
-      .ot-meta strong { color: var(--text-h); font-weight: 600; }
-      .ot-hint { font-size: 0.78rem; opacity: 0.85; }
-
-      .ot-field { display: flex; flex-direction: column; gap: 0.35rem; }
-
-      .ot-label {
-        font-size: 0.78rem;
-        color: var(--text);
-        font-weight: 500;
-      }
-
-      .ot-field-row {
-        display: flex;
-        gap: 0.45rem;
-        flex-wrap: wrap;
-        align-items: center;
-      }
-
-      .ot-input {
-        flex: 1 1 8rem;
-        min-width: 6rem;
-        background: var(--bg);
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        color: var(--text-h);
-        font-size: 0.95rem;
-        font-family: inherit;
-        padding: 0.55rem 0.75rem;
-        outline: none;
-        transition: border-color 0.15s, box-shadow 0.15s;
-      }
-
-      .ot-input:focus {
-        border-color: var(--origin);
-        box-shadow: 0 0 0 3px var(--origin-glow);
-      }
-
-      .ot-input-remaining {
-        flex: 0 0 auto;
-        width: 5.5rem;
-        min-width: 5.5rem;
-        text-align: center;
-        font-size: 1.15rem;
-        font-weight: 600;
-        font-variant-numeric: tabular-nums;
-      }
-
-      .ot-field-hint {
-        font-size: 0.74rem;
-        color: var(--text);
-        opacity: 0.8;
-      }
-
-      .ot-actions {
-        display: flex;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-      }
-
-      .ot-btn {
-        padding: 0.5rem 0.9rem;
-        border-radius: 8px;
-        border: 1px solid var(--border);
-        background: var(--bg);
-        color: var(--text-h);
-        font-size: 0.88rem;
+        font-size: 0.8rem;
         font-family: inherit;
         cursor: pointer;
-        transition: background 0.15s, border-color 0.15s, color 0.15s;
       }
 
-      .ot-btn:hover { background: var(--bg-card-hover); }
-      .ot-btn:disabled { opacity: 0.55; cursor: not-allowed; }
-
-      .ot-btn-primary { border-color: var(--origin); color: #7dd3fc; }
-      .ot-btn-primary:hover { background: rgba(14, 165, 233, 0.12); }
-      .ot-btn-accent { border-color: #f59e0b; color: #fcd34d; }
-      .ot-btn-accent:hover { background: rgba(245, 158, 11, 0.12); }
-      .ot-btn-danger { border-color: rgba(248, 113, 113, 0.45); color: #fca5a5; margin-left: auto; }
-      .ot-btn-danger:hover { background: rgba(248, 113, 113, 0.1); }
-      .ot-btn-ghost { color: var(--text); }
-
-      .ot-registered {
-        background: var(--bg-card);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 0.75rem 0.9rem;
-        max-height: 11rem;
-        overflow: auto;
-      }
-
-      .ot-registered-title {
-        margin: 0 0 0.5rem;
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: var(--text);
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-      }
-
-      .ot-reg-list {
-        list-style: none;
-        margin: 0;
-        padding: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 0.3rem;
-      }
-
-      .ot-reg-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 0.5rem;
-        padding: 0.4rem 0.55rem;
-        border-radius: 8px;
-        border: 1px solid transparent;
-        background: transparent;
-        color: var(--text-h);
-        font: inherit;
-        font-size: 0.86rem;
-        cursor: pointer;
-        text-align: left;
-        width: 100%;
-      }
-
-      .ot-reg-item:hover,
-      .ot-reg-item.is-active {
-        background: var(--bg-card-hover);
-        border-color: var(--border);
-      }
-
-      .ot-reg-item.is-ready .ot-reg-time { color: #86efac; }
-      .ot-reg-time {
-        font-variant-numeric: tabular-nums;
-        font-weight: 600;
+      .ot-toolbar-btn:hover { background: var(--bg-card-hover); }
+      .ot-toolbar-btn.is-active {
+        border-color: var(--origin);
         color: #7dd3fc;
-        font-size: 0.82rem;
       }
 
-      /* ===== 맵 ===== */
-      .ot-map-column {
-        display: flex;
-        flex-direction: column;
-        min-width: 0;
-        min-height: 0;
-      }
-
-      .ot-map-wrap {
+      /* ===== 맵 스테이지 (나머지 전부) ===== */
+      .ot-stage {
         position: relative;
-        border: 1px solid var(--border);
-        border-radius: 14px;
+        flex: 1 1 auto;
+        min-height: 0;
         overflow: hidden;
-        background: #0a1620;
-        min-height: 420px;
       }
 
       .ot-map {
-        position: relative;
-        width: 100%;
-        height: 100%;
-        min-height: 520px;
-        background:
-          radial-gradient(ellipse 70% 55% at 55% 45%, #1a4a5c 0%, transparent 55%),
-          radial-gradient(ellipse 40% 35% at 25% 30%, #163848 0%, transparent 50%),
-          linear-gradient(160deg, #0c1c28 0%, #0e2a38 40%, #0a1822 100%);
-      }
-
-      /* 아주 연한 해안선 느낌 (장식) */
-      .ot-map::before {
-        content: '';
         position: absolute;
         inset: 0;
-        background-image:
-          radial-gradient(circle at 22% 28%, rgba(90, 110, 80, 0.22) 0 8%, transparent 9%),
-          radial-gradient(circle at 35% 55%, rgba(90, 110, 80, 0.18) 0 6%, transparent 7%),
-          radial-gradient(circle at 68% 25%, rgba(100, 95, 70, 0.2) 0 10%, transparent 11%),
-          radial-gradient(circle at 75% 55%, rgba(90, 100, 70, 0.16) 0 7%, transparent 8%),
-          radial-gradient(circle at 70% 75%, rgba(120, 110, 70, 0.14) 0 5%, transparent 6%);
-        pointer-events: none;
+        background: #12151c;
       }
 
       .ot-map-label {
         position: absolute;
-        top: 0.75rem;
-        left: 0.85rem;
+        top: 0.65rem;
+        right: 0.75rem;
+        left: auto;
         z-index: 2;
-        font-size: 0.78rem;
+        font-size: 0.72rem;
         font-weight: 600;
-        color: rgba(125, 211, 252, 0.75);
-        letter-spacing: 0.06em;
+        color: rgba(160, 160, 171, 0.65);
+        letter-spacing: 0.05em;
         text-transform: uppercase;
         pointer-events: none;
       }
@@ -367,7 +145,7 @@
         transform: rotate(-45deg);
         background: #94a3b8;
         border: 2px solid #e2e8f0;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
       }
 
       .ot-pin.is-tracked .ot-pin-marker {
@@ -381,109 +159,332 @@
       }
 
       .ot-pin.is-active .ot-pin-marker {
-        box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.45);
+        box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.5);
       }
 
       .ot-pin-name {
-        margin-top: 2px;
-        font-size: 0.68rem;
-        font-weight: 600;
-        color: #f0f0f5;
-        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+        margin-top: 3px;
+        font-size: 0.95rem;
+        font-weight: 650;
+        color: #f5f5f7;
         white-space: nowrap;
-        background: rgba(10, 14, 20, 0.72);
-        padding: 0.1rem 0.35rem;
-        border-radius: 4px;
-        border: 1px solid rgba(42, 42, 50, 0.8);
+        background: #1a1c24;
+        padding: 0.2rem 0.5rem;
+        border-radius: 5px;
+        border: 1px solid #3a3a44;
+        letter-spacing: -0.01em;
       }
 
       .ot-pin-time {
-        font-size: 0.7rem;
+        font-size: 0.84rem;
         font-weight: 700;
         font-variant-numeric: tabular-nums;
         color: #7dd3fc;
-        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
-        letter-spacing: 0.02em;
+        background: #1a1c24;
+        padding: 0.1rem 0.4rem;
+        border-radius: 4px;
+        border: 1px solid #2a2a32;
       }
 
       .ot-pin.is-ready .ot-pin-time { color: #86efac; }
+      .ot-pin:hover .ot-pin-name { border-color: var(--origin); color: #fff; }
 
-      .ot-pin:hover .ot-pin-name {
-        border-color: var(--origin);
-        color: #fff;
-      }
-
-      .ot-view-tabs {
+      /* ===== 플로팅 패널 ===== */
+      .ot-dock {
+        position: absolute;
+        top: 0.65rem;
+        left: 0.65rem;
+        z-index: 10;
+        width: min(320px, calc(100% - 1.3rem));
         display: flex;
-        flex-wrap: wrap;
-        gap: 0.35rem;
-        margin-bottom: 0.55rem;
+        flex-direction: column;
+        gap: 0.5rem;
+        max-height: calc(100% - 1.3rem);
+        pointer-events: none;
       }
 
-      .ot-view-tab {
-        padding: 0.35rem 0.65rem;
-        border-radius: 999px;
+      .ot-dock > * { pointer-events: auto; }
+
+      .ot-panel {
+        background: rgba(20, 20, 24, 0.94);
         border: 1px solid var(--border);
-        background: var(--bg-card);
-        color: var(--text);
-        font-size: 0.78rem;
-        font-family: inherit;
-        cursor: pointer;
-        transition: background 0.15s, border-color 0.15s, color 0.15s;
+        border-radius: 12px;
+        padding: 0.9rem 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        backdrop-filter: blur(8px);
+        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
       }
 
-      .ot-view-tab:hover {
-        background: var(--bg-card-hover);
+      .ot-panel.is-ready {
+        border-color: var(--origin);
+        box-shadow: 0 0 0 1px rgba(14, 165, 233, 0.25), 0 8px 28px rgba(0, 0, 0, 0.45);
+      }
+
+      .ot-panel-empty {
+        color: var(--text);
+        font-size: 0.85rem;
+        line-height: 1.5;
+        margin: 0;
+        text-align: left;
+      }
+
+      .ot-card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+      }
+
+      .ot-port-name {
+        margin: 0;
+        font-size: 1.15rem;
+        font-weight: 600;
         color: var(--text-h);
       }
 
-      .ot-view-tab.is-active {
-        border-color: var(--origin);
-        color: #7dd3fc;
+      .ot-badge {
+        font-size: 0.72rem;
+        padding: 0.15rem 0.45rem;
+        border-radius: 999px;
+        border: 1px solid rgba(14, 165, 233, 0.35);
         background: rgba(14, 165, 233, 0.12);
+        color: #7dd3fc;
+        white-space: nowrap;
+      }
+
+      .ot-panel.is-ready .ot-badge {
+        border-color: rgba(34, 197, 94, 0.4);
+        background: rgba(34, 197, 94, 0.12);
+        color: #86efac;
+      }
+
+      .ot-countdown-row {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+        flex-wrap: wrap;
+      }
+
+      .ot-countdown {
+        font-size: 2.1rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 0.04em;
+        color: var(--text-h);
+        line-height: 1;
+        min-width: 4.8rem;
+      }
+
+      .ot-panel.is-ready .ot-countdown { color: #86efac; }
+
+      .ot-meta {
+        font-size: 0.82rem;
+        color: var(--text);
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+      }
+
+      .ot-meta strong { color: var(--text-h); font-weight: 600; }
+      .ot-hint { font-size: 0.74rem; opacity: 0.85; }
+
+      .ot-field { display: flex; flex-direction: column; gap: 0.3rem; }
+
+      .ot-label {
+        font-size: 0.74rem;
+        color: var(--text);
+        font-weight: 500;
+      }
+
+      .ot-field-row {
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .ot-input {
+        flex: 1 1 6rem;
+        min-width: 5rem;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text-h);
+        font-size: 0.9rem;
+        font-family: inherit;
+        padding: 0.45rem 0.6rem;
+        outline: none;
+      }
+
+      .ot-input:focus {
+        border-color: var(--origin);
+        box-shadow: 0 0 0 3px var(--origin-glow);
+      }
+
+      .ot-input-remaining {
+        flex: 0 0 auto;
+        width: 5.2rem;
+        min-width: 5.2rem;
+        text-align: center;
+        font-size: 1.1rem;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .ot-field-hint {
+        font-size: 0.7rem;
+        color: var(--text);
+        opacity: 0.8;
+      }
+
+      .ot-actions {
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+      }
+
+      .ot-btn {
+        padding: 0.42rem 0.75rem;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: var(--bg);
+        color: var(--text-h);
+        font-size: 0.82rem;
+        font-family: inherit;
+        cursor: pointer;
+      }
+
+      .ot-btn:hover { background: var(--bg-card-hover); }
+      .ot-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+      .ot-btn-primary { border-color: var(--origin); color: #7dd3fc; }
+      .ot-btn-primary:hover { background: rgba(14, 165, 233, 0.12); }
+      .ot-btn-accent { border-color: #f59e0b; color: #fcd34d; }
+      .ot-btn-accent:hover { background: rgba(245, 158, 11, 0.12); }
+      .ot-btn-danger { border-color: rgba(248, 113, 113, 0.45); color: #fca5a5; margin-left: auto; }
+      .ot-btn-danger:hover { background: rgba(248, 113, 113, 0.1); }
+      .ot-btn-ghost { color: var(--text); }
+
+      .ot-registered {
+        background: rgba(20, 20, 24, 0.94);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 0.65rem 0.8rem;
+        max-height: 9.5rem;
+        overflow: auto;
+        backdrop-filter: blur(8px);
+        display: none;
+      }
+
+      .ot-registered.is-open { display: block; }
+
+      .ot-registered-title {
+        margin: 0 0 0.4rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--text);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .ot-reg-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+
+      .ot-reg-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        padding: 0.35rem 0.5rem;
+        border-radius: 8px;
+        border: 1px solid transparent;
+        background: transparent;
+        color: var(--text-h);
+        font: inherit;
+        font-size: 0.82rem;
+        cursor: pointer;
+        text-align: left;
+        width: 100%;
+      }
+
+      .ot-reg-item:hover,
+      .ot-reg-item.is-active {
+        background: var(--bg-card-hover);
+        border-color: var(--border);
+      }
+
+      .ot-reg-item.is-ready .ot-reg-time { color: #86efac; }
+      .ot-reg-time {
+        font-variant-numeric: tabular-nums;
+        font-weight: 600;
+        color: #7dd3fc;
+        font-size: 0.78rem;
       }
 
       @media (max-width: 560px) {
-        .ot-countdown { font-size: 2rem; }
+        .ot-toolbar-title { display: none; }
+        .ot-countdown { font-size: 1.85rem; }
         .ot-btn-danger { margin-left: 0; }
-        .ot-map { min-height: 380px; }
+        .ot-dock {
+          top: auto;
+          bottom: 0.5rem;
+          left: 0.5rem;
+          right: 0.5rem;
+          width: auto;
+          max-height: 45%;
+        }
       }
     </style>
   </head>
   <body>
-    <div class="ot-page">
-      <header class="ot-header">
-        <div>
-          <a href="game.html" class="back-link">← 게임으로</a>
-          <h1 class="ot-title">교역소 타이머</h1>
-          <p class="ot-sub">해역 맵 · 항구를 눌러 타이머 · 재고 30분 리셋</p>
-        </div>
+    <div class="ot-app">
+      <header class="ot-toolbar">
+        <a href="game.html" class="back-link">← 게임</a>
+        <span class="ot-toolbar-title">교역소 타이머</span>
+        <label class="visually-hidden" for="ot-view-select">해역</label>
+        <select id="ot-view-select" class="ot-view-select" aria-label="해역 선택"></select>
+        <p id="ot-status" class="ot-status" aria-live="polite"></p>
+        <button type="button" id="ot-reg-toggle" class="ot-toolbar-btn" aria-expanded="false">
+          등록 <span id="ot-reg-count">0</span>
+        </button>
       </header>
 
-      <p id="ot-status" class="ot-status" aria-live="polite"></p>
+      <div class="ot-stage">
+        <div id="ot-map" class="ot-map" aria-label="항구 맵">
+          <span class="ot-map-label">동지중해 · 흑해</span>
+        </div>
 
-      <div class="ot-main">
-        <aside class="ot-side">
+        <aside class="ot-dock">
           <div id="ot-panel" class="ot-panel" aria-live="polite">
             <p class="ot-panel-empty">맵에서 항구를 선택하세요.</p>
           </div>
-
-          <div class="ot-registered">
+          <div id="ot-registered" class="ot-registered">
             <h2 class="ot-registered-title">등록된 교역소</h2>
             <ul id="ot-reg-list" class="ot-reg-list"></ul>
           </div>
         </aside>
-
-        <div class="ot-map-column">
-          <div id="ot-view-tabs" class="ot-view-tabs" aria-label="해역 선택"></div>
-          <div class="ot-map-wrap">
-            <div id="ot-map" class="ot-map" aria-label="항구 맵">
-              <span class="ot-map-label">동지중해 · 흑해</span>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
+
+    <style>
+      .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        border: 0;
+      }
+    </style>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-config.js"></script>

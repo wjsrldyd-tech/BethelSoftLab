@@ -12,16 +12,20 @@
     const MAP_VIEWS = window.ORIGIN_MAP_VIEWS || [];
 
     const $ = (sel) => document.querySelector(sel);
-    const mapEl     = $('#ot-map');
-    const panelEl   = $('#ot-panel');
-    const regListEl = $('#ot-reg-list');
-    const statusEl  = $('#ot-status');
-    const viewTabsEl = $('#ot-view-tabs');
+    const mapEl      = $('#ot-map');
+    const panelEl    = $('#ot-panel');
+    const regListEl  = $('#ot-reg-list');
+    const regBoxEl   = $('#ot-registered');
+    const regToggle  = $('#ot-reg-toggle');
+    const regCountEl = $('#ot-reg-count');
+    const statusEl   = $('#ot-status');
+    const viewSelect = $('#ot-view-select');
 
     let ports = [];
     let selectedName = null;
     let selectedViewId = DEFAULT_VIEW;
     let tickTimer = null;
+    let regOpen = false;
 
     function currentMapPins() {
         if (typeof window.getOriginMapPins === 'function') {
@@ -115,22 +119,34 @@
         return ports.find(p => p.portName === name) || null;
     }
 
-    // ─── 해역 탭 ─────────────────────────────────────────────────────
+    // ─── 해역 선택 ───────────────────────────────────────────────────
 
     function renderViewTabs() {
-        if (!viewTabsEl || MAP_VIEWS.length === 0) return;
-        viewTabsEl.innerHTML = MAP_VIEWS.map(v => `
-          <button type="button" class="ot-view-tab${v.id === selectedViewId ? ' is-active' : ''}"
-            data-view-id="${escapeAttr(v.id)}">${escapeHtml(v.label)}</button>
-        `).join('');
+        if (!viewSelect || MAP_VIEWS.length === 0) return;
+        viewSelect.innerHTML = MAP_VIEWS.map(v =>
+            `<option value="${escapeAttr(v.id)}"${v.id === selectedViewId ? ' selected' : ''}>${escapeHtml(v.label)}</option>`
+        ).join('');
     }
 
     function selectView(viewId) {
         selectedViewId = viewId;
-        renderViewTabs();
+        if (viewSelect) viewSelect.value = viewId;
         renderMap();
         const view = currentView();
-        setStatus(`${view.label} · 기준: ${view.anchor || '—'}`);
+        setStatus(`${view.label} · 기준 ${view.anchor || '—'}`);
+    }
+
+    function updateRegCount() {
+        if (regCountEl) regCountEl.textContent = String(ports.length);
+    }
+
+    function setRegOpen(open) {
+        regOpen = open;
+        if (regBoxEl) regBoxEl.classList.toggle('is-open', open);
+        if (regToggle) {
+            regToggle.classList.toggle('is-active', open);
+            regToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        }
     }
 
     // ─── 맵 ─────────────────────────────────────────────────────────
@@ -205,6 +221,7 @@
     function renderRegList() {
         if (!regListEl) return;
         const now = Date.now();
+        updateRegCount();
 
         if (ports.length === 0) {
             regListEl.innerHTML = '<li style="color:var(--text);font-size:0.85rem;padding:0.25rem;">없음</li>';
@@ -414,12 +431,14 @@
 
     // ─── 이벤트 ──────────────────────────────────────────────────────
 
-    if (viewTabsEl) {
-        viewTabsEl.addEventListener('click', (e) => {
-            const btn = e.target.closest('[data-view-id]');
-            if (!btn) return;
-            selectView(btn.dataset.viewId);
+    if (viewSelect) {
+        viewSelect.addEventListener('change', () => {
+            selectView(viewSelect.value);
         });
+    }
+
+    if (regToggle) {
+        regToggle.addEventListener('click', () => setRegOpen(!regOpen));
     }
 
     if (mapEl) {
@@ -523,6 +542,7 @@
             return;
         }
         renderViewTabs();
+        selectView(selectedViewId);
         await reload(false);
         tickTimer = setInterval(tickAll, 1000);
     }
