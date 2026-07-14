@@ -26,7 +26,7 @@
             label: '동지중해·흑해',
             anchor: '이스탄불',
             image: 'images/origin/eastmed.png',
-            imageAspect: 1024 / 602,
+            imageAspect: 1024 / 640,
             regions: ['동지중해', '흑해 인근', '이탈리아반도', '지중해', '남인도양'],
             ports: {
                 오데사: { x: 70, y: 8 },
@@ -69,6 +69,8 @@
             id: 'gibraltar',
             label: '지브롤터·이베리아',
             anchor: '리스본',
+            image: 'images/origin/gibraltar.png',
+            imageAspect: 1024 / 576,
             regions: ['지브롤터 근처', '서아프리카', '잉글랜드 서쪽'],
             ports: {
                 리스본: { x: 38, y: 42 },
