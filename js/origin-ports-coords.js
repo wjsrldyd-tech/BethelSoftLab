@@ -23,7 +23,7 @@
     const VIEWS = [
         {
             id: 'eastmed',
-            label: '동지중해·흑해',
+            label: '지중해,흑해',
             anchor: '이스탄불',
             image: 'images/origin/eastmed.png',
             imageAspect: 1024 / 640,
@@ -67,12 +67,12 @@
         },
         {
             id: 'gibraltar',
-            label: '지브롤터·이베리아',
+            label: '유럽대서양',
             anchor: '리스본',
             image: 'images/origin/gibraltar-16x9.png',
             imageAspect: 1024 / 576,
             imageVersion: '20260714-2302',
-            regions: ['지브롤터 근처', '서아프리카', '잉글랜드 서쪽'],
+            regions: ['지브롤터 근처', '잉글랜드 서쪽'],
             ports: {
                 리스본: { x: 38, y: 42 },
                 포르투: { x: 36, y: 32 },
@@ -89,7 +89,6 @@
                 아조레스: { x: 12, y: 48 },
                 마데이라: { x: 22, y: 62 },
                 산타섬: { x: 18, y: 40 },
-                라스팔마스: { x: 28, y: 78 },
             },
         },
         {

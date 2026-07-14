@@ -75,7 +75,7 @@
         if (typeof window.getOriginMapView === 'function') {
             return window.getOriginMapView(selectedViewId);
         }
-        return MAP_VIEWS[0] || { id: DEFAULT_VIEW, label: '동지중해·흑해', anchor: DEFAULT_PORT };
+        return MAP_VIEWS[0] || { id: DEFAULT_VIEW, label: '지중해,흑해', anchor: DEFAULT_PORT };
     }
 
     // ─── 시간 계산 ───────────────────────────────────────────────────
