@@ -1,7 +1,7 @@
 // =============== origin-ports-coords.js ===============
 // 해역(맵 뷰)별 항구 상대 좌표
-// - 맵 이미지 없음, 스크린샷 기준 근사 위치
-// - x, y: 뷰포트 퍼센트 (0~100), 해역마다 기준 도시 중심
+// - image 있는 뷰: 이미지 기준 x/y% (0~100), fit 미적용
+// - image 없는 뷰: 근사 좌표 + fitPorts 스케일
 
 (function () {
     'use strict';
@@ -13,7 +13,9 @@
      *   label: string,
      *   anchor: string,
      *   regions: string[],
-     *   ports: Record<string, Pt>
+     *   ports: Record<string, Pt>,
+     *   image?: string,
+     *   imageAspect?: number
      * }} MapView
      */
 
@@ -23,6 +25,8 @@
             id: 'eastmed',
             label: '동지중해·흑해',
             anchor: '이스탄불',
+            image: 'images/origin/eastmed.png',
+            imageAspect: 1024 / 602,
             regions: ['동지중해', '흑해 인근', '이탈리아반도', '지중해', '남인도양'],
             ports: {
                 오데사: { x: 70, y: 8 },
@@ -411,12 +415,13 @@
 
     function pinsForView(view) {
         const regions = regionByName();
-        const fitted = fitPorts(view.ports);
-        return Object.keys(fitted).map(name => ({
+        // 실제 맵 이미지가 있으면 이미지 % 좌표 그대로 사용 (드래그 보정용)
+        const pts = view.image ? view.ports : fitPorts(view.ports);
+        return Object.keys(pts).map(name => ({
             name,
             region: regions[name] || '',
-            x: fitted[name].x,
-            y: fitted[name].y,
+            x: pts[name].x,
+            y: pts[name].y,
             mapId: view.id,
         }));
     }

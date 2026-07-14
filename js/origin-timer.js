@@ -217,10 +217,15 @@
 
     // ─── 맵 ─────────────────────────────────────────────────────────
 
+    function mapCanvasEl() {
+        return (mapEl && mapEl.querySelector('.ot-map-canvas')) || mapEl;
+    }
+
     function renderMap() {
         if (!mapEl) return;
         const now = Date.now();
         const view = currentView();
+        const hasImage = !!(view.image);
         const labelHtml = `<span class="ot-map-label">${escapeHtml(view.label)}${view.anchor ? ' · 기준 ' + escapeHtml(view.anchor) : ''}</span>`;
 
         const pins = displayPins().map(loc => {
@@ -250,8 +255,19 @@
               </button>`;
         }).join('');
 
-        mapEl.innerHTML = labelHtml + pins;
+        const canvasStyle = [];
+        if (hasImage) {
+            const ar = view.imageAspect || (16 / 9);
+            canvasStyle.push(`--map-ar:${ar}`);
+            canvasStyle.push(`background-image:url('${escapeAttr(view.image)}')`);
+        }
+
+        mapEl.classList.toggle('has-image', hasImage);
         mapEl.classList.toggle('is-edit-mode', editMode);
+        mapEl.innerHTML = `
+          ${labelHtml}
+          <div class="ot-map-canvas" style="${canvasStyle.join(';')}">${pins}</div>
+        `;
         if (mapPaneEl) mapPaneEl.classList.toggle('is-edit-mode', editMode);
     }
 
@@ -597,7 +613,8 @@
             const pin = e.target.closest('.ot-pin');
             if (!pin) return;
             e.preventDefault();
-            const rect = mapEl.getBoundingClientRect();
+            const canvas = mapCanvasEl();
+            const rect = canvas.getBoundingClientRect();
             dragState = {
                 pin,
                 pointerId: e.pointerId,
