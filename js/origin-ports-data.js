@@ -31,8 +31,8 @@
         { name: '카사블랑카', region: '지브롤터 근처' },
         { name: '파루', region: '지브롤터 근처' },
         { name: '팔마', region: '지브롤터 근처' },
-        { name: '폰타델가다', region: '지브롤터 근처' },
-        { name: '푼샬', region: '지브롤터 근처' },
+        { name: '아조레스', region: '지브롤터 근처' },
+        { name: '마데이라', region: '지브롤터 근처' },
 
         // 잉글랜드 서쪽
         { name: '낭트', region: '잉글랜드 서쪽' },
@@ -328,6 +328,8 @@
         상토메: '상투메',
         카카투와: '카카두와',
         수이: '나하',
+        폰타델가다: '아조레스',
+        푼샬: '마데이라',
     };
 
     window.renameOriginPort = function (name) {
