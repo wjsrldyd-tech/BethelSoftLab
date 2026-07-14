@@ -259,7 +259,7 @@
         if (hasImage) {
             const ar = view.imageAspect || (16 / 9);
             canvasStyle.push(`--map-ar:${ar}`);
-            canvasStyle.push(`background-image:url('${escapeAttr(view.image)}')`);
+            canvasStyle.push(`background-image:url('${escapeAttr(view.image)}?v=${escapeAttr(String(view.imageVersion || '1'))}')`);
         }
 
         mapEl.classList.toggle('has-image', hasImage);
