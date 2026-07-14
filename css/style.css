@@ -18,6 +18,8 @@
   --church-glow: rgba(56, 189, 248, 0.3);
   --stocks: #22c55e;
   --stocks-glow: rgba(34, 197, 94, 0.3);
+  --origin: #0ea5e9;
+  --origin-glow: rgba(14, 165, 233, 0.3);
   --page-padding-x: clamp(1.5rem, 3vw, 3rem);
   --page-padding-y: 1.75rem;
 }
@@ -379,6 +381,11 @@ a {
 .tool-card.diablo:hover {
   border-color: var(--diablo);
   box-shadow: 0 8px 32px var(--diablo-glow);
+}
+
+.tool-card.origin:hover {
+  border-color: var(--origin);
+  box-shadow: 0 8px 32px var(--origin-glow);
 }
 
 .launcher-card.church:hover {
