@@ -1,5 +1,6 @@
 // =============== origin-db.js ===============
 // 대항해시대 오리진 교역소 타이머 ↔ Supabase origin_trade_posts
+// 항구 핀 좌표 ↔ Supabase origin_pin_overrides
 // tenant_id: BETHEL_TENANT_ID (app_storage, d3_scripts와 공통)
 
 (function () {
@@ -8,7 +9,9 @@
     const TENANT_KEY        = 'BETHEL_TENANT_ID';
     const DEFAULT_TENANT_ID = 'default';
     const TBL               = 'origin_trade_posts';
+    const TBL_PINS          = 'origin_pin_overrides';
     const LS_KEY            = 'origin_trade_posts_v1';
+    const LS_PIN_KEY        = 'origin_pin_overrides_v1';
 
     function getTenantId() {
         let id = localStorage.getItem(TENANT_KEY);
@@ -33,6 +36,29 @@
             createdAt:   row.created_at,
             updatedAt:   row.updated_at,
         };
+    }
+
+    function normalizePinData(raw) {
+        if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+        return raw;
+    }
+
+    function readLocalPins() {
+        try {
+            const raw = localStorage.getItem(LS_PIN_KEY);
+            if (!raw) return {};
+            return normalizePinData(JSON.parse(raw));
+        } catch {
+            return {};
+        }
+    }
+
+    function writeLocalPins(data) {
+        localStorage.setItem(LS_PIN_KEY, JSON.stringify(normalizePinData(data)));
+    }
+
+    function isEmptyPins(data) {
+        return !data || Object.keys(data).length === 0;
     }
 
     const client = window.supabaseClient;
@@ -81,6 +107,45 @@
         if (error) throw error;
     }
 
+    /** @returns {Promise<Record<string, Record<string, {x:number,y:number}>>>} */
+    async function loadPinOverrides() {
+        const tenantId = getTenantId();
+        const { data, error } = await client
+            .from(TBL_PINS)
+            .select('data')
+            .eq('tenant_id', tenantId)
+            .maybeSingle();
+        if (error) throw error;
+
+        let pins = normalizePinData(data && data.data);
+        if (isEmptyPins(pins)) {
+            const local = readLocalPins();
+            if (!isEmptyPins(local)) {
+                await savePinOverrides(local);
+                pins = local;
+            }
+        } else {
+            writeLocalPins(pins);
+        }
+        return pins;
+    }
+
+    /** @param {Record<string, Record<string, {x:number,y:number}>>} pinData */
+    async function savePinOverrides(pinData) {
+        const tenantId = getTenantId();
+        const normalized = normalizePinData(pinData);
+        writeLocalPins(normalized);
+        const row = {
+            tenant_id:  tenantId,
+            data:       normalized,
+            updated_at: new Date().toISOString(),
+        };
+        const { error } = await client
+            .from(TBL_PINS)
+            .upsert(row, { onConflict: 'tenant_id' });
+        if (error) throw error;
+    }
+
     function makeLocalOnlyDb() {
         function loadAll() {
             try {
@@ -123,6 +188,10 @@
             deletePort: async (id) => {
                 saveAll(loadAll().filter(e => e.id !== id));
             },
+            loadPinOverrides: async () => readLocalPins(),
+            savePinOverrides: async (pinData) => {
+                writeLocalPins(pinData);
+            },
         };
     }
 
@@ -132,6 +201,8 @@
         listPorts,
         savePort,
         deletePort,
+        loadPinOverrides,
+        savePinOverrides,
     };
 
     console.log('[OriginDB] 초기화 완료 — tenant_id:', getTenantId());

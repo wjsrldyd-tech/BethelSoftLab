@@ -10,7 +10,6 @@
     const DEFAULT_PORT = '오데사';
     const DEFAULT_VIEW = 'eastmed';
     const MAP_VIEWS = window.ORIGIN_MAP_VIEWS || [];
-    const PIN_OVERRIDE_KEY = 'origin_pin_overrides_v1';
     const DRAG_THRESHOLD = 4;
 
     const $ = (sel) => document.querySelector(sel);
@@ -30,27 +29,13 @@
     let tickTimer = null;
 
     /** @type {Record<string, Record<string, {x:number,y:number}>>} */
-    let pinOverrides = loadPinOverrides();
+    let pinOverrides = {};
     let editMode = false;
     /** 수정 중 작업 복사본 (저장 전) */
     let editDraft = null;
     let dragState = null;
     let suppressPinClick = false;
-
-    function loadPinOverrides() {
-        try {
-            const raw = localStorage.getItem(PIN_OVERRIDE_KEY);
-            if (!raw) return {};
-            const data = JSON.parse(raw);
-            return data && typeof data === 'object' ? data : {};
-        } catch {
-            return {};
-        }
-    }
-
-    function savePinOverrides(data) {
-        localStorage.setItem(PIN_OVERRIDE_KEY, JSON.stringify(data));
-    }
+    let pinSaveInFlight = false;
 
     function cloneOverrides(src) {
         return JSON.parse(JSON.stringify(src || {}));
@@ -292,12 +277,27 @@
         setStatus('위치 수정 모드 — 핀을 드래그한 뒤 저장하세요.');
     }
 
-    function exitEditMode(save) {
+    async function exitEditMode(save) {
         if (!editMode) return;
         if (save) {
-            pinOverrides = cloneOverrides(editDraft);
-            savePinOverrides(pinOverrides);
-            setStatus('핀 위치를 저장했습니다. (이 브라우저에 보관)');
+            if (pinSaveInFlight) return;
+            pinSaveInFlight = true;
+            if (editSaveBtn) editSaveBtn.disabled = true;
+            try {
+                pinOverrides = cloneOverrides(editDraft);
+                await window.originDb.savePinOverrides(pinOverrides);
+                setStatus(window.originDb.isLocal
+                    ? '핀 위치를 로컬에 저장했습니다.'
+                    : '핀 위치를 DB에 저장했습니다.');
+            } catch (err) {
+                console.error('[OriginTimer] 핀 저장 실패', err);
+                setStatus('핀 저장 실패: ' + (err.message || err) + ' — SQL 마이그레이션을 확인하세요.', true);
+                if (editSaveBtn) editSaveBtn.disabled = false;
+                pinSaveInFlight = false;
+                return;
+            }
+            pinSaveInFlight = false;
+            if (editSaveBtn) editSaveBtn.disabled = false;
         } else {
             setStatus('위치 수정을 취소했습니다.');
         }
@@ -668,10 +668,10 @@
         editToggleBtn.addEventListener('click', () => enterEditMode());
     }
     if (editSaveBtn) {
-        editSaveBtn.addEventListener('click', () => exitEditMode(true));
+        editSaveBtn.addEventListener('click', () => { exitEditMode(true); });
     }
     if (editCancelBtn) {
-        editCancelBtn.addEventListener('click', () => exitEditMode(false));
+        editCancelBtn.addEventListener('click', () => { exitEditMode(false); });
     }
 
     if (regListEl) {
@@ -761,6 +761,17 @@
 
     // ─── 시작 ────────────────────────────────────────────────────────
 
+    async function loadPinsFromDb() {
+        try {
+            pinOverrides = await window.originDb.loadPinOverrides();
+            if (!editMode) renderMap();
+        } catch (err) {
+            console.error('[OriginTimer] 핀 좌표 로드 실패', err);
+            pinOverrides = {};
+            setStatus('핀 좌표 불러오기 실패: ' + (err.message || err) + ' — SQL 마이그레이션을 확인하세요.', true);
+        }
+    }
+
     async function init() {
         if (!window.originDb) {
             setStatus('originDb가 없습니다. 스크립트 로드 순서를 확인하세요.', true);
@@ -768,7 +779,7 @@
         }
         renderViewTabs();
         selectView(selectedViewId);
-        await reload(false);
+        await Promise.all([reload(false), loadPinsFromDb()]);
         tickTimer = setInterval(tickAll, 1000);
     }
 

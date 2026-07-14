@@ -65,6 +65,31 @@ grant select, insert, update, delete
 --     for all using (tenant_id = auth.uid()::text);
 
 -- ============================================================
--- 4. 롤백 (필요 시 주석 해제)
+-- 4. origin_pin_overrides — 해역 맵 항구 핀 좌표 오버라이드
 -- ============================================================
+-- data : { [viewId]: { [portName]: { x, y } } } JSON
+-- 브라우저 localStorage(origin_pin_overrides_v1)와 동일 구조
+
+create table if not exists public.origin_pin_overrides (
+    tenant_id   text            not null,
+    data        jsonb           not null default '{}'::jsonb,
+    updated_at  timestamptz     not null default now(),
+    primary key (tenant_id)
+);
+
+drop trigger if exists trg_origin_pin_overrides_updated_at on public.origin_pin_overrides;
+create trigger trg_origin_pin_overrides_updated_at
+    before update on public.origin_pin_overrides
+    for each row execute function public.set_updated_at();
+
+alter table public.origin_pin_overrides disable row level security;
+
+grant select, insert, update, delete
+    on public.origin_pin_overrides
+    to anon, authenticated, service_role;
+
+-- ============================================================
+-- 5. 롤백 (필요 시 주석 해제)
+-- ============================================================
+-- drop table if exists public.origin_pin_overrides;
 -- drop table if exists public.origin_trade_posts;
