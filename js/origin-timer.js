@@ -294,8 +294,8 @@
                 hasGoods ? 'has-goods' : '',
             ].filter(Boolean).join(' ');
 
-            // 필터 OFF: 이름 + 타이머 / 필터 ON: 이름 + 품목 (타이머는 왼쪽 패널)
-            const timeHtml = (!filterOn && tracked)
+            // 필터 OFF: 이름 + 타이머 / 필터 ON: 이름|타이머 + 아래 품목
+            const timeHtml = tracked
                 ? `<span class="ot-pin-time" data-pin-time="${escapeAttr(loc.name)}">${formatCountdown(rem)}</span>`
                 : '';
 
@@ -305,15 +305,20 @@
                   `).join('')}</span>`
                 : '';
 
+            const labelHtml = filterOn
+                ? `<span class="ot-pin-head">
+                    <span class="ot-pin-name">${escapeHtml(loc.name)}</span>
+                    ${timeHtml}
+                  </span>${goodsHtml}`
+                : `<span class="ot-pin-name">${escapeHtml(loc.name)}</span>${timeHtml}`;
+
             return `
               <button type="button" class="${classes}"
                 style="left:${loc.x}%; top:${loc.y}%;"
                 data-port-name="${escapeAttr(loc.name)}"
                 aria-label="${escapeAttr(loc.name)}">
                 <span class="ot-pin-marker" aria-hidden="true"></span>
-                <span class="ot-pin-name">${escapeHtml(loc.name)}</span>
-                ${timeHtml}
-                ${goodsHtml}
+                ${labelHtml}
               </button>`;
         }).join('');
 
@@ -389,7 +394,6 @@
 
     function tickMapPins() {
         const now = Date.now();
-        const filterOn = !!(selectedGoodCategory && !editMode);
 
         mapEl.querySelectorAll('.ot-pin').forEach(pin => {
             const name = pin.dataset.portName;
@@ -398,21 +402,6 @@
             pin.classList.toggle('is-active', selectedName === name);
 
             let timeEl = pin.querySelector('[data-pin-time]');
-
-            // 분류 필터 중에는 핀 타이머를 숨김 (왼쪽 패널만 사용)
-            if (filterOn) {
-                if (timeEl) timeEl.remove();
-                if (!tracked) {
-                    pin.classList.remove('is-ready', 'is-sold-out');
-                    return;
-                }
-                const rem = getRemainingMs(tracked.anchorAt, now);
-                const sold = isSoldOut(tracked, now);
-                const ready = rem <= 1000;
-                pin.classList.toggle('is-sold-out', sold);
-                pin.classList.toggle('is-ready', ready && !sold);
-                return;
-            }
 
             if (!tracked) {
                 pin.classList.remove('is-ready', 'is-sold-out');
@@ -430,7 +419,9 @@
                 timeEl = document.createElement('span');
                 timeEl.className = 'ot-pin-time';
                 timeEl.dataset.pinTime = name;
-                pin.appendChild(timeEl);
+                const head = pin.querySelector('.ot-pin-head');
+                if (head) head.appendChild(timeEl);
+                else pin.appendChild(timeEl);
             }
             timeEl.textContent = formatCountdown(rem);
         });
