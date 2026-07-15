@@ -19,10 +19,12 @@
 
     let selectedRecipeId = null;
     let currentRatios = {};
+    let selectedMonth = 1;
     let inited = false;
 
     function els() {
         return {
+            monthSelect: document.getElementById('barter-month'),
             capacityInput: document.getElementById('barter-capacity'),
             recipeSelect: document.getElementById('barter-recipe'),
             ingredientsDiv: document.getElementById('barter-ingredients'),
@@ -32,9 +34,15 @@
     }
 
     function init() {
-        const { capacityInput, recipeSelect, filterBtn } = els();
+        const { monthSelect, capacityInput, recipeSelect, filterBtn } = els();
         if (!capacityInput || !recipeSelect || inited) return;
         inited = true;
+
+        const savedMonth = localStorage.getItem('originBarterMonth');
+        if (savedMonth) {
+            selectedMonth = parseInt(savedMonth, 10);
+            if (monthSelect) monthSelect.value = String(selectedMonth);
+        }
 
         BARTER_RECIPES.forEach(recipe => {
             const opt = document.createElement('option');
@@ -42,6 +50,14 @@
             opt.textContent = `${recipe.name} (${recipe.village})`;
             recipeSelect.appendChild(opt);
         });
+
+        if (monthSelect) {
+            monthSelect.addEventListener('change', (e) => {
+                selectedMonth = parseInt(e.target.value, 10);
+                localStorage.setItem('originBarterMonth', String(selectedMonth));
+                calculate();
+            });
+        }
 
         recipeSelect.addEventListener('change', onRecipeChange);
         capacityInput.addEventListener('input', calculate);
@@ -140,7 +156,8 @@
         const results = recipe.ingredients.map(ing => {
             const ratio = currentRatios[ing.name] || 0;
             const amount = Math.round((capacity * ratio) / totalRatio);
-            return { name: ing.name, amount, ratio };
+            const seasonInfo = getIngredientSeasonInfo(ing.name);
+            return { name: ing.name, amount, ratio, seasonInfo };
         });
 
         const totalAmount = results.reduce((a, b) => a + b.amount, 0);
@@ -150,12 +167,74 @@
             maxItem.amount += diff;
         }
 
-        resultsDiv.innerHTML = results.map(r => `
-            <div class="ot-barter-result-row">
-                <span class="ot-barter-result-name">${r.name}</span>
-                <span class="ot-barter-result-amount">${r.amount.toLocaleString()}</span>
-            </div>
-        `).join('');
+        resultsDiv.innerHTML = results.map(r => {
+            const ports = getIngredientPorts(r.name);
+            let portsHtml = '';
+            if (ports && ports.length > 0) {
+                portsHtml = `
+                    <div class="ot-barter-ports-list">
+                        ${ports.map(p => {
+                            let cssClass = 'ot-barter-port-tag';
+                            let icon = '';
+                            if (p.isSpecialty) {
+                                cssClass += ' is-specialty';
+                            }
+                            if (p.status === 'peak') {
+                                cssClass += ' is-peak';
+                                icon = '▲ ';
+                            } else if (p.status === 'off') {
+                                cssClass += ' is-off';
+                                icon = '▼ ';
+                            }
+                            const specialtyIcon = p.isSpecialty ? '★ ' : '';
+                            return `<span class="${cssClass}">${specialtyIcon}${icon}${p.portName}</span>`;
+                        }).join('')}
+                    </div>
+                `;
+            }
+            return `
+                <div class="ot-barter-result-row">
+                    <div class="ot-barter-result-header">
+                        <span class="ot-barter-result-name">${r.name}</span>
+                        <span class="ot-barter-result-amount">${r.amount.toLocaleString()}</span>
+                    </div>
+                    ${portsHtml}
+                </div>
+            `;
+        }).join('');
+    }
+
+    function getIngredientPorts(goodName) {
+        if (!window.ORIGIN_PORT_GOODS || !window.getOriginGoodSeasonQtyMult) return [];
+
+        const ports = [];
+        for (const portName in window.ORIGIN_PORT_GOODS) {
+            const goods = window.ORIGIN_PORT_GOODS[portName];
+            const good = goods.find(g => g.name === goodName);
+            if (good) {
+                let status = 'plain';
+                let mult = 1;
+                if (window.originGoodHasSeason && window.originGoodHasSeason(good)) {
+                    mult = window.getOriginGoodSeasonQtyMult(good, selectedMonth);
+                    if (mult > 1) status = 'peak';
+                    else if (mult < 1) status = 'off';
+                }
+                ports.push({ portName, status, multiplier: mult, isSpecialty: good.specialty });
+            }
+        }
+        ports.sort((a, b) => {
+            if (a.status === 'peak' && b.status !== 'peak') return -1;
+            if (a.status !== 'peak' && b.status === 'peak') return 1;
+            if (a.isSpecialty && !b.isSpecialty) return -1;
+            if (!a.isSpecialty && b.isSpecialty) return 1;
+            return a.portName.localeCompare(b.portName, 'ko');
+        });
+        return ports;
+    }
+
+    function getIngredientSeasonInfo(goodName) {
+        const ports = getIngredientPorts(goodName);
+        return ports.length > 0 ? ports[0] : null;
     }
 
     function filterMapByIngredients() {

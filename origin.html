@@ -924,24 +924,76 @@
       }
 
       .ot-barter-result-row {
-        display: grid;
-        grid-template-columns: 1fr auto;
-        gap: 0.5rem;
-        padding: 0.5rem 0.65rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        padding: 0.65rem 0.75rem;
         background: rgba(14, 165, 233, 0.08);
         border-radius: 8px;
         border: 1px solid rgba(14, 165, 233, 0.2);
       }
 
+      .ot-barter-result-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
       .ot-barter-result-name {
-        font-size: 0.85rem;
-        color: var(--text);
+        font-size: 0.88rem;
+        font-weight: 600;
+        color: var(--text-h);
       }
 
       .ot-barter-result-amount {
-        font-size: 0.92rem;
-        font-weight: 600;
+        font-size: 0.95rem;
+        font-weight: 700;
         color: #7dd3fc;
+        white-space: nowrap;
+      }
+
+      .ot-barter-ports-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+        margin-top: 0.15rem;
+      }
+
+      .ot-barter-port-tag {
+        padding: 0.15rem 0.4rem;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: 550;
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        background: rgba(30, 41, 59, 0.65);
+        color: #cbd5e1;
+        white-space: nowrap;
+      }
+
+      .ot-barter-port-tag.is-peak {
+        border-color: rgba(34, 197, 94, 0.45);
+        background: rgba(34, 197, 94, 0.12);
+        color: #86efac;
+      }
+
+      .ot-barter-port-tag.is-off {
+        border-color: rgba(248, 113, 113, 0.45);
+        background: rgba(248, 113, 113, 0.12);
+        color: #fca5a5;
+      }
+
+      .ot-barter-port-tag.is-specialty {
+        border-color: rgba(250, 204, 21, 0.55);
+        background: rgba(250, 204, 21, 0.15);
+        color: #fef08a;
+        font-weight: 650;
+      }
+
+      .ot-barter-port-tag.is-specialty.is-peak {
+        border-color: rgba(250, 204, 21, 0.65);
+        background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(250, 204, 21, 0.2));
+        color: #fef3c7;
       }
 
       .ot-barter-empty {
@@ -1008,6 +1060,24 @@
 
             <section id="ot-tool-barter" class="ot-side-tool-pane" data-tool-pane="barter" role="tabpanel" aria-label="물물교환" hidden>
               <div class="ot-barter-panel">
+                <div class="ot-barter-section">
+                  <label class="ot-barter-label" for="barter-month">현재 월</label>
+                  <select id="barter-month" class="ot-barter-select">
+                    <option value="1">1월 (겨울·건기)</option>
+                    <option value="2">2월 (겨울·건기)</option>
+                    <option value="3">3월 (봄·건기)</option>
+                    <option value="4">4월 (봄·건기)</option>
+                    <option value="5">5월 (봄·건기)</option>
+                    <option value="6">6월 (여름·우기)</option>
+                    <option value="7">7월 (여름·우기)</option>
+                    <option value="8">8월 (여름·우기)</option>
+                    <option value="9">9월 (가을·우기)</option>
+                    <option value="10">10월 (가을·우기)</option>
+                    <option value="11">11월 (가을·건기)</option>
+                    <option value="12">12월 (겨울·건기)</option>
+                  </select>
+                </div>
+
                 <div class="ot-barter-section">
                   <label class="ot-barter-label" for="barter-capacity">함대 적재량</label>
                   <input type="number" id="barter-capacity" class="ot-barter-input"
