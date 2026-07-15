@@ -7,7 +7,7 @@
 
     const INTERVAL_MIN = 30;
     const INTERVAL_MS  = INTERVAL_MIN * 60 * 1000;
-    const DEFAULT_PORT = '오데사';
+    const DEFAULT_PORT = '이스탄불';
     const DEFAULT_VIEW = 'eastmed';
     const MAP_VIEWS = window.ORIGIN_MAP_VIEWS || [];
     const DRAG_THRESHOLD = 4;
