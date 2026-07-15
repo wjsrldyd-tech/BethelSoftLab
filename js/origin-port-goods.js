@@ -1941,17 +1941,23 @@
 
     /**
      * @param {string} portName
-     * @param {string|string[]} [category]
-     * @param {{ includeLocked?: boolean }} [opts]
+     * @param {string|string[]} [category] - 분류명 또는 교역품 이름 배열
+     * @param {{ includeLocked?: boolean, byName?: boolean }} [opts]
      */
     window.getOriginPortGoods = function (portName, category, opts) {
         const includeLocked = !!(opts && opts.includeLocked);
+        const byName = !!(opts && opts.byName);
         let list = window.ORIGIN_PORT_GOODS[portName] || [];
         if (!includeLocked) list = list.filter(g => !isLockedGood(g));
         if (!category) return list.slice();
 
         const cats = Array.isArray(category) ? category.filter(Boolean) : [category];
         if (!cats.length) return list.slice();
+
+        // byName 옵션: 교역품 이름으로 필터링
+        if (byName) {
+            return list.filter(g => cats.includes(g.name));
+        }
 
         if (cats.length === 1) {
             const c = cats[0];

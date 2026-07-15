@@ -29,6 +29,7 @@
     let selectedViewId = DEFAULT_VIEW;
     /** @type {string[]} 선택된 교역품 분류 (명산품은 단독, 일반 분류는 OR 복수) */
     let selectedGoodCategories = [];
+    let filterByName = false; // true이면 selectedGoodCategories가 이름 배열
     let tickTimer = null;
 
     /** @type {Record<string, Record<string, {x:number,y:number}>>} */
@@ -283,7 +284,7 @@
 
         const pins = displayPins().map(loc => {
             const goods = filterOn && typeof window.getOriginPortGoods === 'function'
-                ? window.getOriginPortGoods(loc.name, selectedGoodCategories)
+                ? window.getOriginPortGoods(loc.name, selectedGoodCategories, { byName: filterByName })
                 : [];
             const hasGoods = goods.length > 0;
 
@@ -540,6 +541,7 @@
     function clearGoodCategories() {
         if (!selectedGoodCategories.length) return;
         selectedGoodCategories = [];
+        filterByName = false; // 이름 필터도 해제
         renderGoodsCategories();
         renderMap();
         setStatus(currentView().label || '');
@@ -547,6 +549,8 @@
 
     function selectGoodCategory(category) {
         if (!category) return;
+
+        filterByName = false; // 분류 선택 시 이름 필터 해제
 
         if (isSpecialCategory(category)) {
             // 명산품 등: 단독 토글 — 켜면 일반 분류 전부
@@ -968,6 +972,22 @@
         await Promise.all([reload(false), loadPinsFromDb()]);
         tickTimer = setInterval(tickAll, 1000);
     }
+
+    // 물물교환: 재료 이름으로 맵 필터링
+    window.filterMapByGoodNames = function (goodNames) {
+        if (!goodNames || !goodNames.length) return;
+        
+        // 재료 이름 배열로 필터링
+        selectedGoodCategories = goodNames;
+        filterByName = true;
+        renderGoodsCategories();
+        renderMap();
+        
+        const label = goodNames.join(', ');
+        const view = currentView();
+        setStatus(`「${label}」 — ${view.label || ''}`);
+    };
+
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);

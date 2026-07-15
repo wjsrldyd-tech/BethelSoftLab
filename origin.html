@@ -92,12 +92,17 @@
 
       .ot-status.is-error { color: #f87171; }
 
-      /* ===== 좌우 본문 ===== */
+      /* ===== 좌우 본문 =====
+         맵 비율(~1024/673)에 맞는 가로폭만 오른쪽에 주고, 남은 폭은 왼쪽으로 */
       .ot-main {
+        --ot-map-ar: 1.522;
+        --ot-toolbar-h: 3.25rem;
         flex: 1 1 auto;
         min-height: 0;
         display: grid;
-        grid-template-columns: minmax(280px, 340px) 1fr;
+        grid-template-columns:
+          minmax(320px, 1fr)
+          minmax(280px, calc((100svh - var(--ot-toolbar-h)) * var(--ot-map-ar)));
       }
 
       @media (max-width: 860px) {
@@ -754,6 +759,184 @@
 
       .ot-edit-btn[hidden] { display: none; }
 
+      /* ===== 교역품 / 물물교환 탭 ===== */
+      .ot-side-tools {
+        display: flex;
+        flex-direction: column;
+        gap: 0.55rem;
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+
+      .ot-side-tool-tabs {
+        display: flex;
+        gap: 0.25rem;
+        padding: 0.2rem;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.03);
+        flex-shrink: 0;
+      }
+
+      .ot-side-tool-tab {
+        flex: 1 1 0;
+        padding: 0.4rem 0.55rem;
+        border: none;
+        border-radius: 8px;
+        background: transparent;
+        color: var(--text);
+        font-size: 0.78rem;
+        font-family: inherit;
+        cursor: pointer;
+      }
+
+      .ot-side-tool-tab:hover {
+        color: var(--text-h);
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .ot-side-tool-tab.is-active {
+        background: rgba(14, 165, 233, 0.18);
+        color: #7dd3fc;
+        font-weight: 600;
+      }
+
+      .ot-side-tool-pane[hidden] {
+        display: none !important;
+      }
+
+      .ot-side-tool-pane {
+        display: flex;
+        flex-direction: column;
+        gap: 0.55rem;
+        min-height: 0;
+      }
+
+      /* ===== 물물교환 패널 ===== */
+      .ot-barter-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .ot-barter-section {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .ot-barter-label {
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgba(148, 163, 184, 0.9);
+      }
+
+      .ot-barter-input {
+        width: 100%;
+        padding: 0.5rem 0.65rem;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text-h);
+        font-size: 0.88rem;
+        font-family: inherit;
+      }
+
+      .ot-barter-input:focus {
+        outline: none;
+        border-color: var(--origin);
+        background: rgba(14, 165, 233, 0.08);
+      }
+
+      .ot-barter-select {
+        width: 100%;
+        padding: 0.5rem 0.65rem;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text-h);
+        font-size: 0.88rem;
+        font-family: inherit;
+        cursor: pointer;
+      }
+
+      .ot-barter-ingredient-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0.5rem;
+        align-items: center;
+      }
+
+      .ot-barter-ingredient-label {
+        font-size: 0.85rem;
+        color: var(--text);
+      }
+
+      .ot-barter-ingredient-input {
+        width: 80px;
+        padding: 0.4rem 0.5rem;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--text-h);
+        font-size: 0.85rem;
+        text-align: right;
+        font-family: inherit;
+      }
+
+      .ot-barter-results {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+      }
+
+      .ot-barter-result-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0.5rem;
+        padding: 0.5rem 0.65rem;
+        background: rgba(14, 165, 233, 0.08);
+        border-radius: 8px;
+        border: 1px solid rgba(14, 165, 233, 0.2);
+      }
+
+      .ot-barter-result-name {
+        font-size: 0.85rem;
+        color: var(--text);
+      }
+
+      .ot-barter-result-amount {
+        font-size: 0.92rem;
+        font-weight: 600;
+        color: #7dd3fc;
+      }
+
+      .ot-barter-empty {
+        padding: 0.8rem;
+        text-align: center;
+        font-size: 0.8rem;
+        color: rgba(148, 163, 184, 0.9);
+      }
+
+      .ot-barter-filter-btn {
+        padding: 0.55rem 0.85rem;
+        background: var(--origin);
+        border: none;
+        border-radius: 8px;
+        color: #fff;
+        font-size: 0.82rem;
+        font-weight: 600;
+        font-family: inherit;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+
+      .ot-barter-filter-btn:hover {
+        background: #0ea5e9;
+      }
+
       @media (max-width: 560px) {
         .ot-toolbar-title { font-size: 0.95rem; }
         .ot-countdown { font-size: 1.9rem; }
@@ -782,10 +965,49 @@
             <p class="ot-panel-empty">맵에서 항구를 선택하세요.</p>
           </div>
 
-          <section class="ot-goods-section" aria-label="교역품 분류">
-            <p class="ot-goods-section-label">교역품 분류</p>
-            <div id="ot-goods-cats" class="ot-goods-cats" role="group" aria-label="분류 선택"></div>
-          </section>
+          <div class="ot-side-tools">
+            <div class="ot-side-tool-tabs" role="tablist" aria-label="도구 선택">
+              <button type="button" class="ot-side-tool-tab is-active" data-tool="goods" role="tab" aria-selected="true">교역품 분류</button>
+              <button type="button" class="ot-side-tool-tab" data-tool="barter" role="tab" aria-selected="false">물물교환</button>
+            </div>
+
+            <section id="ot-tool-goods" class="ot-side-tool-pane ot-goods-section" data-tool-pane="goods" role="tabpanel" aria-label="교역품 분류">
+              <div id="ot-goods-cats" class="ot-goods-cats" role="group" aria-label="분류 선택"></div>
+            </section>
+
+            <section id="ot-tool-barter" class="ot-side-tool-pane" data-tool-pane="barter" role="tabpanel" aria-label="물물교환" hidden>
+              <div class="ot-barter-panel">
+                <div class="ot-barter-section">
+                  <label class="ot-barter-label" for="barter-capacity">함대 적재량</label>
+                  <input type="number" id="barter-capacity" class="ot-barter-input"
+                         value="5000" min="1" placeholder="적재량 입력">
+                </div>
+
+                <div class="ot-barter-section">
+                  <label class="ot-barter-label" for="barter-recipe">교환 목표</label>
+                  <select id="barter-recipe" class="ot-barter-select">
+                    <option value="">선택하세요</option>
+                  </select>
+                </div>
+
+                <div class="ot-barter-section">
+                  <p class="ot-barter-label">재료 비율 (게임 화면)</p>
+                  <div id="barter-ingredients"></div>
+                </div>
+
+                <div class="ot-barter-section">
+                  <p class="ot-barter-label">구매 목표</p>
+                  <div id="barter-results">
+                    <div class="ot-barter-empty">교환 목표를 선택하세요</div>
+                  </div>
+                </div>
+
+                <button type="button" id="barter-filter-map" class="ot-barter-filter-btn">
+                  맵에 재료 항구 표시
+                </button>
+              </div>
+            </section>
+          </div>
         </aside>
 
         <div class="ot-map-pane">
@@ -801,6 +1023,7 @@
     <script src="js/origin-ports-data.js"></script>
     <script src="js/origin-ports-coords.js"></script>
     <script src="js/origin-port-goods.js"></script>
+    <script src="js/origin-barter.js"></script>
     <script src="js/origin-timer.js"></script>
   </body>
 </html>
