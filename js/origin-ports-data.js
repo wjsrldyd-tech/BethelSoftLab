@@ -143,7 +143,7 @@
         { name: '하바나', region: '중미' },
         { name: '카라카스', region: '중미' },
         { name: '카르타헤나', region: '중미' },
-        { name: '카옌', region: '중미' },
+        { name: '카옌', region: '남미' },
         { name: '포를라마르', region: '중미' },
 
         // 남미
@@ -192,11 +192,15 @@
         { name: '퐁디셰리', region: '동인도양' },
         { name: '페구', region: '동인도양' },
 
-        // 북극해
-        { name: '나르비크', region: '북극해' },
-        { name: '레이캬비크', region: '북극해' },
-        { name: '바르도', region: '북극해' },
-        { name: '아르한겔스크', region: '북극해' },
+        // 북극해A
+        { name: '나르비크', region: '북극해A' },
+        { name: '레이캬비크', region: '북극해A' },
+        { name: '바르도', region: '북극해A' },
+
+        // 북극해C
+        { name: '아르한겔스크', region: '북극해C' },
+        { name: '딕슨', region: '북극해C' },
+        { name: '카탄가', region: '북극해C' },
 
         // 북극해B
         { name: '오호츠크', region: '북극해B' },

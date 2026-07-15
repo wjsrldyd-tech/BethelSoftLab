@@ -228,7 +228,7 @@
         updateNavButtons();
         renderMap();
         const view = currentView();
-        setStatus(`${view.label} · 기준 ${view.anchor || '—'}`);
+        setStatus(view.label || '');
     }
 
     // ─── 맵 ─────────────────────────────────────────────────────────
@@ -242,7 +242,6 @@
         const now = Date.now();
         const view = currentView();
         const hasImage = !!(view.image);
-        const labelHtml = `<span class="ot-map-label">${escapeHtml(view.label)}${view.anchor ? ' · 기준 ' + escapeHtml(view.anchor) : ''}</span>`;
 
         const pins = displayPins().map(loc => {
             const tracked = findPortByName(loc.name);
@@ -283,7 +282,6 @@
         mapEl.classList.toggle('has-image', hasImage);
         mapEl.classList.toggle('is-edit-mode', editMode);
         mapEl.innerHTML = `
-          ${labelHtml}
           <div class="ot-map-canvas" style="${canvasStyle.join(';')}">${pins}</div>
         `;
         if (mapPaneEl) mapPaneEl.classList.toggle('is-edit-mode', editMode);
