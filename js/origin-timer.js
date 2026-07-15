@@ -610,14 +610,15 @@
                 return;
             }
 
-            // 일반 모드: 맵 스와이프로 해역 이동
+            // 일반 모드: 맵 스와이프로 해역 이동 (캡처는 임계치 이후만 — 핀 클릭 유지)
+            const pin = e.target.closest('.ot-pin');
             swipeState = {
                 pointerId: e.pointerId,
                 startX: e.clientX,
                 startY: e.clientY,
                 moved: false,
+                pinName: pin ? pin.dataset.portName : null,
             };
-            try { mapEl.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
         });
 
         mapEl.addEventListener('pointermove', (e) => {
@@ -644,6 +645,7 @@
             const dy = e.clientY - swipeState.startY;
             if (!swipeState.moved && Math.hypot(dx, dy) >= SWIPE_THRESHOLD) {
                 swipeState.moved = true;
+                try { mapEl.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
             }
         });
 
@@ -666,9 +668,20 @@
             const dx = e.clientX - swipeState.startX;
             const dy = e.clientY - swipeState.startY;
             const moved = swipeState.moved;
-            try { mapEl.releasePointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+            const pinName = swipeState.pinName;
+            if (moved) {
+                try { mapEl.releasePointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+            }
             swipeState = null;
-            if (moved && navigateBySwipe(dx, dy)) {
+
+            if (moved) {
+                if (navigateBySwipe(dx, dy)) suppressPinClick = true;
+                return;
+            }
+
+            // 탭: capture를 쓰지 않았어도 클릭이 씹히는 경우가 있어 pointerup에서 선택
+            if (pinName) {
+                selectPort(pinName);
                 suppressPinClick = true;
             }
         }
