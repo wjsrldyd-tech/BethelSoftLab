@@ -109,6 +109,37 @@
         return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
     }
 
+    function formatSyncedAt(iso) {
+        if (!iso) return '';
+        const d = new Date(iso);
+        if (!Number.isFinite(d.getTime())) return '';
+        const p = (n) => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} `
+            + `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+    }
+
+    /** 이전 맞춤 → 지금 맞춤 간격(분) + 새 syncedAt */
+    function buildSyncStamp(prevSyncedAt, now = Date.now()) {
+        const syncedAt = new Date(now).toISOString();
+        let syncedElapsedMin = null;
+        if (prevSyncedAt) {
+            const prev = new Date(prevSyncedAt).getTime();
+            if (Number.isFinite(prev) && now >= prev) {
+                syncedElapsedMin = Math.floor((now - prev) / 60000);
+            }
+        }
+        return { syncedAt, syncedElapsedMin };
+    }
+
+    function formatSyncLine(syncedAt, syncedElapsedMin) {
+        const when = formatSyncedAt(syncedAt);
+        if (!when) return '맞춤 시각 없음';
+        const elapsed = (syncedElapsedMin != null && Number.isFinite(syncedElapsedMin))
+            ? `${syncedElapsedMin}분`
+            : '—';
+        return `${when} | 경과 ${elapsed}`;
+    }
+
     function remainingToAnchor(remainingMs, now = Date.now()) {
         const nextReset = now + remainingMs;
         return new Date(nextReset - INTERVAL_MS).toISOString();
@@ -437,6 +468,7 @@
         const sold = isSoldOut(tracked, now);
         const ready = rem <= 1000;
         const remVal = formatCountdown(rem);
+        const syncLine = formatSyncLine(tracked.syncedAt, tracked.syncedElapsedMin);
         const totalSec = Math.max(0, Math.ceil(rem / 1000));
         const curMin = Math.min(INTERVAL_MIN, Math.floor(totalSec / 60));
         const minOptions = Array.from({ length: INTERVAL_MIN + 1 }, (_, m) =>
@@ -464,6 +496,7 @@
               <select class="ot-select ot-min-select" data-role="remain-min" aria-label="남은 분">${minOptions}</select>
             </label>
           </div>
+          <p class="ot-synced-at" data-role="synced-at">${escapeHtml(syncLine)}</p>
 
           <div class="ot-remain-edit">
             <div class="ot-sec-grid" role="group" aria-label="남은 초">${secButtons}</div>
@@ -552,6 +585,7 @@
             portName: DEFAULT_PORT,
             anchorAt: new Date().toISOString(),
             intervalMin: INTERVAL_MIN,
+            ...buildSyncStamp(null),
             soldOut: false,
             soldOutAt: null,
         });
@@ -593,6 +627,8 @@
                 ...p,
                 soldOut: !!p.soldOut,
                 soldOutAt: p.soldOutAt || null,
+                syncedAt: p.syncedAt || null,
+                syncedElapsedMin: p.syncedElapsedMin != null ? p.syncedElapsedMin : null,
             }));
             const rename = window.renameOriginPort || (n => n);
             if (prev) selectedName = rename(prev);
@@ -613,10 +649,13 @@
         const port = ports.find(p => p.id === id);
         if (!port) return;
         const clearSold = opts && opts.clearSoldOut;
+        const sync = buildSyncStamp(port.syncedAt);
         await window.originDb.savePort({
             ...port,
             anchorAt: iso,
             intervalMin: INTERVAL_MIN,
+            syncedAt: sync.syncedAt,
+            syncedElapsedMin: sync.syncedElapsedMin,
             soldOut: clearSold ? false : !!port.soldOut,
             soldOutAt: clearSold ? null : (port.soldOutAt || null),
         });
@@ -783,6 +822,7 @@
                         portName: selectedName,
                         anchorAt: new Date().toISOString(),
                         intervalMin: INTERVAL_MIN,
+                        ...buildSyncStamp(null),
                         soldOut: false,
                         soldOutAt: null,
                     });
@@ -838,7 +878,7 @@
                 }
 
                 if (action === 'delete') {
-                    if (!confirm(`「${tracked.portName}」교역소 타이머를 삭제할까요?`)) return;
+                    if (!confirm(`「${tracked.portName}」항구 타이머를 삭제할까요?`)) return;
                     btn.disabled = true;
                     await window.originDb.deletePort(tracked.id);
                     selectedName = tracked.portName; // 맵에는 남기고 미등록 상태로

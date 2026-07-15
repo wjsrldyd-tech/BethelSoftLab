@@ -9,6 +9,8 @@ create extension if not exists pgcrypto;
 -- 1. origin_trade_posts — 항구별 교역소 기준 시각
 -- ============================================================
 -- anchor_at : 최초 입장 또는 재화 초기화 시각 (절대 시각)
+-- synced_at : 남은 시간/입장/재화 초기화로 주기를 맞춘 시각
+-- synced_elapsed_min : 이번 맞춤 직전 맞춤으로부터의 경과(분)
 -- interval_min : 재고 리셋 주기 (분) — 기본 30
 
 create table if not exists public.origin_trade_posts (
@@ -19,6 +21,8 @@ create table if not exists public.origin_trade_posts (
     interval_min  int             not null default 30,
     sold_out      boolean         not null default false,
     sold_out_at   timestamptz     null,
+    synced_at     timestamptz     null,
+    synced_elapsed_min int        null,
     created_at    timestamptz     not null default now(),
     updated_at    timestamptz     not null default now(),
     primary key (tenant_id, id)
@@ -29,6 +33,11 @@ alter table public.origin_trade_posts
     add column if not exists sold_out boolean not null default false;
 alter table public.origin_trade_posts
     add column if not exists sold_out_at timestamptz null;
+-- synced_at : 남은 시간/입장/재화 초기화로 주기를 맞춘 시각
+alter table public.origin_trade_posts
+    add column if not exists synced_at timestamptz null;
+alter table public.origin_trade_posts
+    add column if not exists synced_elapsed_min int null;
 
 create index if not exists idx_origin_trade_posts_tenant_name
     on public.origin_trade_posts(tenant_id, port_name);

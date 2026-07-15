@@ -35,9 +35,25 @@
             intervalMin: row.interval_min ?? 30,
             soldOut:     !!row.sold_out,
             soldOutAt:   row.sold_out_at || null,
+            syncedAt:    row.synced_at || null,
+            syncedElapsedMin: row.synced_elapsed_min != null
+                ? Number(row.synced_elapsed_min)
+                : null,
             createdAt:   row.created_at,
             updatedAt:   row.updated_at,
         };
+    }
+
+    function toIsoOrNull(v) {
+        if (v == null || v === '') return null;
+        if (v instanceof Date) return v.toISOString();
+        return v;
+    }
+
+    function toIntOrNull(v) {
+        if (v == null || v === '') return null;
+        const n = Number(v);
+        return Number.isFinite(n) ? Math.trunc(n) : null;
     }
 
     function normalizePinData(raw) {
@@ -97,6 +113,8 @@
                     ? port.soldOutAt.toISOString()
                     : (port.soldOutAt || new Date().toISOString()))
                 : null,
+            synced_at:    toIsoOrNull(port.syncedAt),
+            synced_elapsed_min: toIntOrNull(port.syncedElapsedMin),
             updated_at:   new Date().toISOString(),
         };
         const { error } = await client
@@ -192,6 +210,12 @@
                             ? port.soldOutAt.toISOString()
                             : (port.soldOutAt || (prev && prev.soldOutAt) || new Date().toISOString()))
                         : null,
+                    syncedAt: port.syncedAt !== undefined
+                        ? toIsoOrNull(port.syncedAt)
+                        : ((prev && prev.syncedAt) || null),
+                    syncedElapsedMin: port.syncedElapsedMin !== undefined
+                        ? toIntOrNull(port.syncedElapsedMin)
+                        : ((prev && prev.syncedElapsedMin != null) ? prev.syncedElapsedMin : null),
                     updatedAt: new Date().toISOString(),
                     createdAt: (prev && prev.createdAt) || port.createdAt || new Date().toISOString(),
                 };
