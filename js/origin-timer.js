@@ -27,8 +27,8 @@
     let ports = [];
     let selectedName = null;
     let selectedViewId = DEFAULT_VIEW;
-    /** @type {string|null} */
-    let selectedGoodCategory = null;
+    /** @type {string[]} 선택된 교역품 분류 (명산품은 단독, 일반 분류는 OR 복수) */
+    let selectedGoodCategories = [];
     let tickTimer = null;
 
     /** @type {Record<string, Record<string, {x:number,y:number}>>} */
@@ -221,14 +221,25 @@
         `).join('');
     }
 
+    function selectedCategoriesLabel() {
+        if (!selectedGoodCategories.length) return '';
+        return selectedGoodCategories.join(', ');
+    }
+
+    function isSpecialCategory(cat) {
+        const specials = window.ORIGIN_SPECIAL_CATEGORIES || ['명산품'];
+        return specials.indexOf(cat) !== -1;
+    }
+
     function selectView(viewId) {
         if (!viewId) return;
         selectedViewId = viewId;
         renderViewTabs();
         renderMap();
         const view = currentView();
-        setStatus(selectedGoodCategory
-            ? `「${selectedGoodCategory}」 — ${view.label || ''}`
+        const label = selectedCategoriesLabel();
+        setStatus(label
+            ? `「${label}」 — ${view.label || ''}`
             : (view.label || ''));
     }
 
@@ -268,11 +279,11 @@
         const now = Date.now();
         const view = currentView();
         const hasImage = !!(view.image);
-        const filterOn = !!(selectedGoodCategory && !editMode);
+        const filterOn = !!(selectedGoodCategories.length && !editMode);
 
         const pins = displayPins().map(loc => {
             const goods = filterOn && typeof window.getOriginPortGoods === 'function'
-                ? window.getOriginPortGoods(loc.name, selectedGoodCategory)
+                ? window.getOriginPortGoods(loc.name, selectedGoodCategories)
                 : [];
             const hasGoods = goods.length > 0;
 
@@ -501,21 +512,63 @@
         panelEl.dataset.portId = tracked.id;
     }
 
+    function catButtonHtml(cat) {
+        const active = selectedGoodCategories.indexOf(cat) !== -1;
+        return `<button type="button" class="ot-cat-btn${active ? ' is-active' : ''}"
+            data-category="${escapeAttr(cat)}" aria-pressed="${active ? 'true' : 'false'}">${escapeHtml(cat)}</button>`;
+    }
+
     function renderGoodsCategories() {
         if (!goodsCatsEl) return;
-        const cats = window.ORIGIN_GOOD_CATEGORIES || [];
-        goodsCatsEl.innerHTML = cats.map(cat => `
-          <button type="button" class="ot-cat-btn${cat === selectedGoodCategory ? ' is-active' : ''}"
-            data-category="${escapeAttr(cat)}" aria-pressed="${cat === selectedGoodCategory ? 'true' : 'false'}">${escapeHtml(cat)}</button>
-        `).join('');
+        const specials = window.ORIGIN_SPECIAL_CATEGORIES || ['명산품'];
+        const normals = window.ORIGIN_GOOD_CATEGORIES || [];
+        const hasFilter = selectedGoodCategories.length > 0;
+        goodsCatsEl.innerHTML = `
+          <div class="ot-goods-cats-special" role="group" aria-label="특수 분류">
+            ${specials.map(catButtonHtml).join('')}
+            <button type="button" class="ot-cat-btn ot-cat-clear${hasFilter ? '' : ' is-dim'}"
+              data-action="clear-goods-filter"
+              ${hasFilter ? '' : 'disabled'}
+              aria-label="필터 해제">필터 해제</button>
+          </div>
+          <div class="ot-goods-cats-divider" aria-hidden="true"></div>
+          <div class="ot-goods-cats-normal" role="group" aria-label="일반 분류">
+            ${normals.map(catButtonHtml).join('')}
+          </div>`;
+    }
+
+    function clearGoodCategories() {
+        if (!selectedGoodCategories.length) return;
+        selectedGoodCategories = [];
+        renderGoodsCategories();
+        renderMap();
+        setStatus(currentView().label || '');
     }
 
     function selectGoodCategory(category) {
-        selectedGoodCategory = selectedGoodCategory === category ? null : category;
+        if (!category) return;
+
+        if (isSpecialCategory(category)) {
+            // 명산품 등: 단독 토글 — 켜면 일반 분류 전부
+            if (selectedGoodCategories.length === 1 && selectedGoodCategories[0] === category) {
+                selectedGoodCategories = [];
+            } else {
+                selectedGoodCategories = [category];
+            }
+        } else {
+            // 일반 분류: OR 복수 — 명산품이 켜져 있으면 끄고 시작
+            const withoutSpecial = selectedGoodCategories.filter(c => !isSpecialCategory(c));
+            const idx = withoutSpecial.indexOf(category);
+            if (idx >= 0) withoutSpecial.splice(idx, 1);
+            else withoutSpecial.push(category);
+            selectedGoodCategories = withoutSpecial;
+        }
+
         renderGoodsCategories();
         renderMap();
-        setStatus(selectedGoodCategory
-            ? `「${selectedGoodCategory}」 — 맵에서 해당 항구를 확인하세요.`
+        const label = selectedCategoriesLabel();
+        setStatus(label
+            ? `「${label}」 — 맵에서 해당 항구를 확인하세요.`
             : (currentView().label || ''));
     }
 
@@ -658,6 +711,11 @@
 
     if (goodsCatsEl) {
         goodsCatsEl.addEventListener('click', (e) => {
+            const clearBtn = e.target.closest('[data-action="clear-goods-filter"]');
+            if (clearBtn) {
+                clearGoodCategories();
+                return;
+            }
             const btn = e.target.closest('[data-category]');
             if (!btn) return;
             selectGoodCategory(btn.dataset.category);

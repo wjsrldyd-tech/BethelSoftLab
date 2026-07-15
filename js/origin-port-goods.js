@@ -7,9 +7,13 @@
 (function () {
     'use strict';
 
-    /** @type {string[]} */
-    window.ORIGIN_GOOD_CATEGORIES = [
+    /** @type {string[]} 특수 필터 — 단독 선택 (명산품 등) */
+    window.ORIGIN_SPECIAL_CATEGORIES = [
         '명산품',
+    ];
+
+    /** @type {string[]} 일반 교역품 분류 — 복수 선택(OR) */
+    window.ORIGIN_GOOD_CATEGORIES = [
         '식료품',
         '조미료',
         '가축',
@@ -1068,7 +1072,7 @@
 
     /**
      * @param {string} portName
-     * @param {string} [category]
+     * @param {string|string[]} [category]
      * @param {{ includeLocked?: boolean }} [opts]
      */
     window.getOriginPortGoods = function (portName, category, opts) {
@@ -1076,21 +1080,46 @@
         let list = window.ORIGIN_PORT_GOODS[portName] || [];
         if (!includeLocked) list = list.filter(g => !isLockedGood(g));
         if (!category) return list.slice();
-        if (category === '명산품') return list.filter(g => !!g.specialty);
-        return list.filter(g => g.category === category);
+
+        const cats = Array.isArray(category) ? category.filter(Boolean) : [category];
+        if (!cats.length) return list.slice();
+
+        if (cats.length === 1) {
+            const c = cats[0];
+            if (c === '명산품') return list.filter(g => !!g.specialty);
+            return list.filter(g => g.category === c);
+        }
+
+        // 복수 분류: OR 합집합 (이름+분류 기준 중복 제거)
+        const seen = new Set();
+        const out = [];
+        for (const c of cats) {
+            const matched = c === '명산품'
+                ? list.filter(g => !!g.specialty)
+                : list.filter(g => g.category === c);
+            for (const g of matched) {
+                const key = g.name + '\0' + g.category;
+                if (seen.has(key)) continue;
+                seen.add(key);
+                out.push(g);
+            }
+        }
+        return out;
     };
 
     /**
      * 현재 맵 핀 항구 중 해당 분류 교역품이 있는 항구만
      * @param {{ name: string }[]} pins
-     * @param {string} category
+     * @param {string|string[]} category
      * @returns {{ portName: string, goods: OriginGood[] }[]}
      */
     window.getOriginMapGoodsByCategory = function (pins, category) {
         if (!category || !Array.isArray(pins)) return [];
+        const cats = Array.isArray(category) ? category.filter(Boolean) : [category];
+        if (!cats.length) return [];
         const out = [];
         for (const pin of pins) {
-            const goods = window.getOriginPortGoods(pin.name, category);
+            const goods = window.getOriginPortGoods(pin.name, cats);
             if (goods.length) out.push({ portName: pin.name, goods });
         }
         out.sort((a, b) => a.portName.localeCompare(b.portName, 'ko'));

@@ -138,8 +138,47 @@
 
       .ot-goods-cats {
         display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .ot-goods-cats-special,
+      .ot-goods-cats-normal {
+        display: flex;
         flex-wrap: wrap;
         gap: 0.32rem;
+      }
+
+      .ot-goods-cats-special {
+        align-items: center;
+      }
+
+      .ot-cat-clear {
+        margin-left: auto;
+        border-color: rgba(148, 163, 184, 0.28);
+        color: #94a3b8;
+      }
+
+      .ot-cat-clear:hover:not(:disabled) {
+        border-color: rgba(248, 113, 113, 0.45);
+        background: rgba(248, 113, 113, 0.1);
+        color: #fecaca;
+      }
+
+      .ot-cat-clear:disabled,
+      .ot-cat-clear.is-dim {
+        opacity: 0.45;
+        cursor: default;
+      }
+
+      .ot-goods-cats-divider {
+        height: 1px;
+        margin: 0.05rem 0;
+        background: linear-gradient(90deg,
+          transparent,
+          rgba(148, 163, 184, 0.35) 12%,
+          rgba(148, 163, 184, 0.35) 88%,
+          transparent);
       }
 
       .ot-cat-btn {
@@ -169,18 +208,18 @@
         box-shadow: 0 0 0 1px rgba(14, 165, 233, 0.2), 0 4px 14px rgba(14, 165, 233, 0.12);
       }
 
-      .ot-cat-btn[data-category="명산품"] {
+      .ot-goods-cats-special .ot-cat-btn:not(.ot-cat-clear) {
         border-color: rgba(250, 204, 21, 0.35);
         color: #fde68a;
       }
 
-      .ot-cat-btn[data-category="명산품"]:hover {
+      .ot-goods-cats-special .ot-cat-btn:not(.ot-cat-clear):hover {
         border-color: rgba(250, 204, 21, 0.55);
         background: rgba(250, 204, 21, 0.1);
         color: #fef08a;
       }
 
-      .ot-cat-btn[data-category="명산품"].is-active {
+      .ot-goods-cats-special .ot-cat-btn:not(.ot-cat-clear).is-active {
         border-color: rgba(250, 204, 21, 0.7);
         background: linear-gradient(160deg, rgba(250, 204, 21, 0.28), rgba(202, 138, 4, 0.18));
         color: #fef9c3;
