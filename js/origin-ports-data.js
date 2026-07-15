@@ -198,6 +198,8 @@
         { name: '바르도', region: '북극해A' },
 
         // 북극해C
+        { name: '캠브리지 베이', region: '북극해C' },
+        { name: '카나크', region: '북극해C' },
         { name: '아르한겔스크', region: '북극해C' },
         { name: '딕슨', region: '북극해C' },
         { name: '카탄가', region: '북극해C' },
