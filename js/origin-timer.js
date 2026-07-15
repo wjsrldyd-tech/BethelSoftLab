@@ -214,12 +214,41 @@
 
     // ─── 해역 선택 ───────────────────────────────────────────────────
 
+    function countMatchingPortsInView(viewId) {
+        if (!selectedGoodCategories.length || typeof window.getOriginPortGoods !== 'function') return 0;
+        const pins = typeof window.getOriginMapPins === 'function'
+            ? window.getOriginMapPins(viewId)
+            : [];
+        let count = 0;
+        for (const pin of pins) {
+            const goods = window.getOriginPortGoods(pin.name, selectedGoodCategories, { byName: filterByName });
+            if (goods.length) count += 1;
+        }
+        return count;
+    }
+
     function renderViewTabs() {
         if (!viewTabsEl || MAP_VIEWS.length === 0) return;
-        viewTabsEl.innerHTML = MAP_VIEWS.map(v => `
-          <button type="button" class="ot-view-tab${v.id === selectedViewId ? ' is-active' : ''}"
-            data-view-id="${escapeAttr(v.id)}">${escapeHtml(v.label)}</button>
-        `).join('');
+        const filterOn = !!(selectedGoodCategories.length && !editMode);
+
+        viewTabsEl.innerHTML = MAP_VIEWS.map(v => {
+            const matchCount = filterOn ? countMatchingPortsInView(v.id) : 0;
+            const hasMatch = matchCount > 0;
+            const classes = [
+                'ot-view-tab',
+                v.id === selectedViewId ? 'is-active' : '',
+                hasMatch ? 'has-goods' : '',
+                filterOn && !hasMatch ? 'is-dim' : '',
+            ].filter(Boolean).join(' ');
+            const badge = hasMatch
+                ? `<span class="ot-view-tab-badge" aria-hidden="true">${matchCount}</span>`
+                : '';
+            const ariaExtra = hasMatch ? ` · 재료 항구 ${matchCount}` : (filterOn ? ' · 재료 없음' : '');
+            return `
+          <button type="button" class="${classes}"
+            data-view-id="${escapeAttr(v.id)}"
+            aria-label="${escapeAttr(v.label + ariaExtra)}">${escapeHtml(v.label)}${badge}</button>`;
+        }).join('');
     }
 
     function selectedCategoriesLabel() {
@@ -543,6 +572,7 @@
         selectedGoodCategories = [];
         filterByName = false; // 이름 필터도 해제
         renderGoodsCategories();
+        renderViewTabs();
         renderMap();
         setStatus(currentView().label || '');
     }
@@ -569,6 +599,7 @@
         }
 
         renderGoodsCategories();
+        renderViewTabs();
         renderMap();
         const label = selectedCategoriesLabel();
         setStatus(label
@@ -976,13 +1007,13 @@
     // 물물교환: 재료 이름으로 맵 필터링
     window.filterMapByGoodNames = function (goodNames) {
         if (!goodNames || !goodNames.length) return;
-        
-        // 재료 이름 배열로 필터링
+
         selectedGoodCategories = goodNames;
         filterByName = true;
         renderGoodsCategories();
+        renderViewTabs();
         renderMap();
-        
+
         const label = goodNames.join(', ');
         const view = currentView();
         setStatus(`「${label}」 — ${view.label || ''}`);
