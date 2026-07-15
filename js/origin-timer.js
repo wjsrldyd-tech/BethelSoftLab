@@ -16,6 +16,7 @@
     const $ = (sel) => document.querySelector(sel);
     const mapEl      = $('#ot-map');
     const panelEl    = $('#ot-panel');
+    const goodsCatsEl = $('#ot-goods-cats');
     const statusEl   = $('#ot-status');
     const viewTabsEl = $('#ot-view-tabs');
     const mapPaneEl  = document.querySelector('.ot-map-pane');
@@ -26,6 +27,8 @@
     let ports = [];
     let selectedName = null;
     let selectedViewId = DEFAULT_VIEW;
+    /** @type {string|null} */
+    let selectedGoodCategory = null;
     let tickTimer = null;
 
     /** @type {Record<string, Record<string, {x:number,y:number}>>} */
@@ -193,7 +196,9 @@
         renderViewTabs();
         renderMap();
         const view = currentView();
-        setStatus(view.label || '');
+        setStatus(selectedGoodCategory
+            ? `「${selectedGoodCategory}」 — ${view.label || ''}`
+            : (view.label || ''));
     }
 
     function neighborFor(dir) {
@@ -232,8 +237,17 @@
         const now = Date.now();
         const view = currentView();
         const hasImage = !!(view.image);
+        const filterOn = !!(selectedGoodCategory && !editMode);
 
         const pins = displayPins().map(loc => {
+            const goods = filterOn && typeof window.getOriginPortGoods === 'function'
+                ? window.getOriginPortGoods(loc.name, selectedGoodCategory)
+                : [];
+            const hasGoods = goods.length > 0;
+
+            // 분류 필터 ON → 해당 품목 있는 항구만 표시
+            if (filterOn && !hasGoods) return '';
+
             const tracked = findPortByName(loc.name);
             const rem = tracked ? getRemainingMs(tracked.anchorAt, now) : null;
             const ready = tracked && rem <= 1000;
@@ -245,10 +259,19 @@
                 sold ? 'is-sold-out' : '',
                 ready && !sold ? 'is-ready' : '',
                 active ? 'is-active' : '',
+                filterOn ? 'is-goods-focus' : '',
+                hasGoods ? 'has-goods' : '',
             ].filter(Boolean).join(' ');
 
-            const timeHtml = tracked
+            // 필터 OFF: 이름 + 타이머 / 필터 ON: 이름 + 품목 (타이머는 왼쪽 패널)
+            const timeHtml = (!filterOn && tracked)
                 ? `<span class="ot-pin-time" data-pin-time="${escapeAttr(loc.name)}">${formatCountdown(rem)}</span>`
+                : '';
+
+            const goodsHtml = hasGoods
+                ? `<span class="ot-pin-goods">${goods.map(g => `
+                    <span class="ot-pin-good${g.specialty ? ' is-specialty' : ''}">${escapeHtml(g.name)}</span>
+                  `).join('')}</span>`
                 : '';
 
             return `
@@ -259,6 +282,7 @@
                 <span class="ot-pin-marker" aria-hidden="true"></span>
                 <span class="ot-pin-name">${escapeHtml(loc.name)}</span>
                 ${timeHtml}
+                ${goodsHtml}
               </button>`;
         }).join('');
 
@@ -271,6 +295,7 @@
 
         mapEl.classList.toggle('has-image', hasImage);
         mapEl.classList.toggle('is-edit-mode', editMode);
+        mapEl.classList.toggle('is-goods-filter', filterOn);
         mapEl.innerHTML = `
           <div class="ot-map-canvas" style="${canvasStyle.join(';')}">${pins}</div>
         `;
@@ -333,6 +358,8 @@
 
     function tickMapPins() {
         const now = Date.now();
+        const filterOn = !!(selectedGoodCategory && !editMode);
+
         mapEl.querySelectorAll('.ot-pin').forEach(pin => {
             const name = pin.dataset.portName;
             const tracked = findPortByName(name);
@@ -340,6 +367,22 @@
             pin.classList.toggle('is-active', selectedName === name);
 
             let timeEl = pin.querySelector('[data-pin-time]');
+
+            // 분류 필터 중에는 핀 타이머를 숨김 (왼쪽 패널만 사용)
+            if (filterOn) {
+                if (timeEl) timeEl.remove();
+                if (!tracked) {
+                    pin.classList.remove('is-ready', 'is-sold-out');
+                    return;
+                }
+                const rem = getRemainingMs(tracked.anchorAt, now);
+                const sold = isSoldOut(tracked, now);
+                const ready = rem <= 1000;
+                pin.classList.toggle('is-sold-out', sold);
+                pin.classList.toggle('is-ready', ready && !sold);
+                return;
+            }
+
             if (!tracked) {
                 pin.classList.remove('is-ready', 'is-sold-out');
                 if (timeEl) timeEl.remove();
@@ -432,6 +475,24 @@
               aria-pressed="${sold ? 'true' : 'false'}">${sold ? '상점 구매 취소' : '상점 구매'}</button>
           </div>`;
         panelEl.dataset.portId = tracked.id;
+    }
+
+    function renderGoodsCategories() {
+        if (!goodsCatsEl) return;
+        const cats = window.ORIGIN_GOOD_CATEGORIES || [];
+        goodsCatsEl.innerHTML = cats.map(cat => `
+          <button type="button" class="ot-cat-btn${cat === selectedGoodCategory ? ' is-active' : ''}"
+            data-category="${escapeAttr(cat)}" aria-pressed="${cat === selectedGoodCategory ? 'true' : 'false'}">${escapeHtml(cat)}</button>
+        `).join('');
+    }
+
+    function selectGoodCategory(category) {
+        selectedGoodCategory = selectedGoodCategory === category ? null : category;
+        renderGoodsCategories();
+        renderMap();
+        setStatus(selectedGoodCategory
+            ? `「${selectedGoodCategory}」 — 맵에서 해당 항구를 확인하세요.`
+            : (currentView().label || ''));
     }
 
     function tickPanel() {
@@ -564,6 +625,14 @@
     }
 
     // ─── 이벤트 ──────────────────────────────────────────────────────
+
+    if (goodsCatsEl) {
+        goodsCatsEl.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-category]');
+            if (!btn) return;
+            selectGoodCategory(btn.dataset.category);
+        });
+    }
 
     if (viewTabsEl) {
         viewTabsEl.addEventListener('click', (e) => {
@@ -805,6 +874,7 @@
             return;
         }
         renderViewTabs();
+        renderGoodsCategories();
         selectView(selectedViewId);
         await Promise.all([reload(false), loadPinsFromDb()]);
         tickTimer = setInterval(tickAll, 1000);
