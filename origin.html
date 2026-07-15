@@ -201,7 +201,8 @@
       .ot-countdown-row {
         display: flex;
         align-items: center;
-        gap: 0.85rem;
+        justify-content: space-between;
+        gap: 0.75rem;
         flex-wrap: wrap;
       }
 
@@ -213,6 +214,10 @@
         color: var(--text-h);
         line-height: 1;
         min-width: 5rem;
+      }
+
+      .ot-countdown-row .ot-min-row {
+        margin-left: auto;
       }
 
       .ot-panel.is-ready .ot-countdown { color: #86efac; }

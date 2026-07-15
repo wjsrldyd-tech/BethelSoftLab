@@ -408,13 +408,13 @@
 
           <div class="ot-countdown-row">
             <div class="ot-countdown" data-role="countdown">${remVal}</div>
-          </div>
-
-          <div class="ot-remain-edit">
             <label class="ot-min-row">
               <span class="ot-label">분</span>
               <select class="ot-select ot-min-select" data-role="remain-min" aria-label="남은 분">${minOptions}</select>
             </label>
+          </div>
+
+          <div class="ot-remain-edit">
             <div class="ot-sec-grid" role="group" aria-label="남은 초">${secButtons}</div>
           </div>
 
