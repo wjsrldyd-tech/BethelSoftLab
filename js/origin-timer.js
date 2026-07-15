@@ -109,23 +109,6 @@
         return new Date(nextReset - INTERVAL_MS).toISOString();
     }
 
-    function parseRemainingInput(value) {
-        if (!value || !String(value).trim()) return null;
-        const v = String(value).trim();
-        if (/^\d+$/.test(v)) {
-            const mins = parseInt(v, 10);
-            if (mins < 0 || mins > INTERVAL_MIN) return null;
-            return mins * 60 * 1000;
-        }
-        const m = v.match(/^(\d{1,2}):(\d{2})$/);
-        if (!m) return null;
-        const mins = parseInt(m[1], 10);
-        const secs = parseInt(m[2], 10);
-        if (secs >= 60 || mins < 0 || mins > INTERVAL_MIN) return null;
-        if (mins === INTERVAL_MIN && secs > 0) return null;
-        return (mins * 60 + secs) * 1000;
-    }
-
     function setStatus(msg, isError) {
         if (!statusEl) return;
         statusEl.textContent = msg || '';
@@ -403,6 +386,14 @@
         const sold = isSoldOut(tracked, now);
         const ready = rem <= 1000;
         const remVal = formatCountdown(rem);
+        const totalSec = Math.max(0, Math.ceil(rem / 1000));
+        const curMin = Math.min(INTERVAL_MIN, Math.floor(totalSec / 60));
+        const minOptions = Array.from({ length: INTERVAL_MIN + 1 }, (_, m) =>
+            `<option value="${m}"${m === curMin ? ' selected' : ''}>${m}</option>`
+        ).join('');
+        const secButtons = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55].map(s =>
+            `<button type="button" class="ot-sec-btn" data-action="set-sec" data-sec="${s}">${String(s).padStart(2, '0')}</button>`
+        ).join('');
 
         panelEl.classList.toggle('is-ready', ready && !sold);
         panelEl.classList.toggle('is-sold-out', sold);
@@ -419,20 +410,12 @@
             <div class="ot-countdown" data-role="countdown">${remVal}</div>
           </div>
 
-          <div class="ot-field">
-            <div class="ot-field-row">
-              <input type="text" id="ot-remain-input"
-                class="ot-input ot-input-remaining"
-                data-role="remaining"
-                inputmode="numeric"
-                placeholder="28:13"
-                value="${escapeAttr(remVal)}"
-                maxlength="5"
-                autocomplete="off"
-                aria-label="남은 시간" />
-              <button type="button" class="ot-btn ot-btn-ghost" data-action="sync">현재</button>
-              <button type="button" class="ot-btn ot-btn-primary" data-action="apply">적용</button>
-            </div>
+          <div class="ot-remain-edit">
+            <label class="ot-min-row">
+              <span class="ot-label">분</span>
+              <select class="ot-select ot-min-select" data-role="remain-min" aria-label="남은 분">${minOptions}</select>
+            </label>
+            <div class="ot-sec-grid" role="group" aria-label="남은 초">${secButtons}</div>
           </div>
 
           <div class="ot-actions">
@@ -456,7 +439,7 @@
         panelEl.classList.toggle('is-ready', ready && !sold);
         panelEl.classList.toggle('is-sold-out', sold);
         const cd = panelEl.querySelector('[data-role="countdown"]');
-        const remInput = panelEl.querySelector('[data-role="remaining"]');
+        const minSel = panelEl.querySelector('[data-role="remain-min"]');
         const visitBtn = panelEl.querySelector('[data-action="visit"]');
 
         if (cd) cd.textContent = formatCountdown(rem);
@@ -466,9 +449,10 @@
             visitBtn.textContent = sold ? '상점 구매 취소' : '상점 구매';
         }
 
-        // 입력 중이면 덮어쓰지 않음
-        if (remInput && document.activeElement !== remInput) {
-            remInput.value = formatCountdown(rem);
+        // 분 선택 중이면 덮어쓰지 않음
+        if (minSel && document.activeElement !== minSel) {
+            const totalSec = Math.max(0, Math.ceil(rem / 1000));
+            minSel.value = String(Math.min(INTERVAL_MIN, Math.floor(totalSec / 60)));
         }
     }
 
@@ -693,19 +677,18 @@
                 const tracked = findPortByName(selectedName);
                 if (!tracked) return;
 
-                if (action === 'sync') {
-                    const input = panelEl.querySelector('[data-role="remaining"]');
-                    if (input) input.value = formatCountdown(getRemainingMs(tracked.anchorAt));
-                    return;
-                }
-
-                if (action === 'apply') {
-                    const input = panelEl.querySelector('[data-role="remaining"]');
-                    const remainingMs = parseRemainingInput(input && input.value);
-                    if (remainingMs == null) {
-                        setStatus('남은 시간을 MM:SS 형식으로 입력하세요. (예: 10:30, 최대 30:00)', true);
-                        return;
+                if (action === 'set-sec') {
+                    const minSel = panelEl.querySelector('[data-role="remain-min"]');
+                    let mins = parseInt(minSel && minSel.value, 10);
+                    let secs = parseInt(btn.dataset.sec, 10);
+                    if (!Number.isFinite(mins) || mins < 0) mins = 0;
+                    if (!Number.isFinite(secs) || secs < 0) secs = 0;
+                    if (mins > INTERVAL_MIN) mins = INTERVAL_MIN;
+                    if (mins === INTERVAL_MIN && secs > 0) {
+                        mins = INTERVAL_MIN;
+                        secs = 0;
                     }
+                    const remainingMs = (mins * 60 + secs) * 1000;
                     btn.disabled = true;
                     await saveAnchor(tracked.id, remainingToAnchor(remainingMs));
                     return;
@@ -753,14 +736,6 @@
             }
         });
 
-        panelEl.addEventListener('keydown', (e) => {
-            if (e.key !== 'Enter') return;
-            const input = e.target.closest('[data-role="remaining"]');
-            if (!input) return;
-            e.preventDefault();
-            const applyBtn = panelEl.querySelector('[data-action="apply"]');
-            if (applyBtn) applyBtn.click();
-        });
     }
 
     // ─── 시작 ────────────────────────────────────────────────────────

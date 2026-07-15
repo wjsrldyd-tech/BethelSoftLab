@@ -236,45 +236,65 @@
         font-weight: 500;
       }
 
-      .ot-field-row {
+      .ot-remain-edit {
         display: flex;
-        gap: 0.4rem;
-        flex-wrap: wrap;
-        align-items: center;
+        flex-direction: column;
+        gap: 0.55rem;
       }
 
-      .ot-input {
-        flex: 1 1 6rem;
-        min-width: 5rem;
+      .ot-min-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .ot-select {
         background: var(--bg);
         border: 1px solid var(--border);
         border-radius: 8px;
         color: var(--text-h);
-        font-size: 0.9rem;
+        font-size: 1rem;
+        font-weight: 600;
         font-family: inherit;
-        padding: 0.45rem 0.6rem;
+        font-variant-numeric: tabular-nums;
+        padding: 0.4rem 0.55rem;
         outline: none;
+        min-width: 4.5rem;
       }
 
-      .ot-input:focus {
+      .ot-select:focus {
         border-color: var(--origin);
         box-shadow: 0 0 0 3px var(--origin-glow);
       }
 
-      .ot-input-remaining {
-        flex: 0 0 auto;
-        width: 5.2rem;
-        min-width: 5.2rem;
-        text-align: center;
-        font-size: 1.1rem;
-        font-weight: 600;
-        font-variant-numeric: tabular-nums;
+      .ot-sec-grid {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 0.35rem;
       }
 
-      .ot-field-hint {
-        font-size: 0.7rem;
-        color: var(--text);
-        opacity: 0.8;
+      .ot-sec-btn {
+        padding: 0.45rem 0.15rem;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: var(--bg);
+        color: var(--text-h);
+        font-size: 0.88rem;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        font-family: inherit;
+        cursor: pointer;
+        line-height: 1.1;
+      }
+
+      .ot-sec-btn:hover {
+        border-color: var(--origin);
+        color: #fff;
+      }
+
+      .ot-sec-btn:disabled {
+        opacity: 0.55;
+        cursor: wait;
       }
 
       .ot-actions {
