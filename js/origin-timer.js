@@ -11,6 +11,7 @@
     const DEFAULT_VIEW = 'eastmed';
     const MAP_VIEWS = window.ORIGIN_MAP_VIEWS || [];
     const DRAG_THRESHOLD = 4;
+    const SWIPE_THRESHOLD = 48;
 
     const $ = (sel) => document.querySelector(sel);
     const mapEl      = $('#ot-map');
@@ -33,6 +34,7 @@
     /** 수정 중 작업 복사본 (저장 전) */
     let editDraft = null;
     let dragState = null;
+    let swipeState = null;
     let suppressPinClick = false;
     let pinSaveInFlight = false;
 
@@ -185,33 +187,38 @@
         `).join('');
     }
 
-    function updateNavButtons() {
-        const n = typeof window.getOriginMapNeighbors === 'function'
-            ? window.getOriginMapNeighbors(selectedViewId)
-            : {};
-        if (!mapPaneEl) return;
-        mapPaneEl.querySelectorAll('.ot-nav').forEach(btn => {
-            const dir = btn.dataset.nav;
-            const target = n[dir] || null;
-            btn.disabled = !target;
-            btn.dataset.target = target || '';
-            if (target) {
-                const view = MAP_VIEWS.find(v => v.id === target);
-                btn.title = view ? view.label : dir;
-            } else {
-                btn.title = '';
-            }
-        });
-    }
-
     function selectView(viewId) {
         if (!viewId) return;
         selectedViewId = viewId;
         renderViewTabs();
-        updateNavButtons();
         renderMap();
         const view = currentView();
         setStatus(view.label || '');
+    }
+
+    function neighborFor(dir) {
+        const n = typeof window.getOriginMapNeighbors === 'function'
+            ? window.getOriginMapNeighbors(selectedViewId)
+            : {};
+        return n[dir] || null;
+    }
+
+    /** 손가락 방향 → 이동할 해역 (왼쪽 스와이프 = 동쪽 등) */
+    function dirFromSwipe(dx, dy) {
+        if (Math.abs(dx) < SWIPE_THRESHOLD && Math.abs(dy) < SWIPE_THRESHOLD) return null;
+        if (Math.abs(dx) >= Math.abs(dy)) {
+            return dx < 0 ? 'right' : 'left';
+        }
+        return dy < 0 ? 'down' : 'up';
+    }
+
+    function navigateBySwipe(dx, dy) {
+        const dir = dirFromSwipe(dx, dy);
+        if (!dir) return false;
+        const target = neighborFor(dir);
+        if (!target) return false;
+        selectView(target);
+        return true;
     }
 
     // ─── 맵 ─────────────────────────────────────────────────────────
@@ -285,6 +292,7 @@
     function enterEditMode() {
         if (editMode) return;
         editMode = true;
+        swipeState = null;
         editDraft = cloneOverrides(pinOverrides);
         updateEditChrome();
         renderMap();
@@ -565,15 +573,6 @@
         });
     }
 
-    if (mapPaneEl) {
-        mapPaneEl.addEventListener('click', (e) => {
-            const nav = e.target.closest('.ot-nav');
-            if (!nav || nav.disabled) return;
-            const target = nav.dataset.target;
-            if (target) selectView(target);
-        });
-    }
-
     if (mapEl) {
         mapEl.addEventListener('click', (e) => {
             if (suppressPinClick) {
@@ -587,54 +586,90 @@
         });
 
         mapEl.addEventListener('pointerdown', (e) => {
-            if (!editMode) return;
-            const pin = e.target.closest('.ot-pin');
-            if (!pin) return;
-            e.preventDefault();
-            const canvas = mapCanvasEl();
-            const rect = canvas.getBoundingClientRect();
-            dragState = {
-                pin,
+            if (e.button != null && e.button !== 0) return;
+
+            if (editMode) {
+                const pin = e.target.closest('.ot-pin');
+                if (!pin) return;
+                e.preventDefault();
+                const canvas = mapCanvasEl();
+                const rect = canvas.getBoundingClientRect();
+                dragState = {
+                    pin,
+                    pointerId: e.pointerId,
+                    name: pin.dataset.portName,
+                    startX: e.clientX,
+                    startY: e.clientY,
+                    moved: false,
+                    mapW: rect.width,
+                    mapH: rect.height,
+                    mapLeft: rect.left,
+                    mapTop: rect.top,
+                };
+                try { pin.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+                return;
+            }
+
+            // 일반 모드: 맵 스와이프로 해역 이동
+            swipeState = {
                 pointerId: e.pointerId,
-                name: pin.dataset.portName,
                 startX: e.clientX,
                 startY: e.clientY,
                 moved: false,
-                mapW: rect.width,
-                mapH: rect.height,
-                mapLeft: rect.left,
-                mapTop: rect.top,
             };
-            try { pin.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+            try { mapEl.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
         });
 
         mapEl.addEventListener('pointermove', (e) => {
-            if (!dragState || e.pointerId !== dragState.pointerId) return;
-            const dx = e.clientX - dragState.startX;
-            const dy = e.clientY - dragState.startY;
-            if (!dragState.moved && Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
-            dragState.moved = true;
-            dragState.pin.classList.add('is-dragging');
+            if (editMode) {
+                if (!dragState || e.pointerId !== dragState.pointerId) return;
+                const dx = e.clientX - dragState.startX;
+                const dy = e.clientY - dragState.startY;
+                if (!dragState.moved && Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
+                dragState.moved = true;
+                dragState.pin.classList.add('is-dragging');
 
-            const x = ((e.clientX - dragState.mapLeft) / dragState.mapW) * 100;
-            const y = ((e.clientY - dragState.mapTop) / dragState.mapH) * 100;
-            const clampedX = Math.min(98, Math.max(2, x));
-            const clampedY = Math.min(98, Math.max(2, y));
-            dragState.pin.style.left = clampedX + '%';
-            dragState.pin.style.top = clampedY + '%';
-            setPinOverride(selectedViewId, dragState.name, clampedX, clampedY);
+                const x = ((e.clientX - dragState.mapLeft) / dragState.mapW) * 100;
+                const y = ((e.clientY - dragState.mapTop) / dragState.mapH) * 100;
+                const clampedX = Math.min(98, Math.max(2, x));
+                const clampedY = Math.min(98, Math.max(2, y));
+                dragState.pin.style.left = clampedX + '%';
+                dragState.pin.style.top = clampedY + '%';
+                setPinOverride(selectedViewId, dragState.name, clampedX, clampedY);
+                return;
+            }
+
+            if (!swipeState || e.pointerId !== swipeState.pointerId) return;
+            const dx = e.clientX - swipeState.startX;
+            const dy = e.clientY - swipeState.startY;
+            if (!swipeState.moved && Math.hypot(dx, dy) >= SWIPE_THRESHOLD) {
+                swipeState.moved = true;
+            }
         });
 
         function endDrag(e) {
-            if (!dragState || e.pointerId !== dragState.pointerId) return;
-            const { pin, moved, name } = dragState;
-            pin.classList.remove('is-dragging');
-            try { pin.releasePointerCapture(e.pointerId); } catch (_) { /* ignore */ }
-            dragState = null;
-            if (moved) {
+            if (editMode) {
+                if (!dragState || e.pointerId !== dragState.pointerId) return;
+                const { pin, moved, name } = dragState;
+                pin.classList.remove('is-dragging');
+                try { pin.releasePointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+                dragState = null;
+                if (moved) {
+                    suppressPinClick = true;
+                    selectPort(name);
+                    setStatus(`「${name}」위치 이동 — 저장을 누르면 반영됩니다.`);
+                }
+                return;
+            }
+
+            if (!swipeState || e.pointerId !== swipeState.pointerId) return;
+            const dx = e.clientX - swipeState.startX;
+            const dy = e.clientY - swipeState.startY;
+            const moved = swipeState.moved;
+            try { mapEl.releasePointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+            swipeState = null;
+            if (moved && navigateBySwipe(dx, dy)) {
                 suppressPinClick = true;
-                selectPort(name);
-                setStatus(`「${name}」위치 이동 — 저장을 누르면 반영됩니다.`);
             }
         }
 

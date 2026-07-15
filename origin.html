@@ -368,6 +368,8 @@
         background: #0a0c10;
         overflow: hidden;
         container-type: size;
+        touch-action: none;
+        user-select: none;
       }
 
       .ot-map-canvas {
@@ -562,62 +564,6 @@
 
       .ot-edit-btn[hidden] { display: none; }
 
-      /* 사방 이동 버튼 */
-      .ot-nav {
-        position: absolute;
-        z-index: 8;
-        width: 2.4rem;
-        height: 2.4rem;
-        border-radius: 50%;
-        border: 1px solid var(--border);
-        background: rgba(20, 22, 28, 0.92);
-        color: var(--text-h);
-        font-size: 1.15rem;
-        line-height: 1;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0;
-        font-family: inherit;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
-      }
-
-      .ot-nav:hover:not(:disabled) {
-        border-color: var(--origin);
-        color: #7dd3fc;
-        background: rgba(14, 165, 233, 0.12);
-      }
-
-      .ot-nav:disabled {
-        opacity: 0.28;
-        cursor: default;
-      }
-
-      .ot-nav-up {
-        top: 0.55rem;
-        left: 50%;
-        transform: translateX(-50%);
-      }
-
-      .ot-nav-down {
-        bottom: 0.55rem;
-        left: 50%;
-        transform: translateX(-50%);
-      }
-
-      .ot-nav-left {
-        left: 0.55rem;
-        top: 50%;
-        transform: translateY(-50%);
-      }
-
-      .ot-nav-right {
-        right: 0.55rem;
-        top: 50%;
-        transform: translateY(-50%);
-      }
-
       @media (max-width: 560px) {
         .ot-toolbar-title { font-size: 0.95rem; }
         .ot-countdown { font-size: 1.9rem; }
@@ -650,10 +596,6 @@
         <div class="ot-map-pane">
           <div id="ot-map" class="ot-map" aria-label="항구 맵"></div>
           <div class="ot-edit-hint" aria-hidden="true">위치 수정 모드 — 핀을 드래그한 뒤 저장하세요</div>
-          <button type="button" class="ot-nav ot-nav-up" data-nav="up" aria-label="북쪽 해역" title="위">↑</button>
-          <button type="button" class="ot-nav ot-nav-down" data-nav="down" aria-label="남쪽 해역" title="아래">↓</button>
-          <button type="button" class="ot-nav ot-nav-left" data-nav="left" aria-label="서쪽 해역" title="왼쪽">←</button>
-          <button type="button" class="ot-nav ot-nav-right" data-nav="right" aria-label="동쪽 해역" title="오른쪽">→</button>
         </div>
       </div>
     </div>
