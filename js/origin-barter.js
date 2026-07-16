@@ -339,11 +339,11 @@
     }
 
     /**
-     * 결과 목표: 적재량 (배에 채울 결과물 수량)
-     * 묶음수: 적재량 / 결과비율
-     * 재료 목표: 묶음수 × 각 재료비율
-     * 결과 현황: 적재량 (목표와 동일 = 만재 기준)
-     * 결과 과부족: 0
+     * 결과 목표: 함대 적재량
+     * 묶음수(목표): 적재량 / 결과비율 → 재료 목표 = 묶음수 × 재료비율
+     * 결과 적재: 실제 실은 재료 중 가장 부족한 비율(병목) 기준으로 교환 예상량
+     * 결과 초과: 결과 적재 − 결과 목표
+     * 재료 사용: 병목 묶음 × 비율, 잔량: 입력 − 사용
      */
     function computePlan() {
         const exchange = currentExchange();
@@ -359,21 +359,36 @@
         const hasMaterialRatio = exchange.ingredients.some(ing => (currentRatios[ing.name] || 0) > 0);
         if (!hasMaterialRatio) return null;
 
-        // 적재량만큼 결과물을 얻기 위한 교환 묶음 수
-        const batches = capacity / resultRatio;
+        // 만재 목표 기준 묶음 수 → 재료 목표
+        const goalBatches = capacity / resultRatio;
+
+        // 실제 적재 재료로 가능한 묶음 = min(적재_i / 비율_i)
+        let haveBatches = null;
+        for (const ing of exchange.ingredients) {
+            const ratio = currentRatios[ing.name] || 0;
+            if (ratio <= 0) continue;
+            const have = Number(currentHave[ing.name]) || 0;
+            const b = have / ratio;
+            if (haveBatches == null || b < haveBatches) haveBatches = b;
+        }
+        if (haveBatches == null) haveBatches = 0;
+        const resultHave = Math.round(haveBatches * resultRatio);
 
         const materials = exchange.ingredients.map(ing => {
             const ratio = currentRatios[ing.name] || 0;
-            const amount = Math.round(batches * ratio);
-            return { name: ing.name, amount, ratio };
+            const amount = Math.round(goalBatches * ratio);
+            const have = Number(currentHave[ing.name]) || 0;
+            const used = ratio > 0 ? Math.round(haveBatches * ratio) : 0;
+            const leftover = have - used;
+            return { name: ing.name, amount, ratio, have, used, leftover };
         });
 
         const result = {
             name: exchange.result.name,
             ratio: resultRatio,
             amount: capacity,
-            have: capacity,
-            delta: 0,
+            have: resultHave,
+            delta: resultHave - capacity,
         };
 
         return { materials, result, capacity };
@@ -398,9 +413,24 @@
         let percentText = '';
         if (goal != null && goal > 0) {
             const percent = Math.round((amount / goal) * 100);
-            percentText = ` <span style="font-size: 0.85em; color: rgba(148, 163, 184, 0.85);">(${percent}%)</span>`;
+            percentText = ` <span class="ot-barter-have-percent-inline">(${percent}%)</span>`;
         }
         return `<span class="ot-barter-cell-value ot-barter-have">${amount.toLocaleString()}${percentText}</span>`;
+    }
+
+    function materialHaveMetaHtml(used, leftover, have, goal) {
+        const usedText = used != null ? used.toLocaleString() : '—';
+        const leftoverText = leftover != null ? leftover.toLocaleString() : '—';
+        let percentHtml = '';
+        if (have > 0 && goal != null && goal > 0) {
+            const percent = Math.round((have / goal) * 100);
+            percentHtml = `<div class="ot-barter-have-percent">${percent}%</div>`;
+        }
+        return `<div class="ot-barter-have-meta">
+          <div class="ot-barter-have-line">사용 ${usedText}</div>
+          <div class="ot-barter-have-line">잔량 ${leftoverText}</div>
+          ${percentHtml}
+        </div>`;
     }
 
     function deltaFromValues(have, goal) {
@@ -419,7 +449,7 @@
         return deltaFromValues(have, goal);
     }
 
-    /** 입력란은 유지하고 목표·현황(결과)·과부족만 갱신 */
+    /** 입력란은 유지하고 목표·사용·잔량·초과만 갱신 */
     function updateComputedRows() {
         const { matrixDiv } = els();
         const table = matrixDiv && matrixDiv.querySelector('.ot-barter-table');
@@ -433,8 +463,8 @@
 
         const plan = computePlan();
         lastGoals = plan ? plan.materials.map(g => ({ name: g.name, amount: g.amount })) : [];
-        const goalByName = {};
-        (plan ? plan.materials : []).forEach(g => { goalByName[g.name] = g.amount; });
+        const matByName = {};
+        (plan ? plan.materials : []).forEach(g => { matByName[g.name] = g; });
 
         const rows = table.tBodies[0].rows;
         const goalRow = rows[1];
@@ -446,31 +476,24 @@
         }
 
         exchange.ingredients.forEach((ing, i) => {
-            const goal = goalByName[ing.name];
+            const mat = matByName[ing.name];
+            const goal = mat ? mat.amount : null;
             const have = Number(currentHave[ing.name]) || 0;
+            const used = mat ? mat.used : 0;
+            const leftover = mat ? mat.leftover : have;
             const goalTd = goalRow.cells[i + 1];
             const haveTd = haveRow.cells[i + 1];
             const deltaTd = deltaRow.cells[i + 1];
             if (goalTd) goalTd.innerHTML = goalCellHtml(goal);
             if (deltaTd) deltaTd.innerHTML = deltaCellHtml(goal, have);
 
-            // 재료 현황 셀의 퍼센트 표시 업데이트
             if (haveTd) {
-                let percentDiv = haveTd.querySelector('.ot-barter-have-percent');
-                if (have > 0 && goal != null && goal > 0) {
-                    const percent = Math.round((have / goal) * 100);
-                    if (!percentDiv) {
-                        percentDiv = document.createElement('div');
-                        percentDiv.className = 'ot-barter-have-percent';
-                        percentDiv.style.fontSize = '0.8em';
-                        percentDiv.style.color = 'rgba(148, 163, 184, 0.75)';
-                        percentDiv.style.textAlign = 'center';
-                        percentDiv.style.marginTop = '0.15rem';
-                        haveTd.appendChild(percentDiv);
-                    }
-                    percentDiv.textContent = `${percent}%`;
-                } else if (percentDiv) {
-                    percentDiv.remove();
+                let meta = haveTd.querySelector('.ot-barter-have-meta');
+                const html = materialHaveMetaHtml(used, leftover, have, goal);
+                if (meta) {
+                    meta.outerHTML = html;
+                } else {
+                    haveTd.insertAdjacentHTML('beforeend', html);
                 }
             }
         });
@@ -513,8 +536,8 @@
         lastGoals = plan ? plan.materials.map(g => ({ name: g.name, amount: g.amount })) : [];
 
         const names = exchange.ingredients.map(ing => ing.name);
-        const goalByName = {};
-        (plan ? plan.materials : []).forEach(g => { goalByName[g.name] = g.amount; });
+        const matByName = {};
+        (plan ? plan.materials : []).forEach(g => { matByName[g.name] = g; });
         const result = plan && plan.result ? plan.result : null;
 
         const head = names.map(n => `<th scope="col">${escapeHtml(n)}</th>`).join('')
@@ -535,30 +558,32 @@
               aria-label="${escapeHtml(exchange.result.name)} 비율"></td>`
                 : '');
 
-        const goalCells = names.map(n => `<td>${goalCellHtml(goalByName[n])}</td>`).join('')
+        const goalCells = names.map(n => {
+            const mat = matByName[n];
+            return `<td>${goalCellHtml(mat ? mat.amount : null)}</td>`;
+        }).join('')
             + (exchange.result
                 ? `<td class="ot-barter-result-col">${goalCellHtml(result ? result.amount : null)}</td>`
                 : '');
 
         const haveCells = names.map(n => {
+            const mat = matByName[n];
             const have = Number(currentHave[n]) || 0;
             const val = have > 0 ? String(have) : '';
-            const goal = goalByName[n];
-            let percentHtml = '';
-            if (have > 0 && goal != null && goal > 0) {
-                const percent = Math.round((have / goal) * 100);
-                percentHtml = `<div class="ot-barter-have-percent" style="font-size: 0.8em; color: rgba(148, 163, 184, 0.75); text-align: center; margin-top: 0.15rem;">${percent}%</div>`;
-            }
-            return `<td><input type="number" class="ot-barter-cell-input" min="0"
+            const goal = mat ? mat.amount : null;
+            const used = mat ? mat.used : 0;
+            const leftover = mat ? mat.leftover : have;
+            return `<td class="ot-barter-have-cell"><input type="number" class="ot-barter-cell-input" min="0"
               data-role="have" data-good="${escapeHtml(n)}" value="${escapeHtml(val)}"
-              placeholder="0" aria-label="${escapeHtml(n)} 현황">${percentHtml}</td>`;
+              placeholder="0" aria-label="${escapeHtml(n)} 적재">${materialHaveMetaHtml(used, leftover, have, goal)}</td>`;
         }).join('')
             + (exchange.result
                 ? `<td class="ot-barter-result-col">${haveCellHtml(result ? result.have : null, result ? result.amount : null)}</td>`
                 : '');
 
         const deltaCells = names.map(n => {
-            const goal = goalByName[n];
+            const mat = matByName[n];
+            const goal = mat ? mat.amount : null;
             const have = Number(currentHave[n]) || 0;
             return `<td>${deltaCellHtml(goal, have)}</td>`;
         }).join('')
@@ -586,11 +611,11 @@
                 ${goalCells}
               </tr>
               <tr>
-                <th scope="row">현황</th>
+                <th scope="row">적재</th>
                 ${haveCells}
               </tr>
               <tr>
-                <th scope="row">과부족</th>
+                <th scope="row">초과</th>
                 ${deltaCells}
               </tr>
             </tbody>
