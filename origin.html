@@ -412,9 +412,8 @@
 
       .ot-countdown-row {
         display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 0.75rem;
+        align-items: flex-end;
+        gap: 0.5rem;
         flex-wrap: wrap;
       }
 
@@ -426,20 +425,27 @@
         color: var(--text-h);
         line-height: 1;
         min-width: 5rem;
+        flex-shrink: 0;
       }
 
       .ot-countdown-row .ot-min-row {
         margin-left: auto;
+        flex-shrink: 0;
+        align-self: center;
       }
 
       .ot-panel.is-ready .ot-countdown { color: #86efac; }
 
       .ot-synced-at {
-        margin: -0.15rem 0 0;
-        font-size: 0.78rem;
+        margin: 0;
+        flex: 1 1 8rem;
+        min-width: 0;
+        font-size: 0.72rem;
+        line-height: 1.1;
         font-variant-numeric: tabular-nums;
         color: var(--text);
         opacity: 0.88;
+        padding-bottom: 0.12em;
       }
 
       .ot-meta {
@@ -532,9 +538,6 @@
         display: flex;
         gap: 0.4rem;
         flex-wrap: wrap;
-      }
-
-      .ot-actions:has(.ot-btn-visit) {
         margin-top: 0.15rem;
       }
 
@@ -555,15 +558,23 @@
       .ot-btn-primary:hover { background: rgba(14, 165, 233, 0.12); }
       .ot-btn-accent { border-color: #f59e0b; color: #fcd34d; }
       .ot-btn-accent:hover { background: rgba(245, 158, 11, 0.12); }
+      .ot-btn-enter,
       .ot-btn-visit {
         width: 100%;
         padding: 0.85rem 1rem;
         font-size: 1.05rem;
         font-weight: 650;
         letter-spacing: 0.06em;
+        border-radius: 10px;
+      }
+      .ot-btn-enter {
+        border-color: var(--origin);
+        color: #7dd3fc;
+      }
+      .ot-btn-enter:hover { background: rgba(14, 165, 233, 0.12); }
+      .ot-btn-visit {
         border-color: #fb923c;
         color: #fdba74;
-        border-radius: 10px;
       }
       .ot-btn-visit:hover { background: rgba(251, 146, 60, 0.12); }
       .ot-btn-visit.is-on {
@@ -576,6 +587,15 @@
       .ot-btn-danger { border-color: rgba(248, 113, 113, 0.45); color: #fca5a5; }
       .ot-btn-danger:hover { background: rgba(248, 113, 113, 0.1); }
       .ot-btn-ghost { color: var(--text); }
+
+      .ot-panel.is-untracked .ot-countdown {
+        color: var(--text);
+        opacity: 0.55;
+      }
+
+      .ot-panel.is-untracked .ot-synced-at {
+        opacity: 0.55;
+      }
 
       /* ===== 오른쪽 지도 ===== */
       .ot-map-pane {

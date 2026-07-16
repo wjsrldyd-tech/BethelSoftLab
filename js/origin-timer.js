@@ -580,72 +580,72 @@
         if (!panelEl) return;
 
         if (!selectedName) {
-            panelEl.classList.remove('is-ready', 'is-sold-out');
+            panelEl.classList.remove('is-ready', 'is-sold-out', 'is-untracked');
+            delete panelEl.dataset.portId;
             panelEl.innerHTML = '<p class="ot-panel-empty">맵에서 항구를 선택하세요.</p>';
             return;
         }
 
         const tracked = findPortByName(selectedName);
         const now = Date.now();
+        const untracked = !tracked;
 
-        // 미등록 — 지금 입장
-        if (!tracked) {
-            panelEl.classList.remove('is-ready', 'is-sold-out');
-            panelEl.innerHTML = `
-              <div class="ot-card-head">
-                ${portNameHeadingHtml(selectedName)}
-                <span class="ot-badge">미등록</span>
-              </div>
-              <div class="ot-actions">
-                <button type="button" class="ot-btn ot-btn-primary" data-action="enter">지금 입장</button>
-              </div>`;
-            return;
-        }
-
-        const rem = getRemainingMs(tracked.anchorAt, now);
-        const sold = isSoldOut(tracked, now);
-        const ready = rem <= 1000;
-        const remVal = formatCountdown(rem);
-        const syncLine = formatSyncLine(tracked.syncedAt, tracked.syncedElapsedMin);
-        const totalSec = Math.max(0, Math.ceil(rem / 1000));
-        const curMin = Math.min(INTERVAL_MIN, Math.floor(totalSec / 60));
+        const rem = untracked ? 0 : getRemainingMs(tracked.anchorAt, now);
+        const sold = untracked ? false : isSoldOut(tracked, now);
+        const ready = !untracked && rem <= 1000;
+        const remVal = untracked ? '--:--' : formatCountdown(rem);
+        const syncLine = untracked
+            ? '맞춤 시각 없음'
+            : formatSyncLine(tracked.syncedAt, tracked.syncedElapsedMin);
+        const totalSec = untracked ? 0 : Math.max(0, Math.ceil(rem / 1000));
+        const curMin = untracked ? 0 : Math.min(INTERVAL_MIN, Math.floor(totalSec / 60));
         const minOptions = Array.from({ length: INTERVAL_MIN + 1 }, (_, m) =>
             `<option value="${m}"${m === curMin ? ' selected' : ''}>${m}</option>`
         ).join('');
         const secButtons = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55].map(s =>
-            `<button type="button" class="ot-sec-btn" data-action="set-sec" data-sec="${s}">${String(s).padStart(2, '0')}</button>`
+            `<button type="button" class="ot-sec-btn" data-action="set-sec" data-sec="${s}"${untracked ? ' disabled' : ''}>${String(s).padStart(2, '0')}</button>`
         ).join('');
 
         panelEl.classList.toggle('is-ready', ready && !sold);
         panelEl.classList.toggle('is-sold-out', sold);
+        panelEl.classList.toggle('is-untracked', untracked);
+
+        const headActions = `<div class="ot-head-actions">
+              <button type="button" class="ot-btn ot-btn-accent" data-action="gem-reset"${untracked ? ' disabled' : ''}>초기화</button>
+              <button type="button" class="ot-btn ot-btn-danger" data-action="delete"${untracked ? ' disabled' : ''}>삭제</button>
+            </div>`;
+
+        const bottomAction = untracked
+            ? `<button type="button" class="ot-btn ot-btn-primary ot-btn-enter" data-action="enter">지금 입장</button>`
+            : `<button type="button" class="ot-btn ot-btn-visit${sold ? ' is-on' : ''}"
+              data-action="visit"
+              aria-pressed="${sold ? 'true' : 'false'}">${sold ? '상점 구매 취소' : '상점 구매'}</button>`;
+
         panelEl.innerHTML = `
           <div class="ot-card-head">
-            ${portNameHeadingHtml(tracked.portName)}
-            <div class="ot-head-actions">
-              <button type="button" class="ot-btn ot-btn-accent" data-action="gem-reset">초기화</button>
-              <button type="button" class="ot-btn ot-btn-danger" data-action="delete">삭제</button>
-            </div>
+            ${portNameHeadingHtml(untracked ? selectedName : tracked.portName)}
+            ${headActions}
           </div>
 
           <div class="ot-countdown-row">
             <div class="ot-countdown" data-role="countdown">${remVal}</div>
+            <p class="ot-synced-at" data-role="synced-at">${escapeHtml(syncLine)}</p>
             <label class="ot-min-row">
               <span class="ot-label">분</span>
-              <select class="ot-select ot-min-select" data-role="remain-min" aria-label="남은 분">${minOptions}</select>
+              <select class="ot-select ot-min-select" data-role="remain-min" aria-label="남은 분"${untracked ? ' disabled' : ''}>${minOptions}</select>
             </label>
           </div>
-          <p class="ot-synced-at" data-role="synced-at">${escapeHtml(syncLine)}</p>
 
           <div class="ot-remain-edit">
             <div class="ot-sec-grid" role="group" aria-label="남은 초">${secButtons}</div>
           </div>
 
           <div class="ot-actions">
-            <button type="button" class="ot-btn ot-btn-visit${sold ? ' is-on' : ''}"
-              data-action="visit"
-              aria-pressed="${sold ? 'true' : 'false'}">${sold ? '상점 구매 취소' : '상점 구매'}</button>
+            ${bottomAction}
           </div>`;
-        panelEl.dataset.portId = tracked.id;
+
+        if (tracked) panelEl.dataset.portId = tracked.id;
+        else delete panelEl.dataset.portId;
     }
 
     function catButtonHtml(cat) {
