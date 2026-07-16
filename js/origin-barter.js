@@ -24,7 +24,6 @@
 
     function els() {
         return {
-            monthSelect: document.getElementById('barter-month'),
             capacityInput: document.getElementById('barter-capacity'),
             recipeSelect: document.getElementById('barter-recipe'),
             ingredientsDiv: document.getElementById('barter-ingredients'),
@@ -34,15 +33,12 @@
     }
 
     function init() {
-        const { monthSelect, capacityInput, recipeSelect, filterBtn } = els();
+        const { capacityInput, recipeSelect, filterBtn } = els();
         if (!capacityInput || !recipeSelect || inited) return;
         inited = true;
 
-        const savedMonth = localStorage.getItem('originBarterMonth');
-        if (savedMonth) {
-            selectedMonth = parseInt(savedMonth, 10);
-            if (monthSelect) monthSelect.value = String(selectedMonth);
-        }
+        const savedMonth = parseInt(localStorage.getItem('originBarterMonth') || '1', 10);
+        selectedMonth = (savedMonth >= 1 && savedMonth <= 12) ? savedMonth : 1;
 
         BARTER_RECIPES.forEach(recipe => {
             const opt = document.createElement('option');
@@ -51,13 +47,11 @@
             recipeSelect.appendChild(opt);
         });
 
-        if (monthSelect) {
-            monthSelect.addEventListener('change', (e) => {
-                selectedMonth = parseInt(e.target.value, 10);
-                localStorage.setItem('originBarterMonth', String(selectedMonth));
-                calculate();
-            });
-        }
+        window.originBarterOnMonthChange = function (month) {
+            selectedMonth = parseInt(month, 10);
+            if (!(selectedMonth >= 1 && selectedMonth <= 12)) selectedMonth = 1;
+            calculate();
+        };
 
         recipeSelect.addEventListener('change', onRecipeChange);
         capacityInput.addEventListener('input', calculate);

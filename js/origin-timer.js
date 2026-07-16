@@ -470,6 +470,48 @@
 
     // ─── 패널 ────────────────────────────────────────────────────────
 
+    function getSelectedMonth() {
+        const m = parseInt(localStorage.getItem('originBarterMonth') || '1', 10);
+        return (m >= 1 && m <= 12) ? m : 1;
+    }
+
+    function monthLabel(month) {
+        const cal = (window.ORIGIN_SEASON_CALENDAR || []).find(r => r.month === month);
+        if (!cal) return `${month}월`;
+        return `${month}월 (${cal.season}·${cal.climate})`;
+    }
+
+    function setSelectedMonth(month) {
+        const m = parseInt(month, 10);
+        if (!(m >= 1 && m <= 12)) return;
+        localStorage.setItem('originBarterMonth', String(m));
+        if (typeof window.originBarterOnMonthChange === 'function') {
+            window.originBarterOnMonthChange(m);
+        }
+        renderPanel();
+    }
+
+    function portNameHeadingHtml(portName) {
+        const month = getSelectedMonth();
+        const cal = (window.ORIGIN_SEASON_CALENDAR || []).find(r => r.month === month);
+        const seasonText = cal ? `${cal.season}·${cal.climate}` : '';
+        const options = Array.from({ length: 12 }, (_, i) => {
+            const m = i + 1;
+            return `<option value="${m}"${m === month ? ' selected' : ''}>${m}월</option>`;
+        }).join('');
+        const seasonHtml = seasonText
+            ? `<span class="ot-season">${escapeHtml(seasonText)}</span>`
+            : '';
+        return `<h2 class="ot-port-name">
+            <label class="ot-month-wrap" title="${escapeAttr(monthLabel(month))} · 클릭하여 변경">
+              <select class="ot-month-select" data-role="month" aria-label="현재 월">${options}</select>
+            </label>
+            <span class="ot-month-sep" aria-hidden="true">|</span>
+            <span class="ot-port-title">${escapeHtml(portName)}</span>
+            ${seasonHtml}
+          </h2>`;
+    }
+
     function renderPanel() {
         if (!panelEl) return;
 
@@ -487,7 +529,7 @@
             panelEl.classList.remove('is-ready', 'is-sold-out');
             panelEl.innerHTML = `
               <div class="ot-card-head">
-                <h2 class="ot-port-name">${escapeHtml(selectedName)}</h2>
+                ${portNameHeadingHtml(selectedName)}
                 <span class="ot-badge">미등록</span>
               </div>
               <div class="ot-actions">
@@ -514,7 +556,7 @@
         panelEl.classList.toggle('is-sold-out', sold);
         panelEl.innerHTML = `
           <div class="ot-card-head">
-            <h2 class="ot-port-name">${escapeHtml(tracked.portName)}</h2>
+            ${portNameHeadingHtml(tracked.portName)}
             <div class="ot-head-actions">
               <button type="button" class="ot-btn ot-btn-accent" data-action="gem-reset">초기화</button>
               <button type="button" class="ot-btn ot-btn-danger" data-action="delete">삭제</button>
@@ -893,6 +935,14 @@
     }
 
     if (panelEl) {
+        panelEl.addEventListener('change', (e) => {
+            const monthSel = e.target.closest('[data-role="month"]');
+            if (monthSel) {
+                setSelectedMonth(monthSel.value);
+                return;
+            }
+        });
+
         panelEl.addEventListener('click', async (e) => {
             const btn = e.target.closest('[data-action]');
             if (!btn) return;
@@ -1003,6 +1053,11 @@
         await Promise.all([reload(false), loadPinsFromDb()]);
         tickTimer = setInterval(tickAll, 1000);
     }
+
+    // 월 변경 시 타이머 카드 헤더 갱신
+    window.refreshOriginPanel = function () {
+        renderPanel();
+    };
 
     // 물물교환: 재료 이름으로 맵 필터링
     window.filterMapByGoodNames = function (goodNames) {
