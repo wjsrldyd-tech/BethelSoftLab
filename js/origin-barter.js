@@ -8,6 +8,7 @@
     const LS_VILLAGE = 'originBarterVillage';
     const LS_EXCHANGE = 'originBarterExchange';
     const LS_RATIOS = 'originBarterRatios';
+    const LS_HAVE = 'originBarterHave';
     const LS_RECIPE_LEGACY = 'originBarterRecipe';
 
     /**
@@ -53,6 +54,10 @@
     let selectedVillageId = null;
     let selectedExchangeId = null;
     let currentRatios = {};
+    /** @type {Record<string, number>} */
+    let currentHave = {};
+    /** @type {{ name: string, amount: number }[]} */
+    let lastGoals = [];
     let selectedMonth = 1;
     let inited = false;
 
@@ -61,10 +66,18 @@
             capacityInput: document.getElementById('barter-capacity'),
             villageSelect: document.getElementById('barter-village'),
             exchangeSelect: document.getElementById('barter-exchange'),
-            ingredientsDiv: document.getElementById('barter-ingredients'),
-            resultsDiv: document.getElementById('barter-results'),
+            matrixDiv: document.getElementById('barter-matrix'),
+            progressClearBtn: document.getElementById('barter-progress-clear'),
             filterBtn: document.getElementById('barter-filter-map'),
         };
+    }
+
+    function escapeHtml(s) {
+        return String(s)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
     }
 
     function getVillage(id) {
@@ -120,7 +133,6 @@
         if (!key) return;
         const store = readRatioStore();
         store[key] = { ...currentRatios };
-        // 레거시 키도 유지 (매스틱)
         if (selectedExchangeId === 'mastic') {
             store.mastic = { ...currentRatios };
         }
@@ -131,15 +143,41 @@
         const store = readRatioStore();
         const key = ratioKey();
         if (key && store[key] && typeof store[key] === 'object') return store[key];
-        // 레거시: exchange id만 쓰던 저장
         if (selectedExchangeId && store[selectedExchangeId] && typeof store[selectedExchangeId] === 'object') {
             return store[selectedExchangeId];
         }
         return {};
     }
 
+    function loadSavedHave() {
+        try {
+            const raw = localStorage.getItem(LS_HAVE);
+            const store = raw ? JSON.parse(raw) : {};
+            const key = ratioKey();
+            if (key && store && typeof store === 'object' && store[key] && typeof store[key] === 'object') {
+                return { ...store[key] };
+            }
+        } catch { /* ignore */ }
+        return {};
+    }
+
+    function saveCurrentHave() {
+        const key = ratioKey();
+        if (!key) return;
+        let store = {};
+        try {
+            const raw = localStorage.getItem(LS_HAVE);
+            store = raw ? JSON.parse(raw) : {};
+            if (!store || typeof store !== 'object') store = {};
+        } catch {
+            store = {};
+        }
+        store[key] = { ...currentHave };
+        localStorage.setItem(LS_HAVE, JSON.stringify(store));
+    }
+
     function init() {
-        const { capacityInput, villageSelect, exchangeSelect, filterBtn } = els();
+        const { capacityInput, villageSelect, exchangeSelect, filterBtn, matrixDiv, progressClearBtn } = els();
         if (!capacityInput || !villageSelect || !exchangeSelect || inited) return;
         inited = true;
 
@@ -161,25 +199,33 @@
         window.originBarterOnMonthChange = function (month) {
             selectedMonth = parseInt(month, 10);
             if (!(selectedMonth >= 1 && selectedMonth <= 12)) selectedMonth = 1;
-            calculate();
+            refreshMatrix();
         };
 
         villageSelect.addEventListener('change', onVillageChange);
         exchangeSelect.addEventListener('change', onExchangeChange);
         capacityInput.addEventListener('input', () => {
             saveCapacity();
-            calculate();
+            refreshMatrix();
         });
         if (filterBtn) {
             filterBtn.addEventListener('click', filterMapByIngredients);
         }
+        if (matrixDiv) {
+            matrixDiv.addEventListener('input', onMatrixInput);
+        }
+        if (progressClearBtn) {
+            progressClearBtn.addEventListener('click', () => {
+                currentHave = {};
+                saveCurrentHave();
+                refreshMatrix();
+            });
+        }
 
         initSideToolTabs();
 
-        // 복원
         let savedVillage = localStorage.getItem(LS_VILLAGE);
         let savedExchange = localStorage.getItem(LS_EXCHANGE);
-        // 레거시 recipe id → 마을/교환
         const legacyRecipe = localStorage.getItem(LS_RECIPE_LEGACY);
         if ((!savedVillage || !savedExchange) && legacyRecipe) {
             for (const v of BARTER_VILLAGES) {
@@ -248,8 +294,10 @@
             onExchangeChange();
         } else {
             selectedExchangeId = null;
-            renderIngredients();
-            calculate();
+            currentRatios = {};
+            currentHave = {};
+            lastGoals = [];
+            showMatrixEmpty('교환목록을 선택하세요');
         }
     }
 
@@ -264,90 +312,58 @@
         const { exchangeSelect } = els();
         selectedExchangeId = exchangeSelect.value || null;
         saveSelection();
-        renderIngredients();
-        calculate();
+        loadRatiosIntoState();
+        currentHave = loadSavedHave();
+        refreshMatrix();
     }
 
-    function renderIngredients() {
-        const { ingredientsDiv } = els();
-        if (!ingredientsDiv) return;
-
+    function loadRatiosIntoState() {
         const exchange = currentExchange();
         currentRatios = {};
-        ingredientsDiv.innerHTML = '';
-
-        if (!exchange) {
-            ingredientsDiv.innerHTML = '<div class="ot-barter-empty">교환목록을 선택하세요</div>';
-            return;
-        }
-
-        if (!exchange.ingredients || !exchange.ingredients.length) {
-            ingredientsDiv.innerHTML = '<div class="ot-barter-empty">재료 비율 미등록 — 게임 화면 비율을 알려주시면 추가합니다</div>';
-            return;
-        }
-
+        if (!exchange || !exchange.ingredients) return;
         const saved = loadSavedRatios();
-
         exchange.ingredients.forEach(ing => {
             const ratio = (Number.isFinite(Number(saved[ing.name])) && Number(saved[ing.name]) > 0)
                 ? parseInt(saved[ing.name], 10)
                 : ing.defaultRatio;
             currentRatios[ing.name] = ratio;
-
-            const row = document.createElement('div');
-            row.className = 'ot-barter-ingredient-row';
-
-            const label = document.createElement('label');
-            label.textContent = ing.name;
-            label.className = 'ot-barter-ingredient-label';
-
-            const input = document.createElement('input');
-            input.type = 'number';
-            input.min = '1';
-            input.value = String(ratio);
-            input.className = 'ot-barter-ingredient-input';
-            input.dataset.ingredientName = ing.name;
-            input.addEventListener('input', (e) => {
-                currentRatios[ing.name] = parseInt(e.target.value, 10) || 1;
-                saveCurrentRatios();
-                calculate();
-            });
-
-            row.appendChild(label);
-            row.appendChild(input);
-            ingredientsDiv.appendChild(row);
         });
-
         saveCurrentRatios();
     }
 
-    function calculate() {
-        const { capacityInput, resultsDiv } = els();
-        if (!resultsDiv) return;
+    function onMatrixInput(e) {
+        const input = e.target.closest('.ot-barter-cell-input');
+        if (!input) return;
+        const role = input.dataset.role;
+        const name = input.dataset.good;
+        if (!role || !name) return;
+
+        if (role === 'ratio') {
+            currentRatios[name] = parseInt(input.value, 10) || 1;
+            saveCurrentRatios();
+            refreshMatrix({ keepFocus: input });
+            return;
+        }
+
+        if (role === 'have') {
+            const n = parseInt(input.value, 10);
+            if (Number.isFinite(n) && n > 0) currentHave[name] = n;
+            else delete currentHave[name];
+            saveCurrentHave();
+            refreshMatrix({ keepFocus: input });
+        }
+    }
+
+    function computeGoals() {
+        const { capacityInput } = els();
+        const exchange = currentExchange();
+        if (!exchange || !exchange.ingredients || !exchange.ingredients.length) return null;
 
         const capacity = parseInt(capacityInput && capacityInput.value, 10) || 0;
-        const exchange = currentExchange();
-
-        if (!exchange) {
-            resultsDiv.innerHTML = '<div class="ot-barter-empty">교환목록을 선택하세요</div>';
-            return;
-        }
-
-        if (!exchange.ingredients || !exchange.ingredients.length) {
-            resultsDiv.innerHTML = '<div class="ot-barter-empty">재료 비율 미등록</div>';
-            return;
-        }
-
-        if (capacity <= 0) {
-            resultsDiv.innerHTML = '<div class="ot-barter-empty">적재량을 입력하세요</div>';
-            return;
-        }
+        if (capacity <= 0) return null;
 
         const totalRatio = Object.values(currentRatios).reduce((a, b) => a + b, 0);
-        if (totalRatio === 0) {
-            resultsDiv.innerHTML = '<div class="ot-barter-empty">비율을 입력하세요</div>';
-            return;
-        }
+        if (totalRatio === 0) return null;
 
         const results = exchange.ingredients.map(ing => {
             const ratio = currentRatios[ing.name] || 0;
@@ -361,13 +377,119 @@
             const maxItem = results.reduce((a, b) => (a.amount > b.amount ? a : b));
             maxItem.amount += diff;
         }
+        return results;
+    }
 
-        resultsDiv.innerHTML = results.map(r => `
-            <div class="ot-barter-result-row">
-                <span class="ot-barter-result-name">${r.name}</span>
-                <span class="ot-barter-result-amount">${r.amount.toLocaleString()}</span>
-            </div>
-        `).join('');
+    function showMatrixEmpty(message) {
+        const { matrixDiv } = els();
+        if (matrixDiv) matrixDiv.innerHTML = `<div class="ot-barter-empty">${escapeHtml(message)}</div>`;
+    }
+
+    function refreshMatrix(opts) {
+        const { matrixDiv } = els();
+        if (!matrixDiv) return;
+
+        const exchange = currentExchange();
+        if (!exchange) {
+            lastGoals = [];
+            showMatrixEmpty('교환목록을 선택하세요');
+            return;
+        }
+        if (!exchange.ingredients || !exchange.ingredients.length) {
+            lastGoals = [];
+            showMatrixEmpty('재료 비율 미등록');
+            return;
+        }
+
+        const goals = computeGoals();
+        lastGoals = goals ? goals.map(g => ({ name: g.name, amount: g.amount })) : [];
+
+        const names = exchange.ingredients.map(ing => ing.name);
+        const goalByName = {};
+        (goals || []).forEach(g => { goalByName[g.name] = g.amount; });
+
+        const head = names.map(n => `<th scope="col">${escapeHtml(n)}</th>`).join('');
+
+        const ratioCells = names.map(n => {
+            const v = currentRatios[n] || '';
+            return `<td><input type="number" class="ot-barter-cell-input" min="1"
+              data-role="ratio" data-good="${escapeHtml(n)}" value="${escapeHtml(String(v))}"
+              aria-label="${escapeHtml(n)} 비율"></td>`;
+        }).join('');
+
+        const goalCells = names.map(n => {
+            const amount = goalByName[n];
+            if (amount == null) {
+                return '<td><span class="ot-barter-cell-value ot-barter-goal">—</span></td>';
+            }
+            return `<td><span class="ot-barter-cell-value ot-barter-goal">${amount.toLocaleString()}</span></td>`;
+        }).join('');
+
+        const haveCells = names.map(n => {
+            const have = Number(currentHave[n]) || 0;
+            const val = have > 0 ? String(have) : '';
+            return `<td><input type="number" class="ot-barter-cell-input" min="0"
+              data-role="have" data-good="${escapeHtml(n)}" value="${escapeHtml(val)}"
+              placeholder="0" aria-label="${escapeHtml(n)} 현황"></td>`;
+        }).join('');
+
+        const deltaCells = names.map(n => {
+            const goal = goalByName[n];
+            if (goal == null) {
+                return '<td><span class="ot-barter-cell-value ot-barter-delta">—</span></td>';
+            }
+            const have = Number(currentHave[n]) || 0;
+            const delta = have - goal; // 현황 − 목표
+            if (delta >= 0) {
+                const text = delta === 0 ? '0' : '+' + delta.toLocaleString();
+                return `<td><span class="ot-barter-cell-value ot-barter-delta is-ok">${text}</span></td>`;
+            }
+            return `<td><span class="ot-barter-cell-value ot-barter-delta is-short">${delta.toLocaleString()}</span></td>`;
+        }).join('');
+
+        const focusRole = opts && opts.keepFocus && opts.keepFocus.dataset.role;
+        const focusGood = opts && opts.keepFocus && opts.keepFocus.dataset.good;
+
+        matrixDiv.innerHTML = `
+          <table class="ot-barter-table">
+            <thead>
+              <tr>
+                <th scope="col">물품</th>
+                ${head}
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">비율</th>
+                ${ratioCells}
+              </tr>
+              <tr>
+                <th scope="row">목표</th>
+                ${goalCells}
+              </tr>
+              <tr>
+                <th scope="row">현황</th>
+                ${haveCells}
+              </tr>
+              <tr>
+                <th scope="row">과부족</th>
+                ${deltaCells}
+              </tr>
+            </tbody>
+          </table>`;
+
+        if (focusRole && focusGood) {
+            const el = Array.from(matrixDiv.querySelectorAll('.ot-barter-cell-input')).find(
+                i => i.dataset.role === focusRole && i.dataset.good === focusGood
+            );
+            if (el) {
+                el.focus();
+                try {
+                    const len = el.value.length;
+                    el.setSelectionRange(len, len);
+                } catch { /* ignore */ }
+            }
+        }
     }
 
     function filterMapByIngredients() {

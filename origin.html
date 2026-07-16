@@ -1002,6 +1002,22 @@
         color: rgba(203, 213, 225, 0.95);
       }
 
+      .ot-barter-input,
+      .ot-barter-cell-input,
+      .ot-qty-input {
+        -moz-appearance: textfield;
+      }
+
+      .ot-barter-input::-webkit-outer-spin-button,
+      .ot-barter-input::-webkit-inner-spin-button,
+      .ot-barter-cell-input::-webkit-outer-spin-button,
+      .ot-barter-cell-input::-webkit-inner-spin-button,
+      .ot-qty-input::-webkit-outer-spin-button,
+      .ot-qty-input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+
       .ot-barter-input {
         width: 100%;
         padding: 0.45rem 0.55rem;
@@ -1045,74 +1061,118 @@
         color: #fff;
       }
 
-      #barter-ingredients,
-      .ot-barter-results {
+      .ot-barter-label-row {
         display: flex;
-        flex-wrap: wrap;
-        gap: 0.4rem;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
       }
 
-      .ot-barter-ingredient-row {
-        flex: 1 1 0;
-        min-width: 4.5rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-        padding: 0.4rem 0.45rem;
-        border-radius: 8px;
-        border: 1px solid rgba(148, 163, 184, 0.2);
-        background: rgba(15, 23, 42, 0.45);
+      .ot-barter-label-row .ot-barter-label {
+        margin: 0;
       }
 
-      .ot-barter-ingredient-label {
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: var(--text);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .ot-barter-ingredient-input {
-        width: 100%;
-        padding: 0.35rem 0.4rem;
-        background: rgba(255,255,255,0.04);
-        border: 1px solid var(--border);
+      .ot-barter-clear-btn {
+        padding: 0.15rem 0.45rem;
         border-radius: 6px;
-        color: var(--text-h);
+        border: 1px solid rgba(148, 163, 184, 0.28);
+        background: transparent;
+        color: #94a3b8;
+        font-size: 0.72rem;
+        font-family: inherit;
+        cursor: pointer;
+      }
+
+      .ot-barter-clear-btn:hover {
+        border-color: rgba(248, 113, 113, 0.45);
+        color: #fecaca;
+        background: rgba(248, 113, 113, 0.08);
+      }
+
+      .ot-barter-matrix {
+        width: 100%;
+        overflow-x: auto;
+      }
+
+      .ot-barter-table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
         font-size: 0.85rem;
+      }
+
+      .ot-barter-table th,
+      .ot-barter-table td {
+        padding: 0.3rem 0.28rem;
+        border: 1px solid rgba(148, 163, 184, 0.2);
         text-align: right;
+        vertical-align: middle;
+      }
+
+      .ot-barter-table thead th {
+        background: rgba(14, 165, 233, 0.12);
+        color: var(--text-h);
+        font-weight: 650;
+        font-size: 0.82rem;
+        text-align: center;
+      }
+
+      .ot-barter-table thead th:first-child,
+      .ot-barter-table tbody th {
+        width: 3.4rem;
+        background: rgba(30, 41, 59, 0.75);
+        color: #cbd5e1;
+        font-weight: 600;
+        font-size: 0.82rem;
+        text-align: center;
+        padding-left: 0.28rem;
+        padding-right: 0.28rem;
+      }
+
+      .ot-barter-table .ot-barter-cell-input,
+      .ot-barter-table .ot-barter-cell-value {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        min-height: 1.85rem;
+        padding: 0.28rem 0.35rem;
+        border-radius: 5px;
+        font-size: 0.85rem;
+        font-weight: 650;
         font-family: inherit;
         font-variant-numeric: tabular-nums;
+        line-height: 1.25;
+        text-align: right;
       }
 
-      .ot-barter-result-row {
-        flex: 1 1 0;
-        min-width: 4.5rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.2rem;
-        padding: 0.45rem 0.5rem;
-        background: rgba(14, 165, 233, 0.08);
-        border-radius: 8px;
-        border: 1px solid rgba(14, 165, 233, 0.2);
+      .ot-barter-table .ot-barter-cell-input {
+        background: rgba(255,255,255,0.04);
+        border: 1px solid var(--border);
+        color: var(--text-h);
       }
 
-      .ot-barter-result-name {
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: var(--text);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+      .ot-barter-table .ot-barter-cell-input:focus {
+        outline: none;
+        border-color: var(--origin);
+        background: rgba(14, 165, 233, 0.1);
       }
 
-      .ot-barter-result-amount {
-        font-size: 0.95rem;
-        font-weight: 700;
+      .ot-barter-table .ot-barter-cell-value {
+        border: 1px solid transparent;
+        background: transparent;
+      }
+
+      .ot-barter-goal {
         color: #7dd3fc;
-        font-variant-numeric: tabular-nums;
-        white-space: nowrap;
+      }
+
+      .ot-barter-delta.is-short {
+        color: #fca5a5;
+      }
+
+      .ot-barter-delta.is-ok {
+        color: #86efac;
       }
 
       .ot-barter-empty {
@@ -1310,13 +1370,11 @@
                 </div>
 
                 <div class="ot-barter-section">
-                  <p class="ot-barter-label">재료 비율</p>
-                  <div id="barter-ingredients"></div>
-                </div>
-
-                <div class="ot-barter-section">
-                  <p class="ot-barter-label">구매 목표</p>
-                  <div id="barter-results" class="ot-barter-results">
+                  <div class="ot-barter-label-row">
+                    <p class="ot-barter-label">재료 계획</p>
+                    <button type="button" id="barter-progress-clear" class="ot-barter-clear-btn">현황 초기화</button>
+                  </div>
+                  <div id="barter-matrix" class="ot-barter-matrix">
                     <div class="ot-barter-empty">교환목록을 선택하세요</div>
                   </div>
                 </div>
