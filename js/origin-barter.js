@@ -449,11 +449,16 @@
         return `<span class="ot-barter-cell-value ot-barter-goal">${amount.toLocaleString()}</span>`;
     }
 
-    function haveCellHtml(amount) {
+    function haveCellHtml(amount, goal) {
         if (amount == null) {
             return '<span class="ot-barter-cell-value ot-barter-have">—</span>';
         }
-        return `<span class="ot-barter-cell-value ot-barter-have">${amount.toLocaleString()}</span>`;
+        let percentText = '';
+        if (goal != null && goal > 0) {
+            const percent = Math.round((amount / goal) * 100);
+            percentText = ` <span style="font-size: 0.85em; color: rgba(148, 163, 184, 0.85);">(${percent}%)</span>`;
+        }
+        return `<span class="ot-barter-cell-value ot-barter-have">${amount.toLocaleString()}${percentText}</span>`;
     }
 
     function deltaFromValues(have, goal) {
@@ -502,16 +507,38 @@
             const goal = goalByName[ing.name];
             const have = Number(currentHave[ing.name]) || 0;
             const goalTd = goalRow.cells[i + 1];
+            const haveTd = haveRow.cells[i + 1];
             const deltaTd = deltaRow.cells[i + 1];
             if (goalTd) goalTd.innerHTML = goalCellHtml(goal);
             if (deltaTd) deltaTd.innerHTML = deltaCellHtml(goal, have);
+            
+            // 재료 현황 셀의 퍼센트 표시 업데이트
+            if (haveTd) {
+                const input = haveTd.querySelector('.ot-barter-cell-input');
+                let percentDiv = haveTd.querySelector('.ot-barter-have-percent');
+                if (have > 0 && goal != null && goal > 0) {
+                    const percent = Math.round((have / goal) * 100);
+                    if (!percentDiv) {
+                        percentDiv = document.createElement('div');
+                        percentDiv.className = 'ot-barter-have-percent';
+                        percentDiv.style.fontSize = '0.8em';
+                        percentDiv.style.color = 'rgba(148, 163, 184, 0.75)';
+                        percentDiv.style.textAlign = 'center';
+                        percentDiv.style.marginTop = '0.15rem';
+                        haveTd.appendChild(percentDiv);
+                    }
+                    percentDiv.textContent = `${percent}%`;
+                } else if (percentDiv) {
+                    percentDiv.remove();
+                }
+            }
         });
 
         if (exchange.result) {
             const col = exchange.ingredients.length + 1;
             const r = plan && plan.result ? plan.result : null;
             if (goalRow.cells[col]) goalRow.cells[col].innerHTML = goalCellHtml(r ? r.amount : null);
-            if (haveRow.cells[col]) haveRow.cells[col].innerHTML = haveCellHtml(r ? r.have : null);
+            if (haveRow.cells[col]) haveRow.cells[col].innerHTML = haveCellHtml(r ? r.have : null, r ? r.amount : null);
             if (deltaRow.cells[col]) {
                 deltaRow.cells[col].innerHTML = r
                     ? deltaFromValues(r.have, r.amount)
@@ -575,12 +602,18 @@
         const haveCells = names.map(n => {
             const have = Number(currentHave[n]) || 0;
             const val = have > 0 ? String(have) : '';
+            const goal = goalByName[n];
+            let percentHtml = '';
+            if (have > 0 && goal != null && goal > 0) {
+                const percent = Math.round((have / goal) * 100);
+                percentHtml = `<div class="ot-barter-have-percent" style="font-size: 0.8em; color: rgba(148, 163, 184, 0.75); text-align: center; margin-top: 0.15rem;">${percent}%</div>`;
+            }
             return `<td><input type="number" class="ot-barter-cell-input" min="0"
               data-role="have" data-good="${escapeHtml(n)}" value="${escapeHtml(val)}"
-              placeholder="0" aria-label="${escapeHtml(n)} 현황"></td>`;
+              placeholder="0" aria-label="${escapeHtml(n)} 현황">${percentHtml}</td>`;
         }).join('')
             + (exchange.result
-                ? `<td class="ot-barter-result-col">${haveCellHtml(result ? result.have : null)}</td>`
+                ? `<td class="ot-barter-result-col">${haveCellHtml(result ? result.have : null, result ? result.amount : null)}</td>`
                 : '');
 
         const deltaCells = names.map(n => {
