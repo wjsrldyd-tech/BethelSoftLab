@@ -13,7 +13,8 @@
 
     /**
      * 마을별 교환목록
-     * ingredients: 게임 교환 화면의 재료 비율 (defaultRatio)
+     * ingredients: 재료 비율 (defaultRatio)
+     * result: 결과물 비율 (defaultRatio) — 재료 나눔에 포함하지 않음
      */
     const BARTER_VILLAGES = [
         {
@@ -23,6 +24,7 @@
                 {
                     id: 'mastic',
                     name: '매스틱',
+                    result: { name: '매스틱', defaultRatio: 680 },
                     ingredients: [
                         { name: '은 식기', defaultRatio: 194 },
                         { name: '커피', defaultRatio: 174 },
@@ -32,6 +34,7 @@
                 {
                     id: 'chaidanruk',
                     name: '차이단륵',
+                    result: { name: '차이단륵', defaultRatio: 626 },
                     ingredients: [
                         { name: '사금', defaultRatio: 174 },
                         { name: '주석 광석', defaultRatio: 174 },
@@ -41,6 +44,7 @@
                 {
                     id: 'damascus_steel',
                     name: '다마스쿠스 강철',
+                    result: { name: '다마스쿠스 강철', defaultRatio: 626 },
                     ingredients: [
                         { name: '철광석', defaultRatio: 174 },
                         { name: '석탄', defaultRatio: 174 },
@@ -53,7 +57,10 @@
 
     let selectedVillageId = null;
     let selectedExchangeId = null;
+    /** 재료 비율만 (결과물 비율 제외) */
     let currentRatios = {};
+    /** 결과물 비율 */
+    let currentResultRatio = 0;
     /** @type {Record<string, number>} */
     let currentHave = {};
     /** @type {{ name: string, amount: number }[]} */
@@ -131,10 +138,15 @@
     function saveCurrentRatios() {
         const key = ratioKey();
         if (!key) return;
+        const exchange = currentExchange();
         const store = readRatioStore();
-        store[key] = { ...currentRatios };
+        const payload = { ...currentRatios };
+        if (exchange && exchange.result) {
+            payload[exchange.result.name] = currentResultRatio;
+        }
+        store[key] = payload;
         if (selectedExchangeId === 'mastic') {
-            store.mastic = { ...currentRatios };
+            store.mastic = { ...payload };
         }
         writeRatioStore(store);
     }
@@ -181,8 +193,14 @@
         if (!capacityInput || !villageSelect || !exchangeSelect || inited) return;
         inited = true;
 
-        const savedMonth = parseInt(localStorage.getItem('originBarterMonth') || '1', 10);
+        const savedMonth = parseInt(localStorage.getItem('originBarterMonth') || '', 10);
         selectedMonth = (savedMonth >= 1 && savedMonth <= 12) ? savedMonth : 1;
+        localStorage.setItem('originBarterMonth', String(selectedMonth));
+        if (typeof window.advanceOriginBarterMonthIfNeeded === 'function') {
+            const advanced = window.advanceOriginBarterMonthIfNeeded();
+            if (advanced != null) selectedMonth = advanced;
+            else selectedMonth = parseInt(localStorage.getItem('originBarterMonth') || String(selectedMonth), 10) || selectedMonth;
+        }
 
         const savedCapacity = parseInt(localStorage.getItem(LS_CAPACITY) || '', 10);
         if (Number.isFinite(savedCapacity) && savedCapacity > 0) {
@@ -295,6 +313,7 @@
         } else {
             selectedExchangeId = null;
             currentRatios = {};
+            currentResultRatio = 0;
             currentHave = {};
             lastGoals = [];
             showMatrixEmpty('교환목록을 선택하세요');
@@ -320,6 +339,7 @@
     function loadRatiosIntoState() {
         const exchange = currentExchange();
         currentRatios = {};
+        currentResultRatio = 0;
         if (!exchange || !exchange.ingredients) return;
         const saved = loadSavedRatios();
         exchange.ingredients.forEach(ing => {
@@ -328,6 +348,13 @@
                 : ing.defaultRatio;
             currentRatios[ing.name] = ratio;
         });
+        if (exchange.result) {
+            const rName = exchange.result.name;
+            const savedR = Number(saved[rName]);
+            currentResultRatio = (Number.isFinite(savedR) && savedR > 0)
+                ? parseInt(saved[rName], 10)
+                : exchange.result.defaultRatio;
+        }
         saveCurrentRatios();
     }
 
@@ -339,45 +366,173 @@
         if (!role || !name) return;
 
         if (role === 'ratio') {
-            currentRatios[name] = parseInt(input.value, 10) || 1;
+            const exchange = currentExchange();
+            const raw = input.value.trim();
+            const n = parseInt(raw, 10);
+            const val = (Number.isFinite(n) && n > 0) ? n : 0;
+            if (exchange && exchange.result && name === exchange.result.name) {
+                currentResultRatio = val;
+            } else {
+                currentRatios[name] = val;
+            }
             saveCurrentRatios();
-            refreshMatrix({ keepFocus: input });
+            updateComputedRows();
             return;
         }
 
         if (role === 'have') {
-            const n = parseInt(input.value, 10);
-            if (Number.isFinite(n) && n > 0) currentHave[name] = n;
+            const raw = input.value.trim();
+            const n = parseInt(raw, 10);
+            if (raw !== '' && Number.isFinite(n) && n >= 0) currentHave[name] = n;
             else delete currentHave[name];
             saveCurrentHave();
-            refreshMatrix({ keepFocus: input });
+            updateComputedRows();
         }
     }
 
-    function computeGoals() {
+    function getCapacity() {
         const { capacityInput } = els();
+        return parseInt(capacityInput && capacityInput.value, 10) || 0;
+    }
+
+    /**
+     * 재료 목표: 적재량을 재료 비율만으로 분배
+     * 결과 목표: (재료목표 / 재료비율) × 결과비율  (적재량 직접 사용 안 함)
+     * 결과 현황: 적재량
+     * 결과 과부족: 적재량 − 결과목표
+     */
+    function computePlan() {
         const exchange = currentExchange();
         if (!exchange || !exchange.ingredients || !exchange.ingredients.length) return null;
 
-        const capacity = parseInt(capacityInput && capacityInput.value, 10) || 0;
+        const capacity = getCapacity();
         if (capacity <= 0) return null;
 
-        const totalRatio = Object.values(currentRatios).reduce((a, b) => a + b, 0);
+        const totalRatio = exchange.ingredients.reduce((sum, ing) => {
+            return sum + (currentRatios[ing.name] || 0);
+        }, 0);
         if (totalRatio === 0) return null;
 
-        const results = exchange.ingredients.map(ing => {
+        const materials = exchange.ingredients.map(ing => {
             const ratio = currentRatios[ing.name] || 0;
             const amount = Math.round((capacity * ratio) / totalRatio);
             return { name: ing.name, amount, ratio };
         });
 
-        const totalAmount = results.reduce((a, b) => a + b.amount, 0);
+        const totalAmount = materials.reduce((a, b) => a + b.amount, 0);
         const diff = capacity - totalAmount;
         if (diff !== 0) {
-            const maxItem = results.reduce((a, b) => (a.amount > b.amount ? a : b));
+            const maxItem = materials.reduce((a, b) => (a.amount > b.amount ? a : b));
             maxItem.amount += diff;
         }
-        return results;
+
+        let result = null;
+        if (exchange.result) {
+            const resultRatio = currentResultRatio || exchange.result.defaultRatio || 0;
+            // 재료 목표에서 묶음 수 산출 (비율 있는 항목 평균 → 반올림 오차 ±1 흡수)
+            let batchSum = 0;
+            let batchCount = 0;
+            materials.forEach(m => {
+                if (m.ratio > 0) {
+                    batchSum += m.amount / m.ratio;
+                    batchCount += 1;
+                }
+            });
+            const batches = batchCount > 0 ? (batchSum / batchCount) : 0;
+            const amount = Math.round(batches * resultRatio);
+            result = {
+                name: exchange.result.name,
+                ratio: resultRatio,
+                amount,
+                have: capacity,
+                delta: capacity - amount,
+            };
+        }
+
+        return { materials, result, capacity };
+    }
+
+    function computeGoals() {
+        const plan = computePlan();
+        return plan ? plan.materials : null;
+    }
+
+    function goalCellHtml(amount) {
+        if (amount == null) {
+            return '<span class="ot-barter-cell-value ot-barter-goal">—</span>';
+        }
+        return `<span class="ot-barter-cell-value ot-barter-goal">${amount.toLocaleString()}</span>`;
+    }
+
+    function haveCellHtml(amount) {
+        if (amount == null) {
+            return '<span class="ot-barter-cell-value ot-barter-have">—</span>';
+        }
+        return `<span class="ot-barter-cell-value ot-barter-have">${amount.toLocaleString()}</span>`;
+    }
+
+    function deltaFromValues(have, goal) {
+        if (goal == null) {
+            return '<span class="ot-barter-cell-value ot-barter-delta">—</span>';
+        }
+        const delta = have - goal;
+        if (delta >= 0) {
+            const text = delta === 0 ? '0' : '+' + delta.toLocaleString();
+            return `<span class="ot-barter-cell-value ot-barter-delta is-ok">${text}</span>`;
+        }
+        return `<span class="ot-barter-cell-value ot-barter-delta is-short">${delta.toLocaleString()}</span>`;
+    }
+
+    function deltaCellHtml(goal, have) {
+        return deltaFromValues(have, goal);
+    }
+
+    /** 입력란은 유지하고 목표·현황(결과)·과부족만 갱신 */
+    function updateComputedRows() {
+        const { matrixDiv } = els();
+        const table = matrixDiv && matrixDiv.querySelector('.ot-barter-table');
+        if (!table || !table.tBodies[0]) {
+            refreshMatrix();
+            return;
+        }
+
+        const exchange = currentExchange();
+        if (!exchange || !exchange.ingredients) return;
+
+        const plan = computePlan();
+        lastGoals = plan ? plan.materials.map(g => ({ name: g.name, amount: g.amount })) : [];
+        const goalByName = {};
+        (plan ? plan.materials : []).forEach(g => { goalByName[g.name] = g.amount; });
+
+        const rows = table.tBodies[0].rows;
+        const goalRow = rows[1];
+        const haveRow = rows[2];
+        const deltaRow = rows[3];
+        if (!goalRow || !haveRow || !deltaRow) {
+            refreshMatrix();
+            return;
+        }
+
+        exchange.ingredients.forEach((ing, i) => {
+            const goal = goalByName[ing.name];
+            const have = Number(currentHave[ing.name]) || 0;
+            const goalTd = goalRow.cells[i + 1];
+            const deltaTd = deltaRow.cells[i + 1];
+            if (goalTd) goalTd.innerHTML = goalCellHtml(goal);
+            if (deltaTd) deltaTd.innerHTML = deltaCellHtml(goal, have);
+        });
+
+        if (exchange.result) {
+            const col = exchange.ingredients.length + 1;
+            const r = plan && plan.result ? plan.result : null;
+            if (goalRow.cells[col]) goalRow.cells[col].innerHTML = goalCellHtml(r ? r.amount : null);
+            if (haveRow.cells[col]) haveRow.cells[col].innerHTML = haveCellHtml(r ? r.have : null);
+            if (deltaRow.cells[col]) {
+                deltaRow.cells[col].innerHTML = r
+                    ? deltaFromValues(r.have, r.amount)
+                    : deltaCellHtml(null, 0);
+            }
+        }
     }
 
     function showMatrixEmpty(message) {
@@ -385,7 +540,7 @@
         if (matrixDiv) matrixDiv.innerHTML = `<div class="ot-barter-empty">${escapeHtml(message)}</div>`;
     }
 
-    function refreshMatrix(opts) {
+    function refreshMatrix() {
         const { matrixDiv } = els();
         if (!matrixDiv) return;
 
@@ -401,29 +556,36 @@
             return;
         }
 
-        const goals = computeGoals();
-        lastGoals = goals ? goals.map(g => ({ name: g.name, amount: g.amount })) : [];
+        const plan = computePlan();
+        lastGoals = plan ? plan.materials.map(g => ({ name: g.name, amount: g.amount })) : [];
 
         const names = exchange.ingredients.map(ing => ing.name);
         const goalByName = {};
-        (goals || []).forEach(g => { goalByName[g.name] = g.amount; });
+        (plan ? plan.materials : []).forEach(g => { goalByName[g.name] = g.amount; });
+        const result = plan && plan.result ? plan.result : null;
 
-        const head = names.map(n => `<th scope="col">${escapeHtml(n)}</th>`).join('');
+        const head = names.map(n => `<th scope="col">${escapeHtml(n)}</th>`).join('')
+            + (exchange.result
+                ? `<th scope="col" class="ot-barter-result-col">${escapeHtml(exchange.result.name)}</th>`
+                : '');
 
         const ratioCells = names.map(n => {
             const v = currentRatios[n] || '';
             return `<td><input type="number" class="ot-barter-cell-input" min="1"
               data-role="ratio" data-good="${escapeHtml(n)}" value="${escapeHtml(String(v))}"
               aria-label="${escapeHtml(n)} 비율"></td>`;
-        }).join('');
+        }).join('')
+            + (exchange.result
+                ? `<td class="ot-barter-result-col"><input type="number" class="ot-barter-cell-input" min="1"
+              data-role="ratio" data-good="${escapeHtml(exchange.result.name)}"
+              value="${escapeHtml(String(currentResultRatio || exchange.result.defaultRatio || ''))}"
+              aria-label="${escapeHtml(exchange.result.name)} 비율"></td>`
+                : '');
 
-        const goalCells = names.map(n => {
-            const amount = goalByName[n];
-            if (amount == null) {
-                return '<td><span class="ot-barter-cell-value ot-barter-goal">—</span></td>';
-            }
-            return `<td><span class="ot-barter-cell-value ot-barter-goal">${amount.toLocaleString()}</span></td>`;
-        }).join('');
+        const goalCells = names.map(n => `<td>${goalCellHtml(goalByName[n])}</td>`).join('')
+            + (exchange.result
+                ? `<td class="ot-barter-result-col">${goalCellHtml(result ? result.amount : null)}</td>`
+                : '');
 
         const haveCells = names.map(n => {
             const have = Number(currentHave[n]) || 0;
@@ -431,24 +593,21 @@
             return `<td><input type="number" class="ot-barter-cell-input" min="0"
               data-role="have" data-good="${escapeHtml(n)}" value="${escapeHtml(val)}"
               placeholder="0" aria-label="${escapeHtml(n)} 현황"></td>`;
-        }).join('');
+        }).join('')
+            + (exchange.result
+                ? `<td class="ot-barter-result-col">${haveCellHtml(result ? result.have : null)}</td>`
+                : '');
 
         const deltaCells = names.map(n => {
             const goal = goalByName[n];
-            if (goal == null) {
-                return '<td><span class="ot-barter-cell-value ot-barter-delta">—</span></td>';
-            }
             const have = Number(currentHave[n]) || 0;
-            const delta = have - goal; // 현황 − 목표
-            if (delta >= 0) {
-                const text = delta === 0 ? '0' : '+' + delta.toLocaleString();
-                return `<td><span class="ot-barter-cell-value ot-barter-delta is-ok">${text}</span></td>`;
-            }
-            return `<td><span class="ot-barter-cell-value ot-barter-delta is-short">${delta.toLocaleString()}</span></td>`;
-        }).join('');
-
-        const focusRole = opts && opts.keepFocus && opts.keepFocus.dataset.role;
-        const focusGood = opts && opts.keepFocus && opts.keepFocus.dataset.good;
+            return `<td>${deltaCellHtml(goal, have)}</td>`;
+        }).join('')
+            + (exchange.result
+                ? `<td class="ot-barter-result-col">${result
+                    ? deltaFromValues(result.have, result.amount)
+                    : deltaCellHtml(null, 0)}</td>`
+                : '');
 
         matrixDiv.innerHTML = `
           <table class="ot-barter-table">
@@ -477,19 +636,6 @@
               </tr>
             </tbody>
           </table>`;
-
-        if (focusRole && focusGood) {
-            const el = Array.from(matrixDiv.querySelectorAll('.ot-barter-cell-input')).find(
-                i => i.dataset.role === focusRole && i.dataset.good === focusGood
-            );
-            if (el) {
-                el.focus();
-                try {
-                    const len = el.value.length;
-                    el.setSelectionRange(len, len);
-                } catch { /* ignore */ }
-            }
-        }
     }
 
     function filterMapByIngredients() {

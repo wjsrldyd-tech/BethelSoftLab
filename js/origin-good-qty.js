@@ -33,11 +33,12 @@
     }
 
     function seasonMeta(good, month) {
+        const port = currentPort;
         const status = (typeof window.getOriginGoodSeasonStatus === 'function')
-            ? window.getOriginGoodSeasonStatus(good, month)
+            ? window.getOriginGoodSeasonStatus(good, month, port)
             : 'plain';
         const mult = (typeof window.getOriginGoodSeasonQtyMult === 'function')
-            ? window.getOriginGoodSeasonQtyMult(good, month)
+            ? window.getOriginGoodSeasonQtyMult(good, month, port)
             : 1;
         return { status, mult };
     }
@@ -116,33 +117,28 @@
             const plain = plainByGood[g.name] || 0;
             const visible = visibleFromPlain(plain, mult);
             let seasonClass = '';
-            let seasonMark = '';
+            let seasonTitle = '';
             if (status === 'peak') {
                 seasonClass = ' is-peak';
-                seasonMark = '▲';
+                seasonTitle = '성수기';
             } else if (status === 'off') {
                 seasonClass = ' is-off';
-                seasonMark = '▼';
+                seasonTitle = '비수기';
             }
-            const specialty = g.specialty
-                ? '<span class="ot-qty-specialty" title="명산품">★</span>'
-                : '';
-            const seasonBadge = seasonMark
-                ? `<span class="ot-qty-season${seasonClass}" title="${status === 'peak' ? '성수기' : '비수기'}">${seasonMark}</span>`
-                : '';
+            const nameClass = g.specialty ? 'ot-qty-name is-specialty' : 'ot-qty-name';
 
             return `
               <div class="ot-qty-row" data-good="${escapeHtml(g.name)}">
                 <div class="ot-qty-info">
-                  <span class="ot-qty-name">${specialty}${escapeHtml(g.name)}</span>
+                  <span class="${nameClass}"${g.specialty ? ' title="명산품"' : ''}>${escapeHtml(g.name)}</span>
                   <span class="ot-qty-cat">${escapeHtml(g.category || '')}</span>
-                  ${seasonBadge}
                 </div>
-                <input type="number" class="ot-qty-input" min="0" step="any"
+                <input type="number" class="ot-qty-input${seasonClass}" min="0" step="any"
                   inputmode="decimal" placeholder="—"
                   data-good-name="${escapeHtml(g.name)}"
                   value="${escapeHtml(visible)}"
-                  aria-label="${escapeHtml(g.name)} 보이는 수량">
+                  title="${escapeHtml(seasonTitle)}"
+                  aria-label="${escapeHtml(g.name)} 보이는 수량${seasonTitle ? ' (' + seasonTitle + ')' : ''}">
               </div>`;
         }).join('');
     }

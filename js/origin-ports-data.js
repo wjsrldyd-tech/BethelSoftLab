@@ -292,8 +292,32 @@
         new Set(window.ORIGIN_PORTS.map(p => p.region))
     ).sort((a, b) => a.localeCompare(b, 'ko'));
 
+    /**
+     * 건기·우기만 쓰는 해역 (카리브)
+     * 그 외 해역은 봄·여름·가을·겨울만 사용
+     */
+    window.ORIGIN_CLIMATE_SEASON_REGIONS = ['중미'];
+
     window.getOriginPortsByRegion = function (region) {
         return window.ORIGIN_PORTS.filter(p => p.region === region);
+    };
+
+    /** @returns {string|null} */
+    window.getOriginPortRegion = function (portName) {
+        if (!portName) return null;
+        const port = (window.ORIGIN_PORTS || []).find(p => p.name === portName);
+        return port ? port.region : null;
+    };
+
+    /**
+     * 항구가 쓰는 시즌 축
+     * @returns {'season'|'climate'}
+     */
+    window.getOriginPortSeasonAxis = function (portName) {
+        const region = window.getOriginPortRegion(portName);
+        const climateRegions = window.ORIGIN_CLIMATE_SEASON_REGIONS || [];
+        if (region && climateRegions.indexOf(region) !== -1) return 'climate';
+        return 'season';
     };
 
     // 구버전(텍스트) → 현행(공식 맵) 표기

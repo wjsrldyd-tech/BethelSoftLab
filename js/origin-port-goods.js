@@ -6,7 +6,9 @@
 //   peak?: 성수기(▲) 태그 — 지역별 용어 그대로 (봄/여름/가을/겨울 및/또는 건기/우기)
 //   off?:  비수기(▼) 태그 — 마찬가지
 //   ※ 품목마다 없을 수 있음. peak/off 없으면 시즌 변동 없음(표시 생략)
-//   ※ 항구·권역마다 계절형만, 건기/우기만, 또는 둘 다 조합으로 표기됨
+//   ※ 항구·권역마다 계절형만(사계절) 또는 건기/우기만 사용 — 해역 축에 맞는 태그만 매칭
+//   ※ 사계절 해역: 봄·여름·가을·겨울만 / 건·우기 해역: 건기·우기만
+//   ※ 게임 월: 사용자가 설정한 월 유지, 매일 KST 09:00에 +1 (advanceOriginBarterMonthIfNeeded)
 // 항구를 늘릴 때는 ORIGIN_PORT_GOODS[항구명] 에 배열만 추가
 
 (function () {
@@ -43,7 +45,10 @@
 
     /**
      * 게임 달력 — 월(1~12)별 사계절 / 건기·우기
-     * (1월=겨울·건기 … 표 기준 고정)
+     * 사계절: 3~5 봄, 6~8 여름, 9~11 가을, 12~2 겨울
+     * 카리브(건·우): 6~10 우기, 11~5 건기
+     * ※ 해역에 따라 season 또는 climate 중 하나만 매칭 (둘 다 OR 금지)
+     * ※ 게임 월: 저장값 유지, 매일 KST 09:00에 +1 (현실 달력 월과 무관)
      * @type {{ month: number, season: string, climate: string }[]}
      */
     window.ORIGIN_SEASON_CALENDAR = [
@@ -60,6 +65,12 @@
         { month: 11, season: '가을', climate: '건기' },
         { month: 12, season: '겨울', climate: '건기' },
     ];
+
+    const SEASON_TAGS = { 봄: 1, 여름: 1, 가을: 1, 겨울: 1 };
+    const CLIMATE_TAGS = { 건기: 1, 우기: 1 };
+
+    /** 게임 일일 리셋 (한국 시간 아침 9시) */
+    const GAME_DAY_RESET_HOUR_KST = 9;
 
     /**
      * @typedef {'monopoly'|'vassal'} OriginGoodLock
@@ -465,7 +476,7 @@
             { name: '뚜론', category: '기호품', specialty: true, lock: 'monopoly', peak: ['가을', '건기'], off: ['봄', '우기'] },
         ],
         보르도: [
-            { name: '고블랭', category: '직물', specialty: true },
+            { name: '고블랭', category: '직물', specialty: true, peak: ['봄'], off: ['가을'] },
             { name: '브랜디', category: '주류', specialty: false, peak: ['겨울', '건기'], off: ['여름', '우기'] },
             { name: '아주라이트', category: '염료', specialty: false, peak: ['여름', '우기'], off: ['겨울', '건기'] },
             { name: '콩소메', category: '조미료', specialty: false, peak: ['여름', '건기'], off: ['겨울'] },
@@ -475,7 +486,7 @@
             { name: '헝가리 워터', category: '향료', specialty: true, lock: 'monopoly', peak: ['가을', '우기'], off: ['봄', '건기'] },
         ],
         낭트: [
-            { name: '라일락', category: '향료', specialty: true },
+            { name: '라일락', category: '향료', specialty: true, peak: ['가을', '우기'], off: ['봄', '건기'] },
             { name: '브랜디', category: '주류', specialty: false, peak: ['겨울', '건기'], off: ['여름', '우기'] },
             { name: '베이컨', category: '식료품', specialty: false, peak: ['가을', '건기'], off: ['봄'] },
             { name: '양파', category: '식료품', specialty: false, peak: ['가을', '건기'], off: ['봄'] },
@@ -1977,19 +1988,136 @@
     };
 
     /**
-     * @param {number} [month] 1~12, 생략 시 현재 로컬 월
-     * @returns {{ month: number, season: string, climate: string, tags: string[] }}
+     * 게임 기준 "오늘" 날짜 (KST, 매일 09:00에 날짜 갱신)
+     * 09:00 이전이면 전일로 취급 — 월 +1 판정에만 사용 (현실 달력 월 ≠ 게임 월)
+     * @param {Date|number} [now]
+     * @returns {{ year: number, month: number, day: number }}
      */
-    window.getOriginSeasonForMonth = function (month) {
+    window.getOriginGameDateParts = function (now) {
+        const d = now instanceof Date ? now : new Date(now || Date.now());
+        const fmt = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'Asia/Seoul',
+            year: 'numeric',
+            month: 'numeric',
+            day: 'numeric',
+            hour: 'numeric',
+            hourCycle: 'h23',
+        });
+        const parts = {};
+        for (const p of fmt.formatToParts(d)) {
+            if (p.type !== 'literal') parts[p.type] = parseInt(p.value, 10);
+        }
+        let year = parts.year;
+        let month = parts.month;
+        let day = parts.day;
+        const hour = parts.hour;
+        if (hour < GAME_DAY_RESET_HOUR_KST) {
+            const noonUtc = Date.UTC(year, month - 1, day, 12, 0, 0);
+            const prev = new Date(noonUtc - 24 * 60 * 60 * 1000);
+            year = prev.getUTCFullYear();
+            month = prev.getUTCMonth() + 1;
+            day = prev.getUTCDate();
+        }
+        return { year, month, day };
+    };
+
+    function pad2(n) {
+        return String(n).padStart(2, '0');
+    }
+
+    /** @returns {string} YYYY-MM-DD (게임일) */
+    window.getOriginGameDayKey = function (now) {
+        const { year, month, day } = window.getOriginGameDateParts(now);
+        return year + '-' + pad2(month) + '-' + pad2(day);
+    };
+
+    const LS_BARTER_MONTH = 'originBarterMonth';
+    const LS_BARTER_MONTH_DAY = 'originBarterMonthGameDay';
+
+    /**
+     * 저장된 게임 월 (1~12). 없으면 null.
+     * 현실 달력과 무관 — 사용자가 맞춘 값.
+     */
+    window.getOriginStoredMonth = function () {
+        const m = parseInt(localStorage.getItem(LS_BARTER_MONTH) || '', 10);
+        return (m >= 1 && m <= 12) ? m : null;
+    };
+
+    /**
+     * 현재 헬퍼 게임 월 (1~12). 미설정 시 1.
+     */
+    window.getOriginGameMonth = function () {
+        return window.getOriginStoredMonth() || 1;
+    };
+
+    /**
+     * 게임일이 바뀌었으면(KST 09:00) 저장 월을 경과일만큼 +1.
+     * @returns {number|null} 변경된 월, 변경 없으면 null
+     */
+    window.advanceOriginBarterMonthIfNeeded = function (now) {
+        const todayKey = window.getOriginGameDayKey(now);
+        const lastKey = localStorage.getItem(LS_BARTER_MONTH_DAY);
+
+        if (!lastKey) {
+            localStorage.setItem(LS_BARTER_MONTH_DAY, todayKey);
+            return null;
+        }
+        if (lastKey === todayKey) return null;
+
+        const lastMs = Date.parse(lastKey + 'T12:00:00Z');
+        const todayMs = Date.parse(todayKey + 'T12:00:00Z');
+        if (!Number.isFinite(lastMs) || !Number.isFinite(todayMs)) {
+            localStorage.setItem(LS_BARTER_MONTH_DAY, todayKey);
+            return null;
+        }
+
+        const days = Math.round((todayMs - lastMs) / (24 * 60 * 60 * 1000));
+        localStorage.setItem(LS_BARTER_MONTH_DAY, todayKey);
+        if (!(days > 0)) return null;
+
+        let month = window.getOriginGameMonth();
+        month = ((month - 1 + days) % 12) + 1;
+        localStorage.setItem(LS_BARTER_MONTH, String(month));
+        return month;
+    };
+
+    /**
+     * @param {'season'|'climate'|string|null|undefined} axisOrPort
+     * @returns {'season'|'climate'}
+     */
+    function resolveSeasonAxis(axisOrPort) {
+        if (axisOrPort === 'climate' || axisOrPort === 'season') return axisOrPort;
+        if (typeof axisOrPort === 'string' && axisOrPort
+            && typeof window.getOriginPortSeasonAxis === 'function') {
+            return window.getOriginPortSeasonAxis(axisOrPort);
+        }
+        return 'season';
+    }
+
+    function tagBelongsToAxis(tag, axis) {
+        if (axis === 'climate') return !!CLIMATE_TAGS[tag];
+        return !!SEASON_TAGS[tag];
+    }
+
+    /**
+     * @param {number} [month] 1~12, 생략 시 게임 월
+     * @param {'season'|'climate'|string} [axisOrPort] 축 또는 항구명
+     * @returns {{ month: number, season: string, climate: string, axis: string, activeTag: string, tags: string[] }}
+     */
+    window.getOriginSeasonForMonth = function (month, axisOrPort) {
         const cal = window.ORIGIN_SEASON_CALENDAR || [];
         let m = Number(month);
-        if (!(m >= 1 && m <= 12)) m = new Date().getMonth() + 1;
+        if (!(m >= 1 && m <= 12)) m = window.getOriginGameMonth();
         const row = cal.find(r => r.month === m) || cal[0] || { month: m, season: '', climate: '' };
+        const axis = resolveSeasonAxis(axisOrPort);
+        const activeTag = axis === 'climate' ? row.climate : row.season;
         return {
             month: row.month,
             season: row.season,
             climate: row.climate,
-            tags: [row.season, row.climate].filter(Boolean),
+            axis,
+            activeTag,
+            tags: activeTag ? [activeTag] : [],
         };
     };
 
@@ -2005,18 +2133,22 @@
 
     /**
      * 품목의 peak/off 태그가 현재(또는 지정) 월과 맞는지
-     * - 시즌 정보 없으면 'plain'
-     * - peak 태그 중 하나라도 월의 season/climate에 있으면 'peak'
-     * - off 태그 중 하나라도 맞으면 'off'
-     * - 둘 다 아니면 'plain' (시즌 필드만 있고 해당 월은 중성)
+     * - 항구/해역 축에 해당하는 태그만 사용 (사계절 vs 건기·우기)
+     * - peak 축 태그가 현재 activeTag와 같으면 'peak'
+     * - off 축 태그가 맞으면 'off'
      * @param {{ peak?: string[], off?: string[] }} g
      * @param {number} [month]
+     * @param {'season'|'climate'|string} [axisOrPort] 축 또는 항구명 (생략 시 사계절)
      * @returns {'peak'|'off'|'plain'}
      */
-    window.getOriginGoodSeasonStatus = function (g, month) {
+    window.getOriginGoodSeasonStatus = function (g, month, axisOrPort) {
         if (!window.originGoodHasSeason(g)) return 'plain';
-        const { tags } = window.getOriginSeasonForMonth(month);
-        const hit = (arr) => Array.isArray(arr) && arr.some(t => tags.indexOf(t) !== -1);
+        const { activeTag, axis } = window.getOriginSeasonForMonth(month, axisOrPort);
+        if (!activeTag) return 'plain';
+
+        const hit = (arr) => Array.isArray(arr)
+            && arr.some(t => tagBelongsToAxis(t, axis) && t === activeTag);
+
         if (hit(g.peak)) return 'peak';
         if (hit(g.off)) return 'off';
         return 'plain';
@@ -2026,10 +2158,11 @@
      * 평시 수량 기준 시즌 배수
      * @param {{ peak?: string[], off?: string[] }} g
      * @param {number} [month]
+     * @param {'season'|'climate'|string} [axisOrPort]
      * @returns {number} peak 1.5 / off 0.5 / plain 1
      */
-    window.getOriginGoodSeasonQtyMult = function (g, month) {
-        const status = window.getOriginGoodSeasonStatus(g, month);
+    window.getOriginGoodSeasonQtyMult = function (g, month, axisOrPort) {
+        const status = window.getOriginGoodSeasonStatus(g, month, axisOrPort);
         const table = window.ORIGIN_SEASON_QTY_MULT || { peak: 1.5, off: 0.5, plain: 1 };
         return table[status] != null ? table[status] : 1;
     };
@@ -2039,11 +2172,12 @@
      * @param {{ peak?: string[], off?: string[] }} g
      * @param {number} plainQty
      * @param {number} [month]
+     * @param {'season'|'climate'|string} [axisOrPort]
      * @returns {number}
      */
-    window.getOriginGoodSeasonQty = function (g, plainQty, month) {
+    window.getOriginGoodSeasonQty = function (g, plainQty, month, axisOrPort) {
         const base = Number(plainQty) || 0;
-        return base * window.getOriginGoodSeasonQtyMult(g, month);
+        return base * window.getOriginGoodSeasonQtyMult(g, month, axisOrPort);
     };
 
     /**

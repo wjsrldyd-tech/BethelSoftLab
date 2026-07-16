@@ -472,8 +472,24 @@
     // ─── 패널 ────────────────────────────────────────────────────────
 
     function getSelectedMonth() {
-        const m = parseInt(localStorage.getItem('originBarterMonth') || '1', 10);
-        return (m >= 1 && m <= 12) ? m : 1;
+        const m = parseInt(localStorage.getItem('originBarterMonth') || '', 10);
+        if (m >= 1 && m <= 12) return m;
+        return 1;
+    }
+
+    /** KST 09:00 게임일이 바뀌면 저장 월 +1 (현실 달력으로 덮지 않음) */
+    function syncGameMonthIfNeeded() {
+        if (typeof window.advanceOriginBarterMonthIfNeeded !== 'function') return;
+        const next = window.advanceOriginBarterMonthIfNeeded();
+        if (next == null) return;
+        if (typeof window.originBarterOnMonthChange === 'function') {
+            window.originBarterOnMonthChange(next);
+        }
+        if (typeof window.originGoodQtyOnMonthChange === 'function') {
+            window.originGoodQtyOnMonthChange();
+        }
+        renderPanel();
+        if (selectedGoodCategories.length) renderMap();
     }
 
     async function loadGoodQtyCache() {
@@ -510,7 +526,7 @@
         const month = getSelectedMonth();
         const plain = (goodQtyCache[portName] && goodQtyCache[portName][g.name]) || 0;
         const mult = (typeof window.getOriginGoodSeasonQtyMult === 'function')
-            ? window.getOriginGoodSeasonQtyMult(g, month)
+            ? window.getOriginGoodSeasonQtyMult(g, month, portName)
             : 1;
         const qtyText = plain > 0 ? formatVisibleQty(plain, mult) : '';
         const qtyHtml = qtyText
@@ -519,10 +535,13 @@
         return `<span class="ot-pin-good${g.specialty ? ' is-specialty' : ''}">${escapeHtml(g.name)}${qtyHtml}</span>`;
     }
 
-    function monthLabel(month) {
-        const cal = (window.ORIGIN_SEASON_CALENDAR || []).find(r => r.month === month);
-        if (!cal) return `${month}월`;
-        return `${month}월 (${cal.season}·${cal.climate})`;
+    function monthLabel(month, portName) {
+        const info = (typeof window.getOriginSeasonForMonth === 'function')
+            ? window.getOriginSeasonForMonth(month, portName)
+            : null;
+        if (!info) return `${month}월`;
+        const tag = info.activeTag || info.season || '';
+        return tag ? `${month}월 (${tag})` : `${month}월`;
     }
 
     function setSelectedMonth(month) {
@@ -541,8 +560,10 @@
 
     function portNameHeadingHtml(portName) {
         const month = getSelectedMonth();
-        const cal = (window.ORIGIN_SEASON_CALENDAR || []).find(r => r.month === month);
-        const seasonText = cal ? `${cal.season}·${cal.climate}` : '';
+        const info = (typeof window.getOriginSeasonForMonth === 'function')
+            ? window.getOriginSeasonForMonth(month, portName)
+            : null;
+        const seasonText = info && info.activeTag ? info.activeTag : '';
         const options = Array.from({ length: 12 }, (_, i) => {
             const m = i + 1;
             return `<option value="${m}"${m === month ? ' selected' : ''}>${m}월</option>`;
@@ -551,7 +572,7 @@
             ? `<span class="ot-season">${escapeHtml(seasonText)}</span>`
             : '';
         return `<h2 class="ot-port-name">
-            <label class="ot-month-wrap" title="${escapeAttr(monthLabel(month))} · 클릭하여 변경">
+            <label class="ot-month-wrap" title="${escapeAttr(monthLabel(month, portName))} · 클릭하여 변경 (매일 KST 09:00에 다음 월로 자동 +1)">
               <select class="ot-month-select" data-role="month" aria-label="현재 월">${options}</select>
             </label>
             <span class="ot-month-sep" aria-hidden="true">|</span>
@@ -745,6 +766,7 @@
     }
 
     function tickAll() {
+        syncGameMonthIfNeeded();
         flushExpiredSoldOut();
         tickMapPins();
         tickPanel();
@@ -1101,6 +1123,7 @@
             setStatus('originDb가 없습니다. 스크립트 로드 순서를 확인하세요.', true);
             return;
         }
+        syncGameMonthIfNeeded();
         renderViewTabs();
         renderGoodsCategories();
         selectView(selectedViewId);
