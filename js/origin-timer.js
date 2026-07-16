@@ -1,12 +1,17 @@
 // =============== origin-timer.js ===============
 // 대항해시대 오리진 교역소 재고 타이머 UI
 // 절대 시각(anchor_at) 기준 30분 주기 · 해역별 맵 핀
+// 게임 시계 드리프트(970분당 ~3초)는 계산만 보정, DB anchor는 유지
 
 (function () {
     'use strict';
 
     const INTERVAL_MIN = 30;
     const INTERVAL_MS  = INTERVAL_MIN * 60 * 1000;
+    /** 게임 시계가 현실보다 빠름: 970분당 약 3초 (측정값). DB anchor는 그대로 두고 계산만 보정. */
+    const DRIFT_AHEAD_MS = 3000;
+    const DRIFT_OVER_MS  = 970 * 60 * 1000;
+    const DRIFT_RATE     = DRIFT_AHEAD_MS / DRIFT_OVER_MS;
     const DEFAULT_PORT = '이스탄불';
     const DEFAULT_VIEW = 'eastmed';
     const MAP_VIEWS = window.ORIGIN_MAP_VIEWS || [];
@@ -94,15 +99,28 @@
         return Number.isFinite(t) ? t : Date.now();
     }
 
+    /** 기준 이후 현실 경과에 따른 게임 시계 앞섬(ms). anchor 저장값은 수정하지 않음. */
+    function getDriftMs(elapsedMs) {
+        return Math.max(0, elapsedMs) * DRIFT_RATE;
+    }
+
+    /**
+     * 다음 리셋 절대 시각(현실 시계).
+     * 게임은 DRIFT_RATE만큼 빠르므로, 같은 anchor로도 리셋이 조금 더 일찍 온다.
+     */
     function getNextResetMs(anchorAt, now = Date.now()) {
         const anchor = parseAnchorMs(anchorAt);
         const elapsed = Math.max(0, now - anchor);
-        const cycles = Math.floor(elapsed / INTERVAL_MS);
-        return anchor + (cycles + 1) * INTERVAL_MS;
+        const gameElapsed = elapsed + getDriftMs(elapsed);
+        const cycles = Math.floor(gameElapsed / INTERVAL_MS);
+        const nextBoundaryGame = (cycles + 1) * INTERVAL_MS;
+        // 게임 경과 → 현실 경과로 환산 (게임 = 현실 × (1 + DRIFT_RATE))
+        const realElapsedAtNext = nextBoundaryGame / (1 + DRIFT_RATE);
+        return anchor + realElapsedAtNext;
     }
 
     function getRemainingMs(anchorAt, now = Date.now()) {
-        return getNextResetMs(anchorAt, now) - now;
+        return Math.max(0, getNextResetMs(anchorAt, now) - now);
     }
 
     function formatCountdown(ms) {
