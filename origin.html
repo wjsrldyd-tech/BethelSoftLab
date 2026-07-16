@@ -1118,6 +1118,24 @@
         color-scheme: dark;
       }
 
+      .ot-barter-select-wrap {
+        position: relative;
+        min-width: 0;
+      }
+
+      .ot-barter-select-wrap .ot-barter-select {
+        padding-left: 2.35rem;
+      }
+
+      .ot-barter-select-wrap .ot-cat-badge {
+        position: absolute;
+        left: 0.55rem;
+        top: 50%;
+        z-index: 1;
+        transform: translateY(-50%);
+        pointer-events: none;
+      }
+
       .ot-barter-select option {
         background: #0c0c10;
         color: #e2e8f0;
@@ -1408,6 +1426,10 @@
         user-select: none;
       }
 
+      .ot-cat-badge[hidden] {
+        display: none;
+      }
+
       .ot-qty-input {
         width: 100%;
         padding: 0.35rem 0.4rem;
@@ -1517,9 +1539,12 @@
                   </div>
                   <div class="ot-barter-field">
                     <label class="ot-barter-label" for="barter-exchange">교환목록</label>
-                    <select id="barter-exchange" class="ot-barter-select">
-                      <option value="">선택하세요</option>
-                    </select>
+                    <div class="ot-barter-select-wrap">
+                      <span id="barter-exchange-badge" class="ot-cat-badge" hidden></span>
+                      <select id="barter-exchange" class="ot-barter-select">
+                        <option value="">선택하세요</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
 

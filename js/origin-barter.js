@@ -21,6 +21,7 @@
         {
             id: 'mastic',
             name: '매스틱',
+            category: '기호품',
             result: { name: '매스틱', defaultRatio: 680 },
             ingredients: [
                 { name: '은 식기', defaultRatio: 194 },
@@ -31,6 +32,7 @@
         {
             id: 'chaidanruk',
             name: '차이단륵',
+            category: '미술품',
             result: { name: '차이단륵', defaultRatio: 626 },
             ingredients: [
                 { name: '사금', defaultRatio: 174 },
@@ -41,6 +43,7 @@
         {
             id: 'damascus_steel',
             name: '다마스쿠스 강철',
+            category: '공업품',
             result: { name: '다마스쿠스 강철', defaultRatio: 626 },
             ingredients: [
                 { name: '철광석', defaultRatio: 174 },
@@ -66,6 +69,7 @@
         return {
             capacityInput: document.getElementById('barter-capacity'),
             exchangeSelect: document.getElementById('barter-exchange'),
+            exchangeBadge: document.getElementById('barter-exchange-badge'),
             matrixDiv: document.getElementById('barter-matrix'),
             progressClearBtn: document.getElementById('barter-progress-clear'),
             filterBtn: document.getElementById('barter-filter-map'),
@@ -86,6 +90,19 @@
 
     function currentExchange() {
         return getExchange(selectedExchangeId);
+    }
+
+    function renderExchangeBadge() {
+        const { exchangeBadge } = els();
+        if (!exchangeBadge) return;
+        const exchange = currentExchange();
+        const badge = exchange && typeof window.getOriginCategoryBadge === 'function'
+            ? window.getOriginCategoryBadge(exchange.category)
+            : null;
+        exchangeBadge.hidden = !badge;
+        exchangeBadge.textContent = badge ? badge.letter : '';
+        exchangeBadge.title = badge ? badge.label : '';
+        exchangeBadge.setAttribute('aria-label', badge ? badge.label : '');
     }
 
     function ratioKey() {
@@ -273,6 +290,7 @@
     function onExchangeChange() {
         const { exchangeSelect } = els();
         selectedExchangeId = exchangeSelect.value || null;
+        renderExchangeBadge();
         saveSelection();
         loadRatiosIntoState();
         currentHave = loadSavedHave();
