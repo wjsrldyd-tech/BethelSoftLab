@@ -35,6 +35,67 @@
         .reduce((acc, g) => acc.concat(g.categories), []);
 
     /**
+     * 분류 → 한 글자 뱃지 (충돌 방지: 공예품=예, 향신료=신)
+     * 시즌(성수/비수) 색과 무관한 중립 표기용
+     * @type {Record<string, string>}
+     */
+    window.ORIGIN_CATEGORY_BADGES = {
+        '기호품': '기',
+        '식료품': '식',
+        '조미료': '조',
+        '직물': '직',
+        '공업품': '공',
+        '광석': '광',
+        '주류': '주',
+        '잡화': '잡',
+        '의약품': '의',
+        '섬유': '섬',
+        '향신료': '신',
+        '공예품': '예',
+        '염료': '염',
+        '향료': '향',
+        '미술품': '미',
+        '귀금속': '귀',
+        '보석': '보',
+        '총포류': '총',
+        '무기류': '무',
+        '가축': '가',
+    };
+
+    /**
+     * @param {string} category
+     * @returns {{ letter: string, label: string } | null}
+     */
+    window.getOriginCategoryBadge = function (category) {
+        if (!category) return null;
+        const map = window.ORIGIN_CATEGORY_BADGES || {};
+        const letter = map[category] || String(category).charAt(0);
+        if (!letter) return null;
+        return { letter: letter, label: category };
+    };
+
+    /**
+     * 공통 HTML 스니펫 (중립 뱃지). 시즌 색 미사용.
+     * @param {string} category
+     * @param {{ escapeHtml?: (s: string) => string }} [opts]
+     * @returns {string}
+     */
+    window.originCategoryBadgeHtml = function (category, opts) {
+        const badge = window.getOriginCategoryBadge(category);
+        if (!badge) return '';
+        const esc = (opts && typeof opts.escapeHtml === 'function')
+            ? opts.escapeHtml
+            : function (s) {
+                return String(s)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;');
+            };
+        return `<span class="ot-cat-badge" title="${esc(badge.label)}" aria-label="${esc(badge.label)}">${esc(badge.letter)}</span>`;
+    };
+
+    /**
      * 게임 달력 — 월(1~12)별 사계절 / 건기·우기
      * @deprecated 7종 계절 타입 시스템으로 대체됨. SEASON_TYPE_CALENDARS 사용
      * @type {{ month: number, season: string, climate: string }[]}

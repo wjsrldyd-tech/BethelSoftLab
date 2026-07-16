@@ -1360,9 +1360,9 @@
 
       .ot-qty-info {
         display: flex;
-        flex-wrap: wrap;
-        align-items: baseline;
-        gap: 0.2rem 0.4rem;
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 0.35rem;
         min-width: 0;
       }
 
@@ -1374,6 +1374,7 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        min-width: 0;
         max-width: 100%;
       }
 
@@ -1388,10 +1389,23 @@
         font-weight: 700;
       }
 
-      .ot-qty-cat {
-        font-size: 0.84rem;
-        color: rgba(148, 163, 184, 0.95);
+      /* 분류 한 글자 뱃지 — 시즌(성수/비수) 색과 분리, 재사용용 */
+      .ot-cat-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.35rem;
+        height: 1.35rem;
         flex-shrink: 0;
+        border-radius: 4px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: 0;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        background: rgba(51, 65, 85, 0.85);
+        color: #e2e8f0;
+        user-select: none;
       }
 
       .ot-qty-input {
