@@ -38,6 +38,8 @@
             intervalMin: row.interval_min ?? 30,
             soldOut:     !!row.sold_out,
             soldOutAt:   row.sold_out_at || null,
+            toolShopBought: !!row.tool_shop_bought,
+            toolShopBoughtAt: row.tool_shop_bought_at || null,
             syncedAt:    row.synced_at || null,
             syncedElapsedMin: row.synced_elapsed_min != null
                 ? Number(row.synced_elapsed_min)
@@ -141,6 +143,12 @@
                 ? (port.soldOutAt instanceof Date
                     ? port.soldOutAt.toISOString()
                     : (port.soldOutAt || new Date().toISOString()))
+                : null,
+            tool_shop_bought: !!port.toolShopBought,
+            tool_shop_bought_at: port.toolShopBought
+                ? (port.toolShopBoughtAt instanceof Date
+                    ? port.toolShopBoughtAt.toISOString()
+                    : (port.toolShopBoughtAt || new Date().toISOString()))
                 : null,
             synced_at:    toIsoOrNull(port.syncedAt),
             synced_elapsed_min: toIntOrNull(port.syncedElapsedMin),
@@ -290,6 +298,9 @@
                 const id = port.id || genId('op');
                 const prev = all.find(e => e.id === id);
                 const soldOut = port.soldOut != null ? !!port.soldOut : !!(prev && prev.soldOut);
+                const toolShopBought = port.toolShopBought != null
+                    ? !!port.toolShopBought
+                    : !!(prev && prev.toolShopBought);
                 const row = {
                     id,
                     tenantId: getTenantId(),
@@ -303,6 +314,12 @@
                         ? (port.soldOutAt instanceof Date
                             ? port.soldOutAt.toISOString()
                             : (port.soldOutAt || (prev && prev.soldOutAt) || new Date().toISOString()))
+                        : null,
+                    toolShopBought,
+                    toolShopBoughtAt: toolShopBought
+                        ? (port.toolShopBoughtAt instanceof Date
+                            ? port.toolShopBoughtAt.toISOString()
+                            : (port.toolShopBoughtAt || (prev && prev.toolShopBoughtAt) || new Date().toISOString()))
                         : null,
                     syncedAt: port.syncedAt !== undefined
                         ? toIsoOrNull(port.syncedAt)

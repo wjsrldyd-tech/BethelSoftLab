@@ -38,6 +38,11 @@ alter table public.origin_trade_posts
     add column if not exists synced_at timestamptz null;
 alter table public.origin_trade_posts
     add column if not exists synced_elapsed_min int null;
+-- 도구점 구매: 현실 KST 자정에 리셋
+alter table public.origin_trade_posts
+    add column if not exists tool_shop_bought boolean not null default false;
+alter table public.origin_trade_posts
+    add column if not exists tool_shop_bought_at timestamptz null;
 
 create index if not exists idx_origin_trade_posts_tenant_name
     on public.origin_trade_posts(tenant_id, port_name);

@@ -204,6 +204,24 @@
         return now < soldOutUntilMs(port);
     }
 
+    /** 현실 한국 날짜 키 YYYY-MM-DD (KST) */
+    function kstDateKey(ms = Date.now()) {
+        return new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'Asia/Seoul',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+        }).format(new Date(ms));
+    }
+
+    /** 도구점 구매: 현실 KST 같은 날이면 유효, 자정 지나면 해제 */
+    function isToolShopBought(port, now = Date.now()) {
+        if (!port || !port.toolShopBought) return false;
+        const at = port.toolShopBoughtAt ? parseAnchorMs(port.toolShopBoughtAt) : NaN;
+        if (!Number.isFinite(at)) return false;
+        return kstDateKey(at) === kstDateKey(now);
+    }
+
     let soldOutFlushInFlight = false;
 
     /** 리셋 시각이 지난 매진 표시를 DB에서 해제 */
@@ -230,6 +248,35 @@
             console.error('[OriginTimer] 매진 해제 실패', err);
         } finally {
             soldOutFlushInFlight = false;
+        }
+    }
+
+    let toolShopFlushInFlight = false;
+
+    /** KST 자정이 지난 도구점 구매 표시를 DB에서 해제 */
+    async function flushExpiredToolShop() {
+        if (toolShopFlushInFlight) return;
+        const now = Date.now();
+        const expired = ports.filter(p => p.toolShopBought && !isToolShopBought(p, now));
+        if (!expired.length) return;
+
+        toolShopFlushInFlight = true;
+        try {
+            for (const port of expired) {
+                await window.originDb.savePort({
+                    ...port,
+                    toolShopBought: false,
+                    toolShopBoughtAt: null,
+                    intervalMin: INTERVAL_MIN,
+                });
+                port.toolShopBought = false;
+                port.toolShopBoughtAt = null;
+            }
+            refreshAll();
+        } catch (err) {
+            console.error('[OriginTimer] 도구점 해제 실패', err);
+        } finally {
+            toolShopFlushInFlight = false;
         }
     }
 
@@ -340,12 +387,14 @@
             const rem = tracked ? getRemainingMs(tracked.anchorAt, now) : null;
             const ready = tracked && rem <= 1000;
             const sold = tracked && isSoldOut(tracked, now);
+            const toolShop = tracked && isToolShopBought(tracked, now);
             const active = selectedName === loc.name;
             const classes = [
                 'ot-pin',
                 tracked ? 'is-tracked' : '',
                 sold ? 'is-sold-out' : '',
                 ready && !sold ? 'is-ready' : '',
+                toolShop ? 'is-tool-shop' : '',
                 active ? 'is-active' : '',
                 filterOn ? 'is-goods-focus' : '',
                 hasGoods ? 'has-goods' : '',
@@ -459,7 +508,7 @@
             let timeEl = pin.querySelector('[data-pin-time]');
 
             if (!tracked) {
-                pin.classList.remove('is-ready', 'is-sold-out');
+                pin.classList.remove('is-ready', 'is-sold-out', 'is-tool-shop');
                 if (timeEl) timeEl.remove();
                 return;
             }
@@ -467,8 +516,10 @@
             const rem = getRemainingMs(tracked.anchorAt, now);
             const sold = isSoldOut(tracked, now);
             const ready = rem <= 1000;
+            const toolShop = isToolShopBought(tracked, now);
             pin.classList.toggle('is-sold-out', sold);
             pin.classList.toggle('is-ready', ready && !sold);
+            pin.classList.toggle('is-tool-shop', toolShop);
 
             if (!timeEl) {
                 timeEl = document.createElement('span');
@@ -610,6 +661,7 @@
 
         const rem = untracked ? 0 : getRemainingMs(tracked.anchorAt, now);
         const sold = untracked ? false : isSoldOut(tracked, now);
+        const toolShop = untracked ? false : isToolShopBought(tracked, now);
         const ready = !untracked && rem <= 1000;
         const remVal = untracked ? '--:--' : formatCountdown(rem);
         const syncLine = untracked
@@ -635,9 +687,14 @@
 
         const bottomAction = untracked
             ? `<button type="button" class="ot-btn ot-btn-primary ot-btn-enter" data-action="enter">지금 입장</button>`
-            : `<button type="button" class="ot-btn ot-btn-visit${sold ? ' is-on' : ''}"
-              data-action="visit"
-              aria-pressed="${sold ? 'true' : 'false'}">${sold ? '상점 구매 취소' : '상점 구매'}</button>`;
+            : `<div class="ot-actions-grid">
+                <button type="button" class="ot-btn ot-btn-tool${toolShop ? ' is-on' : ''}"
+                  data-action="tool-shop"
+                  aria-pressed="${toolShop ? 'true' : 'false'}">${toolShop ? '도구점 구매 취소' : '도구점 구매'}</button>
+                <button type="button" class="ot-btn ot-btn-visit${sold ? ' is-on' : ''}"
+                  data-action="visit"
+                  aria-pressed="${sold ? 'true' : 'false'}">${sold ? '상점 구매 취소' : '상점 구매'}</button>
+              </div>`;
 
         panelEl.innerHTML = `
           <div class="ot-card-head">
@@ -748,6 +805,7 @@
         const now = Date.now();
         const rem = getRemainingMs(tracked.anchorAt, now);
         const sold = isSoldOut(tracked, now);
+        const toolShop = isToolShopBought(tracked, now);
         const ready = rem <= 1000;
 
         panelEl.classList.toggle('is-ready', ready && !sold);
@@ -755,12 +813,18 @@
         const cd = panelEl.querySelector('[data-role="countdown"]');
         const minSel = panelEl.querySelector('[data-role="remain-min"]');
         const visitBtn = panelEl.querySelector('[data-action="visit"]');
+        const toolBtn = panelEl.querySelector('[data-action="tool-shop"]');
 
         if (cd) cd.textContent = formatCountdown(rem);
         if (visitBtn) {
             visitBtn.classList.toggle('is-on', sold);
             visitBtn.setAttribute('aria-pressed', sold ? 'true' : 'false');
             visitBtn.textContent = sold ? '상점 구매 취소' : '상점 구매';
+        }
+        if (toolBtn) {
+            toolBtn.classList.toggle('is-on', toolShop);
+            toolBtn.setAttribute('aria-pressed', toolShop ? 'true' : 'false');
+            toolBtn.textContent = toolShop ? '도구점 구매 취소' : '도구점 구매';
         }
 
         // 분 선택 중이면 덮어쓰지 않음
@@ -790,6 +854,7 @@
     function tickAll() {
         syncGameMonthIfNeeded();
         flushExpiredSoldOut();
+        flushExpiredToolShop();
         tickMapPins();
         tickPanel();
     }
@@ -807,6 +872,8 @@
             ...buildSyncStamp(null),
             soldOut: false,
             soldOutAt: null,
+            toolShopBought: false,
+            toolShopBoughtAt: null,
         });
         setStatus(`「${DEFAULT_PORT}」항구를 추가했습니다.`);
         return window.originDb.listPorts();
@@ -846,6 +913,8 @@
                 ...p,
                 soldOut: !!p.soldOut,
                 soldOutAt: p.soldOutAt || null,
+                toolShopBought: !!p.toolShopBought,
+                toolShopBoughtAt: p.toolShopBoughtAt || null,
                 syncedAt: p.syncedAt || null,
                 syncedElapsedMin: p.syncedElapsedMin != null ? p.syncedElapsedMin : null,
             }));
@@ -877,6 +946,8 @@
             syncedElapsedMin: sync.syncedElapsedMin,
             soldOut: clearSold ? false : !!port.soldOut,
             soldOutAt: clearSold ? null : (port.soldOutAt || null),
+            toolShopBought: !!port.toolShopBought,
+            toolShopBoughtAt: port.toolShopBoughtAt || null,
         });
         await reload(true);
         setStatus(`「${port.portName}」남은 시간을 반영했습니다.`);
@@ -1057,6 +1128,8 @@
                         ...buildSyncStamp(null),
                         soldOut: false,
                         soldOutAt: null,
+                        toolShopBought: false,
+                        toolShopBoughtAt: null,
                     });
                     await reload(true);
                     setStatus(`「${selectedName}」지금 입장으로 등록했습니다.`);
@@ -1096,6 +1169,22 @@
                     setStatus(turnOn
                         ? `「${tracked.portName}」상점 구매를 표시했습니다.`
                         : `「${tracked.portName}」상점 구매를 취소했습니다.`);
+                    return;
+                }
+
+                if (action === 'tool-shop') {
+                    btn.disabled = true;
+                    const turnOn = !isToolShopBought(tracked);
+                    await window.originDb.savePort({
+                        ...tracked,
+                        intervalMin: INTERVAL_MIN,
+                        toolShopBought: turnOn,
+                        toolShopBoughtAt: turnOn ? new Date().toISOString() : null,
+                    });
+                    await reload(true);
+                    setStatus(turnOn
+                        ? `「${tracked.portName}」도구점 구매를 표시했습니다.`
+                        : `「${tracked.portName}」도구점 구매를 취소했습니다.`);
                     return;
                 }
 
