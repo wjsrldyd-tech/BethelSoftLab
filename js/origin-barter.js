@@ -406,30 +406,19 @@
         return `<span class="ot-barter-cell-value ot-barter-goal">${amount.toLocaleString()}</span>`;
     }
 
-    function haveCellHtml(amount, goal) {
+    function haveCellHtml(amount) {
         if (amount == null) {
             return '<span class="ot-barter-cell-value ot-barter-have">—</span>';
         }
-        let percentText = '';
-        if (goal != null && goal > 0) {
-            const percent = Math.round((amount / goal) * 100);
-            percentText = ` <span class="ot-barter-have-percent-inline">(${percent}%)</span>`;
-        }
-        return `<span class="ot-barter-cell-value ot-barter-have">${amount.toLocaleString()}${percentText}</span>`;
+        return `<span class="ot-barter-cell-value ot-barter-have">${amount.toLocaleString()}</span>`;
     }
 
-    function materialHaveMetaHtml(used, leftover, have, goal) {
+    function materialHaveMetaHtml(used, leftover) {
         const usedText = used != null ? used.toLocaleString() : '—';
         const leftoverText = leftover != null ? leftover.toLocaleString() : '—';
-        let percentHtml = '';
-        if (have > 0 && goal != null && goal > 0) {
-            const percent = Math.round((have / goal) * 100);
-            percentHtml = `<div class="ot-barter-have-percent">${percent}%</div>`;
-        }
         return `<div class="ot-barter-have-meta">
           <div class="ot-barter-have-line">사용 ${usedText}</div>
           <div class="ot-barter-have-line">잔량 ${leftoverText}</div>
-          ${percentHtml}
         </div>`;
     }
 
@@ -438,11 +427,16 @@
             return '<span class="ot-barter-cell-value ot-barter-delta">—</span>';
         }
         const delta = have - goal;
+        let percentHtml = '';
+        if (goal > 0) {
+            const percent = Math.round((have / goal) * 100);
+            percentHtml = `<div class="ot-barter-delta-percent">${percent}%</div>`;
+        }
         if (delta >= 0) {
             const text = delta === 0 ? '0' : '+' + delta.toLocaleString();
-            return `<span class="ot-barter-cell-value ot-barter-delta is-ok">${text}</span>`;
+            return `<span class="ot-barter-cell-value ot-barter-delta is-ok">${text}</span>${percentHtml}`;
         }
-        return `<span class="ot-barter-cell-value ot-barter-delta is-short">${delta.toLocaleString()}</span>`;
+        return `<span class="ot-barter-cell-value ot-barter-delta is-short">${delta.toLocaleString()}</span>${percentHtml}`;
     }
 
     function deltaCellHtml(goal, have) {
@@ -489,7 +483,7 @@
 
             if (haveTd) {
                 let meta = haveTd.querySelector('.ot-barter-have-meta');
-                const html = materialHaveMetaHtml(used, leftover, have, goal);
+                const html = materialHaveMetaHtml(used, leftover);
                 if (meta) {
                     meta.outerHTML = html;
                 } else {
@@ -502,7 +496,7 @@
             const col = exchange.ingredients.length + 1;
             const r = plan && plan.result ? plan.result : null;
             if (goalRow.cells[col]) goalRow.cells[col].innerHTML = goalCellHtml(r ? r.amount : null);
-            if (haveRow.cells[col]) haveRow.cells[col].innerHTML = haveCellHtml(r ? r.have : null, r ? r.amount : null);
+            if (haveRow.cells[col]) haveRow.cells[col].innerHTML = haveCellHtml(r ? r.have : null);
             if (deltaRow.cells[col]) {
                 deltaRow.cells[col].innerHTML = r
                     ? deltaFromValues(r.have, r.amount)
@@ -570,15 +564,14 @@
             const mat = matByName[n];
             const have = Number(currentHave[n]) || 0;
             const val = have > 0 ? String(have) : '';
-            const goal = mat ? mat.amount : null;
             const used = mat ? mat.used : 0;
             const leftover = mat ? mat.leftover : have;
             return `<td class="ot-barter-have-cell"><input type="number" class="ot-barter-cell-input" min="0"
               data-role="have" data-good="${escapeHtml(n)}" value="${escapeHtml(val)}"
-              placeholder="0" aria-label="${escapeHtml(n)} 적재">${materialHaveMetaHtml(used, leftover, have, goal)}</td>`;
+              placeholder="0" aria-label="${escapeHtml(n)} 적재">${materialHaveMetaHtml(used, leftover)}</td>`;
         }).join('')
             + (exchange.result
-                ? `<td class="ot-barter-result-col">${haveCellHtml(result ? result.have : null, result ? result.amount : null)}</td>`
+                ? `<td class="ot-barter-result-col">${haveCellHtml(result ? result.have : null)}</td>`
                 : '');
 
         const deltaCells = names.map(n => {
