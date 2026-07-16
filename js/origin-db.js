@@ -1,6 +1,7 @@
 // =============== origin-db.js ===============
 // 대항해시대 오리진 교역소 타이머 ↔ Supabase origin_trade_posts
 // 항구 핀 좌표 ↔ Supabase origin_pin_overrides
+// 교역품 평시 수량 ↔ Supabase origin_good_plain_qty
 // tenant_id: BETHEL_TENANT_ID (app_storage, d3_scripts와 공통)
 
 (function () {
@@ -10,8 +11,10 @@
     const DEFAULT_TENANT_ID = 'default';
     const TBL               = 'origin_trade_posts';
     const TBL_PINS          = 'origin_pin_overrides';
+    const TBL_QTY           = 'origin_good_plain_qty';
     const LS_KEY            = 'origin_trade_posts_v1';
     const LS_PIN_KEY        = 'origin_pin_overrides_v1';
+    const LS_QTY_KEY        = 'origin_good_plain_qty_v1';
 
     function getTenantId() {
         let id = localStorage.getItem(TENANT_KEY);
@@ -41,6 +44,16 @@
                 : null,
             createdAt:   row.created_at,
             updatedAt:   row.updated_at,
+        };
+    }
+
+    function rowToGoodQty(row) {
+        return {
+            tenantId:  row.tenant_id,
+            portName:  row.port_name,
+            goodName:  row.good_name,
+            plainQty:  Number(row.plain_qty) || 0,
+            updatedAt: row.updated_at,
         };
     }
 
@@ -77,6 +90,22 @@
 
     function isEmptyPins(data) {
         return !data || Object.keys(data).length === 0;
+    }
+
+    /** @returns {Record<string, Record<string, number>>} port -> good -> plainQty */
+    function readLocalQtys() {
+        try {
+            const raw = localStorage.getItem(LS_QTY_KEY);
+            if (!raw) return {};
+            const parsed = JSON.parse(raw);
+            return (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
+        } catch {
+            return {};
+        }
+    }
+
+    function writeLocalQtys(data) {
+        localStorage.setItem(LS_QTY_KEY, JSON.stringify(data || {}));
     }
 
     const client = window.supabaseClient;
@@ -172,6 +201,71 @@
         if (error) throw error;
     }
 
+    /**
+     * @param {string} [portName]
+     * @returns {Promise<{ portName: string, goodName: string, plainQty: number, updatedAt?: string }[]>}
+     */
+    async function listGoodPlainQtys(portName) {
+        let q = client
+            .from(TBL_QTY)
+            .select('*')
+            .eq('tenant_id', getTenantId());
+        if (portName) q = q.eq('port_name', portName);
+        const { data, error } = await q.order('good_name', { ascending: true });
+        if (error) throw error;
+        return (data || []).map(rowToGoodQty);
+    }
+
+    /**
+     * @param {{ portName: string, goodName: string, plainQty: number }} item
+     */
+    async function saveGoodPlainQty(item) {
+        const portName = (item.portName || '').trim();
+        const goodName = (item.goodName || '').trim();
+        if (!portName || !goodName) throw new Error('항구/교역품명이 필요합니다.');
+        const plainQty = Number(item.plainQty);
+        if (!Number.isFinite(plainQty) || plainQty < 0) {
+            throw new Error('수량이 올바르지 않습니다.');
+        }
+        if (plainQty === 0) {
+            return deleteGoodPlainQty(portName, goodName);
+        }
+        const row = {
+            tenant_id:  getTenantId(),
+            port_name:  portName,
+            good_name:  goodName,
+            plain_qty:  plainQty,
+            updated_at: new Date().toISOString(),
+        };
+        const { error } = await client
+            .from(TBL_QTY)
+            .upsert(row, { onConflict: 'tenant_id,port_name,good_name' });
+        if (error) throw error;
+
+        const local = readLocalQtys();
+        if (!local[portName]) local[portName] = {};
+        local[portName][goodName] = plainQty;
+        writeLocalQtys(local);
+    }
+
+    async function deleteGoodPlainQty(portName, goodName) {
+        const p = (portName || '').trim();
+        const g = (goodName || '').trim();
+        const { error } = await client
+            .from(TBL_QTY)
+            .delete()
+            .eq('tenant_id', getTenantId())
+            .eq('port_name', p)
+            .eq('good_name', g);
+        if (error) throw error;
+        const local = readLocalQtys();
+        if (local[p]) {
+            delete local[p][g];
+            if (!Object.keys(local[p]).length) delete local[p];
+            writeLocalQtys(local);
+        }
+    }
+
     function makeLocalOnlyDb() {
         function loadAll() {
             try {
@@ -232,6 +326,50 @@
             savePinOverrides: async (pinData) => {
                 writeLocalPins(pinData);
             },
+            listGoodPlainQtys: async (portName) => {
+                const all = readLocalQtys();
+                const out = [];
+                const ports = portName ? [portName] : Object.keys(all);
+                for (const p of ports) {
+                    const goods = all[p] || {};
+                    for (const g of Object.keys(goods)) {
+                        out.push({
+                            portName: p,
+                            goodName: g,
+                            plainQty: Number(goods[g]) || 0,
+                        });
+                    }
+                }
+                out.sort((a, b) => a.goodName.localeCompare(b.goodName, 'ko'));
+                return out;
+            },
+            saveGoodPlainQty: async (item) => {
+                const portName = (item.portName || '').trim();
+                const goodName = (item.goodName || '').trim();
+                const plainQty = Number(item.plainQty);
+                if (!portName || !goodName) throw new Error('항구/교역품명이 필요합니다.');
+                const local = readLocalQtys();
+                if (!Number.isFinite(plainQty) || plainQty <= 0) {
+                    if (local[portName]) {
+                        delete local[portName][goodName];
+                        if (!Object.keys(local[portName]).length) delete local[portName];
+                    }
+                } else {
+                    if (!local[portName]) local[portName] = {};
+                    local[portName][goodName] = plainQty;
+                }
+                writeLocalQtys(local);
+            },
+            deleteGoodPlainQty: async (portName, goodName) => {
+                const local = readLocalQtys();
+                const p = (portName || '').trim();
+                const g = (goodName || '').trim();
+                if (local[p]) {
+                    delete local[p][g];
+                    if (!Object.keys(local[p]).length) delete local[p];
+                    writeLocalQtys(local);
+                }
+            },
         };
     }
 
@@ -243,6 +381,9 @@
         deletePort,
         loadPinOverrides,
         savePinOverrides,
+        listGoodPlainQtys,
+        saveGoodPlainQty,
+        deleteGoodPlainQty,
     };
 
     console.log('[OriginDB] 초기화 완료 — tenant_id:', getTenantId());

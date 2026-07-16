@@ -521,17 +521,17 @@
 
       .ot-sec-grid {
         display: grid;
-        grid-template-columns: repeat(6, minmax(0, 1fr));
-        gap: 0.35rem;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: 0.25rem;
       }
 
       .ot-sec-btn {
-        padding: 0.45rem 0.15rem;
+        padding: 0.4rem 0.05rem;
         border-radius: 8px;
         border: 1px solid var(--border);
         background: var(--bg);
         color: var(--text-h);
-        font-size: 0.88rem;
+        font-size: 0.78rem;
         font-weight: 600;
         font-variant-numeric: tabular-nums;
         font-family: inherit;
@@ -1115,6 +1115,107 @@
         background: #0ea5e9;
       }
 
+      /* ===== 구매수량 ===== */
+      .ot-qty-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 0.55rem;
+        min-height: 0;
+        flex: 1 1 auto;
+      }
+
+      .ot-qty-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        overflow: auto;
+        min-height: 0;
+        max-height: min(52svh, 28rem);
+        padding-right: 0.15rem;
+      }
+
+      .ot-qty-empty {
+        padding: 0.85rem 0.5rem;
+        text-align: center;
+        font-size: 0.8rem;
+        color: rgba(148, 163, 184, 0.9);
+      }
+
+      .ot-qty-row {
+        display: grid;
+        grid-template-columns: 1fr 4.5rem;
+        gap: 0.45rem;
+        align-items: center;
+        padding: 0.4rem 0.5rem;
+        border-radius: 8px;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        background: rgba(15, 23, 42, 0.55);
+      }
+
+      .ot-qty-info {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 0.28rem 0.4rem;
+        min-width: 0;
+      }
+
+      .ot-qty-name {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-h);
+      }
+
+      .ot-qty-specialty {
+        margin-right: 0.2rem;
+        color: #facc15;
+      }
+
+      .ot-qty-cat {
+        font-size: 0.68rem;
+        color: rgba(148, 163, 184, 0.9);
+      }
+
+      .ot-qty-season {
+        font-size: 0.68rem;
+        font-weight: 650;
+        color: #94a3b8;
+      }
+
+      .ot-qty-season.is-peak { color: #86efac; }
+      .ot-qty-season.is-off { color: #fca5a5; }
+      .ot-qty-season.is-plain { color: #64748b; }
+
+      .ot-qty-input {
+        width: 100%;
+        padding: 0.35rem 0.4rem;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text-h);
+        font-size: 0.85rem;
+        font-family: inherit;
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+      }
+
+      .ot-qty-input:focus {
+        outline: none;
+        border-color: var(--origin);
+        background: rgba(14, 165, 233, 0.08);
+      }
+
+      .ot-qty-status {
+        margin: 0;
+        min-height: 1.1em;
+        font-size: 0.72rem;
+        color: #86efac;
+      }
+
+      .ot-qty-status.is-error {
+        color: #fca5a5;
+      }
+
       @media (max-width: 560px) {
         .ot-toolbar-title { font-size: 0.95rem; }
         .ot-countdown { font-size: 1.9rem; }
@@ -1146,11 +1247,19 @@
           <div class="ot-side-tools">
             <div class="ot-side-tool-tabs" role="tablist" aria-label="도구 선택">
               <button type="button" class="ot-side-tool-tab is-active" data-tool="goods" role="tab" aria-selected="true">교역품 분류</button>
+              <button type="button" class="ot-side-tool-tab" data-tool="qty" role="tab" aria-selected="false">구매수량</button>
               <button type="button" class="ot-side-tool-tab" data-tool="barter" role="tab" aria-selected="false">물물교환</button>
             </div>
 
             <section id="ot-tool-goods" class="ot-side-tool-pane ot-goods-section" data-tool-pane="goods" role="tabpanel" aria-label="교역품 분류">
               <div id="ot-goods-cats" class="ot-goods-cats" role="group" aria-label="분류 선택"></div>
+            </section>
+
+            <section id="ot-tool-qty" class="ot-side-tool-pane" data-tool-pane="qty" role="tabpanel" aria-label="구매수량" hidden>
+              <div class="ot-qty-panel">
+                <div id="ot-qty-list" class="ot-qty-list" role="list"></div>
+                <p id="ot-qty-status" class="ot-qty-status" aria-live="polite"></p>
+              </div>
             </section>
 
             <section id="ot-tool-barter" class="ot-side-tool-pane" data-tool-pane="barter" role="tabpanel" aria-label="물물교환" hidden>
@@ -1202,6 +1311,7 @@
     <script src="js/origin-ports-coords.js"></script>
     <script src="js/origin-port-goods.js"></script>
     <script src="js/origin-barter.js"></script>
+    <script src="js/origin-good-qty.js"></script>
     <script src="js/origin-timer.js"></script>
   </body>
 </html>

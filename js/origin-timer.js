@@ -488,6 +488,9 @@
         if (typeof window.originBarterOnMonthChange === 'function') {
             window.originBarterOnMonthChange(m);
         }
+        if (typeof window.originGoodQtyOnMonthChange === 'function') {
+            window.originGoodQtyOnMonthChange();
+        }
         renderPanel();
     }
 
@@ -683,11 +686,17 @@
         selectedName = name;
         renderMap();
         renderPanel();
+        if (typeof window.refreshOriginGoodQty === 'function') {
+            window.refreshOriginGoodQty(name);
+        }
     }
 
     function refreshAll() {
         renderMap();
         renderPanel();
+        if (typeof window.refreshOriginGoodQty === 'function') {
+            window.refreshOriginGoodQty(selectedName);
+        }
     }
 
     function tickAll() {
@@ -1057,6 +1066,10 @@
     // 월 변경 시 타이머 카드 헤더 갱신
     window.refreshOriginPanel = function () {
         renderPanel();
+    };
+
+    window.getOriginSelectedPort = function () {
+        return selectedName;
     };
 
     // 물물교환: 재료 이름으로 맵 필터링

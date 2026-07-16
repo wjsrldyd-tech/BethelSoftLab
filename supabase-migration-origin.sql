@@ -106,7 +106,54 @@ grant select, insert, update, delete
     to anon, authenticated, service_role;
 
 -- ============================================================
--- 5. 롤백 (필요 시 주석 해제)
+-- 5. origin_good_plain_qty — 항구·교역품별 평시 구매 수량
 -- ============================================================
+-- 유저는 게임에서 보이는 수량을 입력하고, 클라이언트는 시즌 배수로
+-- 나눠 평시(plain_qty)만 저장한다. 표시 시 다시 월별 배수를 곱한다.
+
+create table if not exists public.origin_good_plain_qty (
+    tenant_id   text            not null,
+    port_name   text            not null,
+    good_name   text            not null,
+    plain_qty   numeric         not null default 0,
+    updated_at  timestamptz     not null default now(),
+    primary key (tenant_id, port_name, good_name)
+);
+
+create index if not exists idx_origin_good_plain_qty_tenant_port
+    on public.origin_good_plain_qty(tenant_id, port_name);
+
+drop trigger if exists trg_origin_good_plain_qty_updated_at on public.origin_good_plain_qty;
+create trigger trg_origin_good_plain_qty_updated_at
+    before update on public.origin_good_plain_qty
+    for each row execute function public.set_updated_at();
+
+alter table public.origin_good_plain_qty disable row level security;
+
+do $$
+declare
+    r record;
+begin
+    for r in
+        select policyname
+        from pg_policies
+        where schemaname = 'public'
+          and tablename = 'origin_good_plain_qty'
+    loop
+        execute format(
+            'drop policy if exists %I on public.origin_good_plain_qty',
+            r.policyname
+        );
+    end loop;
+end $$;
+
+grant select, insert, update, delete
+    on public.origin_good_plain_qty
+    to anon, authenticated, service_role;
+
+-- ============================================================
+-- 6. 롤백 (필요 시 주석 해제)
+-- ============================================================
+-- drop table if exists public.origin_good_plain_qty;
 -- drop table if exists public.origin_pin_overrides;
 -- drop table if exists public.origin_trade_posts;
