@@ -45,10 +45,7 @@
 
     /**
      * 게임 달력 — 월(1~12)별 사계절 / 건기·우기
-     * 사계절: 3~5 봄, 6~8 여름, 9~11 가을, 12~2 겨울
-     * 카리브(건·우): 6~10 우기, 11~5 건기
-     * ※ 해역에 따라 season 또는 climate 중 하나만 매칭 (둘 다 OR 금지)
-     * ※ 게임 월: 저장값 유지, 매일 KST 09:00에 +1 (현실 달력 월과 무관)
+     * @deprecated 7종 계절 타입 시스템으로 대체됨. SEASON_TYPE_CALENDARS 사용
      * @type {{ month: number, season: string, climate: string }[]}
      */
     window.ORIGIN_SEASON_CALENDAR = [
@@ -65,6 +62,49 @@
         { month: 11, season: '가을', climate: '건기' },
         { month: 12, season: '겨울', climate: '건기' },
     ];
+
+    /**
+     * 계절 타입별 월 매핑 (7종)
+     * ※ 게임 월: 저장값 유지, 매일 KST 09:00에 +1 (현실 달력 월과 무관)
+     * @type {Record<string, string[]>} [월1~12]
+     */
+    window.SEASON_TYPE_CALENDARS = {
+        // 북반구 사계절: 3~5 봄, 6~8 여름, 9~11 가을, 12~2 겨울
+        'north-4seasons': [
+            '겨울', '겨울', '봄', '봄', '봄', '여름',
+            '여름', '여름', '가을', '가을', '가을', '겨울'
+        ],
+        // 남반구 사계절: 9~11 봄, 12~2 여름, 3~5 가을, 6~8 겨울
+        'south-4seasons': [
+            '여름', '여름', '가을', '가을', '가을', '겨울',
+            '겨울', '겨울', '봄', '봄', '봄', '여름'
+        ],
+        // 건기-우기-건기: 11~5 건기, 6~10 우기
+        'dry-rainy-dry': [
+            '건기', '건기', '건기', '건기', '건기', '우기',
+            '우기', '우기', '우기', '우기', '건기', '건기'
+        ],
+        // 건기+1-우기-건기: 12~6 건기, 7~11 우기
+        'dry+1-rainy-dry': [
+            '건기', '건기', '건기', '건기', '건기', '건기',
+            '우기', '우기', '우기', '우기', '우기', '건기'
+        ],
+        // 우기-건기-우기: 12~5 우기, 6~11 건기 (추후 도시 추가)
+        'rainy-dry-rainy': [
+            '우기', '우기', '우기', '우기', '우기', '건기',
+            '건기', '건기', '건기', '건기', '건기', '우기'
+        ],
+        // 열대: 성수기 없음 (빈 문자열)
+        'tropical': [
+            '', '', '', '', '', '',
+            '', '', '', '', '', ''
+        ],
+        // 한대: 성수기 없음 (빈 문자열)
+        'arctic': [
+            '', '', '', '', '', '',
+            '', '', '', '', '', ''
+        ]
+    };
 
     const SEASON_TAGS = { 봄: 1, 여름: 1, 가을: 1, 겨울: 1 };
     const CLIMATE_TAGS = { 건기: 1, 우기: 1 };
@@ -2084,6 +2124,7 @@
     /**
      * @param {'season'|'climate'|string|null|undefined} axisOrPort
      * @returns {'season'|'climate'}
+     * @deprecated 7종 계절 타입 시스템으로 대체됨
      */
     function resolveSeasonAxis(axisOrPort) {
         if (axisOrPort === 'climate' || axisOrPort === 'season') return axisOrPort;
@@ -2094,32 +2135,87 @@
         return 'season';
     }
 
+    /**
+     * @deprecated 7종 계절 타입 시스템으로 대체됨
+     */
     function tagBelongsToAxis(tag, axis) {
         if (axis === 'climate') return !!CLIMATE_TAGS[tag];
         return !!SEASON_TAGS[tag];
     }
 
     /**
-     * @param {number} [month] 1~12, 생략 시 게임 월
-     * @param {'season'|'climate'|string} [axisOrPort] 축 또는 항구명
-     * @returns {{ month: number, season: string, climate: string, axis: string, activeTag: string, tags: string[] }}
+     * 항구 또는 계절 타입 → 계절 타입 결정
+     * @param {string|null|undefined} portOrType
+     * @returns {string} 'north-4seasons' 등
      */
-    window.getOriginSeasonForMonth = function (month, axisOrPort) {
-        const cal = window.ORIGIN_SEASON_CALENDAR || [];
+    function resolveSeasonType(portOrType) {
+        if (!portOrType) return 'north-4seasons';
+        const types = ['north-4seasons', 'south-4seasons', 'dry-rainy-dry', 
+                      'dry+1-rainy-dry', 'rainy-dry-rainy', 'tropical', 'arctic'];
+        if (types.indexOf(portOrType) !== -1) return portOrType;
+        // 항구명으로 간주
+        if (typeof window.getOriginPortSeasonType === 'function') {
+            return window.getOriginPortSeasonType(portOrType);
+        }
+        return 'north-4seasons';
+    }
+
+    /**
+     * @param {number} [month] 1~12, 생략 시 게임 월
+     * @param {string} [portOrType] 항구명 또는 계절 타입 ('north-4seasons' 등)
+     * @returns {{ month: number, seasonType: string, activeTag: string, tags: string[] }}
+     */
+    window.getOriginSeasonForMonth = function (month, portOrType) {
         let m = Number(month);
         if (!(m >= 1 && m <= 12)) m = window.getOriginGameMonth();
-        const row = cal.find(r => r.month === m) || cal[0] || { month: m, season: '', climate: '' };
-        const axis = resolveSeasonAxis(axisOrPort);
-        const activeTag = axis === 'climate' ? row.climate : row.season;
+        
+        const seasonType = resolveSeasonType(portOrType);
+        const calendars = window.SEASON_TYPE_CALENDARS || {};
+        const calendar = calendars[seasonType] || calendars['north-4seasons'] || [];
+        const activeTag = calendar[m - 1] || ''; // 배열 인덱스는 0부터
+        
         return {
-            month: row.month,
-            season: row.season,
-            climate: row.climate,
-            axis,
+            month: m,
+            seasonType,
             activeTag,
-            tags: activeTag ? [activeTag] : [],
+            tags: activeTag ? [activeTag] : []
         };
     };
+
+    /**
+     * 계절 타입별 분류 성수기/비수기 규칙
+     * ※ 통합표 기준으로 추후 완성 예정
+     * @type {Record<string, Record<string, { peak?: string[], off?: string[] }>>}
+     */
+    window.CATEGORY_SEASON_RULES = {
+        'north-4seasons': {
+            // 예시: '식료품': { peak: ['봄'], off: ['가을'] },
+            // 통합표 기준으로 추후 추가
+        },
+        'south-4seasons': {
+            // 남반구는 북반구와 반대 계절
+        },
+        'dry-rainy-dry': {
+            // 건기-우기 규칙
+        },
+        'dry+1-rainy-dry': {
+            // 건기+1-우기 규칙
+        },
+        'rainy-dry-rainy': {
+            // 우기-건기 규칙
+        },
+        'tropical': {
+            // 열대는 모든 분류 평수기 (빈 객체)
+        },
+        'arctic': {
+            // 한대는 모든 분류 평수기 (빈 객체)
+        }
+    };
+
+    /**
+     * 항상 평수기인 특수 교역품 (예외 처리)
+     */
+    window.ALWAYS_PLAIN_GOODS = ['밀'];
 
     /**
      * 구매 한도 배수 (평시=1 기준)
@@ -2132,23 +2228,48 @@
     };
 
     /**
-     * 품목의 peak/off 태그가 현재(또는 지정) 월과 맞는지
-     * - 항구/해역 축에 해당하는 태그만 사용 (사계절 vs 건기·우기)
-     * - peak 축 태그가 현재 activeTag와 같으면 'peak'
-     * - off 축 태그가 맞으면 'off'
-     * @param {{ peak?: string[], off?: string[] }} g
+     * 품목의 성수기/비수기 상태 판정 (7종 계절 타입 기반)
+     * 우선순위:
+     * 1. 열대/한대 → 항상 plain
+     * 2. 특수 교역품(밀 등) → 항상 plain
+     * 3. 분류별 규칙 → peak/off 판정 (CATEGORY_SEASON_RULES)
+     * 4. 품목별 태그 → peak/off 판정 (호환성, 기존 데이터)
+     * @param {{ name?: string, category?: string, peak?: string[], off?: string[] }} g
      * @param {number} [month]
-     * @param {'season'|'climate'|string} [axisOrPort] 축 또는 항구명 (생략 시 사계절)
+     * @param {string} [portOrType] 항구명 또는 계절 타입
      * @returns {'peak'|'off'|'plain'}
      */
-    window.getOriginGoodSeasonStatus = function (g, month, axisOrPort) {
-        if (!window.originGoodHasSeason(g)) return 'plain';
-        const { activeTag, axis } = window.getOriginSeasonForMonth(month, axisOrPort);
+    window.getOriginGoodSeasonStatus = function (g, month, portOrType) {
+        if (!g) return 'plain';
+        
+        const { seasonType, activeTag } = window.getOriginSeasonForMonth(month, portOrType);
+        
+        // 1. 열대/한대는 항상 평수기
+        if (seasonType === 'tropical' || seasonType === 'arctic') return 'plain';
+        
+        // 2. 특수 교역품 (밀 등)
+        const alwaysPlain = window.ALWAYS_PLAIN_GOODS || [];
+        if (g.name && alwaysPlain.indexOf(g.name) !== -1) return 'plain';
+        
+        // 3. activeTag가 없으면 평수기
         if (!activeTag) return 'plain';
-
-        const hit = (arr) => Array.isArray(arr)
-            && arr.some(t => tagBelongsToAxis(t, axis) && t === activeTag);
-
+        
+        // 4. 분류별 규칙 조회
+        const categoryRules = window.CATEGORY_SEASON_RULES || {};
+        const typeRules = categoryRules[seasonType] || {};
+        const categoryRule = g.category ? typeRules[g.category] : null;
+        
+        if (categoryRule) {
+            // 분류별 규칙이 있으면 사용
+            const hit = (arr) => Array.isArray(arr) && arr.indexOf(activeTag) !== -1;
+            if (hit(categoryRule.peak)) return 'peak';
+            if (hit(categoryRule.off)) return 'off';
+            return 'plain';
+        }
+        
+        // 5. 품목별 peak/off 태그로 폴백 (기존 데이터 호환)
+        if (!window.originGoodHasSeason(g)) return 'plain';
+        const hit = (arr) => Array.isArray(arr) && arr.indexOf(activeTag) !== -1;
         if (hit(g.peak)) return 'peak';
         if (hit(g.off)) return 'off';
         return 'plain';

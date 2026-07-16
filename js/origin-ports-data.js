@@ -295,8 +295,200 @@
     /**
      * 건기·우기만 쓰는 해역 (카리브)
      * 그 외 해역은 봄·여름·가을·겨울만 사용
+     * @deprecated 7종 계절 타입 시스템으로 대체됨
      */
     window.ORIGIN_CLIMATE_SEASON_REGIONS = ['중미'];
+
+    /**
+     * 항구별 계절 타입 (7종)
+     * - north-4seasons: 북반구 사계절 (3~5 봄, 6~8 여름, 9~11 가을, 12~2 겨울)
+     * - south-4seasons: 남반구 사계절 (9~11 봄, 12~2 여름, 3~5 가을, 6~8 겨울)
+     * - dry-rainy-dry: 건기-우기-건기 (11~5 건기, 6~10 우기)
+     * - dry+1-rainy-dry: 건기+1-우기-건기 (12~6 건기, 7~11 우기)
+     * - rainy-dry-rainy: 우기-건기-우기 (12~5 우기, 6~11 건기) - 추후 추가
+     * - tropical: 열대 (성수기 없음)
+     * - arctic: 한대 (성수기 없음)
+     * @type {Record<string, string>}
+     */
+    window.ORIGIN_PORT_SEASON_TYPE = {
+        // 북반구-사계절 (93개)
+        '니코시아': 'north-4seasons',
+        '베이루트': 'north-4seasons',
+        '안탈리아': 'north-4seasons',
+        '야파': 'north-4seasons',
+        '이스탄불': 'north-4seasons',
+        '트라브존': 'north-4seasons',
+        '나탈': 'north-4seasons',
+        '마르세유': 'north-4seasons',
+        '몽펠리에': 'north-4seasons',
+        '사사리': 'north-4seasons',
+        '칼리아리': 'north-4seasons',
+        '칼비': 'north-4seasons',
+        '덴헬데르': 'north-4seasons',
+        '앤트워프': 'north-4seasons',
+        '암스테르담': 'north-4seasons',
+        '그로닝겐': 'north-4seasons',
+        '아조레스': 'north-4seasons',
+        '마데이라': 'north-4seasons',
+        '뤼베크': 'north-4seasons',
+        '브레멘': 'north-4seasons',
+        '함부르크': 'north-4seasons',
+        '바르나': 'north-4seasons',
+        '오데사': 'north-4seasons',
+        '케르치': 'north-4seasons',
+        '타간로크': 'north-4seasons',
+        '상트페테르부르크': 'north-4seasons',
+        '마카오': 'north-4seasons',
+        '아테네': 'north-4seasons',
+        '칸디아': 'north-4seasons',
+        '테살로니키': 'north-4seasons',
+        '아비앗': 'north-4seasons',
+        '코하셋': 'north-4seasons',
+        '라스팔마스': 'north-4seasons',
+        '벵가지': 'north-4seasons',
+        '포트사이드': 'north-4seasons',
+        '세우타': 'north-4seasons',
+        '아르긴': 'north-4seasons',
+        '알렉산드리아': 'north-4seasons',
+        '알제': 'north-4seasons',
+        '카이로': 'north-4seasons',
+        '수에즈': 'north-4seasons',
+        '카사블랑카': 'north-4seasons',
+        '트리폴리': 'north-4seasons',
+        '튀니스': 'north-4seasons',
+        '그단스크': 'north-4seasons',
+        '리가': 'north-4seasons',
+        '베르겐': 'north-4seasons',
+        '비스뷔': 'north-4seasons',
+        '스톡홀름': 'north-4seasons',
+        '오슬로': 'north-4seasons',
+        '코콜라': 'north-4seasons',
+        '코펜하겐': 'north-4seasons',
+        '낭트': 'north-4seasons',
+        '보르도': 'north-4seasons',
+        '칼레': 'north-4seasons',
+        '도버': 'north-4seasons',
+        '더블린': 'north-4seasons',
+        '런던': 'north-4seasons',
+        '브리스틀': 'north-4seasons',
+        '에든버러': 'north-4seasons',
+        '플리머스': 'north-4seasons',
+        '팀북투': 'north-4seasons',
+        '카보베르데': 'north-4seasons',
+        '도파르': 'north-4seasons',
+        '무스카트': 'north-4seasons',
+        '아덴': 'north-4seasons',
+        '도하': 'north-4seasons',
+        '제다': 'north-4seasons',
+        '소코트라': 'north-4seasons',
+        '리스본': 'north-4seasons',
+        '말라가': 'north-4seasons',
+        '바르셀로나': 'north-4seasons',
+        '발렌시아': 'north-4seasons',
+        '세비야': 'north-4seasons',
+        '파루': 'north-4seasons',
+        '팔마': 'north-4seasons',
+        '포르투': 'north-4seasons',
+        '히혼': 'north-4seasons',
+        '나폴리': 'north-4seasons',
+        '라구사': 'north-4seasons',
+        '베네치아': 'north-4seasons',
+        '시라쿠사': 'north-4seasons',
+        '안코나': 'north-4seasons',
+        '자다르': 'north-4seasons',
+        '제노바': 'north-4seasons',
+        '트리에스테': 'north-4seasons',
+        '피사': 'north-4seasons',
+        '하노이': 'north-4seasons',
+        '바그다드': 'north-4seasons',
+        '시라즈': 'north-4seasons',
+        '바스라': 'north-4seasons',
+        '호르무즈': 'north-4seasons',
+
+        // 남반구-사계절 (15개)
+        '리마': 'south-4seasons',
+        '리우데자네이루': 'south-4seasons',
+        '발파라이소': 'south-4seasons',
+        '부에노스아이레스': 'south-4seasons',
+        '코피아포': 'south-4seasons',
+        '툼베스': 'south-4seasons',
+        '케이프타운': 'south-4seasons',
+        '카리비브': 'south-4seasons',
+        '마사와': 'south-4seasons',
+        '몸바사': 'south-4seasons',
+        '말린디': 'south-4seasons',
+        '모가디슈': 'south-4seasons',
+        '잔지바르': 'south-4seasons',
+        '루안다': 'south-4seasons',
+        '벵겔라': 'south-4seasons',
+
+        // 건기-우기-건기 (16개)
+        '마닐라': 'dry-rainy-dry',
+        '브루나이': 'dry-rainy-dry',
+        '홀로': 'dry-rainy-dry',
+        '두알라': 'dry-rainy-dry',
+        '베냉': 'dry-rainy-dry',
+        '배서스트': 'dry-rainy-dry',
+        '비사우': 'dry-rainy-dry',
+        '상투메': 'dry-rainy-dry',
+        '시에라리온': 'dry-rainy-dry',
+        '아비장': 'dry-rainy-dry',
+        '엘미나': 'dry-rainy-dry',
+        '고아': 'dry-rainy-dry',
+        '코친': 'dry-rainy-dry',
+        '디우': 'dry-rainy-dry',
+        '캘리컷': 'dry-rainy-dry',
+        '롭부리': 'dry-rainy-dry',
+
+        // 건기+1-우기-건기 (18개)
+        '마라카이보': 'dry+1-rainy-dry',
+        '윌렘스타트': 'dry+1-rainy-dry',
+        '카라카스': 'dry+1-rainy-dry',
+        '카르타헤나': 'dry+1-rainy-dry',
+        '포를라마르': 'dry+1-rainy-dry',
+        '딜리': 'dry+1-rainy-dry',
+        '수라바야': 'dry+1-rainy-dry',
+        '메리다': 'dry+1-rainy-dry',
+        '베라크루스': 'dry+1-rainy-dry',
+        '마실리파트남': 'dry+1-rainy-dry',
+        '캘커타': 'dry+1-rainy-dry',
+        '퐁디셰리': 'dry+1-rainy-dry',
+        '나사우': 'dry+1-rainy-dry',
+        '사우스사이드': 'dry+1-rainy-dry',
+        '산티아고': 'dry+1-rainy-dry',
+        '산후안': 'dry+1-rainy-dry',
+        '하바나': 'dry+1-rainy-dry',
+        '포트로열': 'dry+1-rainy-dry',
+
+        // 열대 (22개)
+        '카옌': 'tropical',
+        '타마타브': 'tropical',
+        '다바오': 'tropical',
+        '마카사르': 'tropical',
+        '반다': 'tropical',
+        '반자르마신': 'tropical',
+        '아체': 'tropical',
+        '암본': 'tropical',
+        '자카르타': 'tropical',
+        '쿠칭': 'tropical',
+        '테르나테': 'tropical',
+        '파사이': 'tropical',
+        '팔렘방': 'tropical',
+        '팡칼피낭': 'tropical',
+        '트루히요': 'tropical',
+        '파나마': 'tropical',
+        '포르토벨로': 'tropical',
+        '실론': 'tropical',
+        '말라카': 'tropical',
+        '페구': 'tropical',
+        '프레이노코르': 'tropical',
+        '산토도밍고': 'tropical',
+
+        // 한대 (3개)
+        '우수아이아': 'arctic',
+        '누탁': 'arctic',
+        '레이캬비크': 'arctic',
+    };
 
     window.getOriginPortsByRegion = function (region) {
         return window.ORIGIN_PORTS.filter(p => p.region === region);
@@ -310,13 +502,25 @@
     };
 
     /**
-     * 항구가 쓰는 시즌 축
+     * 항구의 계절 타입 조회 (7종)
+     * @param {string} portName
+     * @returns {string} 'north-4seasons'|'south-4seasons'|'dry-rainy-dry'|'dry+1-rainy-dry'|'rainy-dry-rainy'|'tropical'|'arctic'
+     */
+    window.getOriginPortSeasonType = function (portName) {
+        if (!portName) return 'north-4seasons'; // 기본값
+        const map = window.ORIGIN_PORT_SEASON_TYPE || {};
+        return map[portName] || 'north-4seasons';
+    };
+
+    /**
+     * 항구가 쓰는 시즌 축 (구버전 호환)
+     * @deprecated 7종 계절 타입 시스템으로 대체됨. getOriginPortSeasonType() 사용 권장
      * @returns {'season'|'climate'}
      */
     window.getOriginPortSeasonAxis = function (portName) {
-        const region = window.getOriginPortRegion(portName);
-        const climateRegions = window.ORIGIN_CLIMATE_SEASON_REGIONS || [];
-        if (region && climateRegions.indexOf(region) !== -1) return 'climate';
+        const type = window.getOriginPortSeasonType(portName);
+        // 건기/우기 계열이면 climate, 아니면 season
+        if (type.includes('dry') || type.includes('rainy')) return 'climate';
         return 'season';
     };
 
