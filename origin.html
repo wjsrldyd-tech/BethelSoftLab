@@ -991,12 +991,12 @@
 
       .ot-side-tool-tab {
         flex: 1 1 0;
-        padding: 0.55rem 0.45rem;
+        padding: 0.5rem 0.3rem;
         border: none;
         border-radius: 8px;
         background: transparent;
         color: var(--text);
-        font-size: 1.05rem;
+        font-size: 0.95rem;
         font-weight: 560;
         font-family: inherit;
         cursor: pointer;
@@ -1294,6 +1294,33 @@
         background: #0ea5e9;
       }
 
+      /* ===== 추천 (루트별 소제목 + 추천1~5) ===== */
+      .ot-recommend-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        min-height: 0;
+        padding: 0.15rem 0.1rem 0.35rem;
+      }
+
+      .ot-recommend-routes {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .ot-recommend-route-title {
+        margin: 0 0 0.35rem;
+        font-size: 0.88rem;
+        font-weight: 650;
+        color: #e2e8f0;
+        letter-spacing: -0.01em;
+      }
+
+      .ot-recommend-row {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+      }
+
       /* ===== 구매수량 ===== */
       .ot-qty-panel {
         display: flex;
@@ -1452,6 +1479,7 @@
               <button type="button" class="ot-side-tool-tab is-active" data-tool="goods" role="tab" aria-selected="true">교역품 분류</button>
               <button type="button" class="ot-side-tool-tab" data-tool="qty" role="tab" aria-selected="false">구매수량</button>
               <button type="button" class="ot-side-tool-tab" data-tool="barter" role="tab" aria-selected="false">물물교환</button>
+              <button type="button" class="ot-side-tool-tab" data-tool="recommend" role="tab" aria-selected="false">추천</button>
             </div>
 
             <section id="ot-tool-goods" class="ot-side-tool-pane ot-goods-section" data-tool-pane="goods" role="tabpanel" aria-label="교역품 분류">
@@ -1496,6 +1524,19 @@
                 </button>
               </div>
             </section>
+
+            <section id="ot-tool-recommend" class="ot-side-tool-pane" data-tool-pane="recommend" role="tabpanel" aria-label="추천" hidden>
+              <div class="ot-recommend-panel">
+                <div class="ot-goods-cats">
+                  <div class="ot-goods-cats-special" role="group" aria-label="필터 공통">
+                    <button type="button" id="ot-recommend-clear" class="ot-cat-btn ot-cat-clear is-dim" disabled
+                      aria-label="필터 해제">필터 해제</button>
+                  </div>
+                  <div class="ot-goods-cats-divider" aria-hidden="true"></div>
+                  <div id="ot-recommend-routes" class="ot-recommend-routes ot-goods-cats-normal" role="group" aria-label="추천 루트"></div>
+                </div>
+              </div>
+            </section>
           </div>
         </aside>
 
@@ -1512,6 +1553,7 @@
     <script src="js/origin-ports-data.js"></script>
     <script src="js/origin-ports-coords.js"></script>
     <script src="js/origin-port-goods.js"></script>
+    <script src="js/origin-recommend.js"></script>
     <script src="js/origin-barter.js"></script>
     <script src="js/origin-good-qty.js"></script>
     <script src="js/origin-timer.js"></script>

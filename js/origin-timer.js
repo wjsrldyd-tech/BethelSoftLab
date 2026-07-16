@@ -1251,8 +1251,9 @@
         return selectedName;
     };
 
-    // 물물교환: 재료 이름으로 맵 필터링
-    window.filterMapByGoodNames = async function (goodNames) {
+    // 물물교환·추천: 재료 이름으로 맵 필터링
+    // statusMsg를 주면 그 문구로 상태줄 표시 (미전달 시 이름 목록)
+    window.filterMapByGoodNames = async function (goodNames, statusMsg) {
         if (!goodNames || !goodNames.length) return;
 
         selectedGoodCategories = goodNames;
@@ -1262,9 +1263,21 @@
         await loadGoodQtyCache();
         renderMap();
 
-        const label = goodNames.join(', ');
         const view = currentView();
-        setStatus(`「${label}」 — ${view.label || ''}`);
+        if (statusMsg != null) {
+            setStatus(statusMsg);
+        } else {
+            const label = goodNames.join(', ');
+            setStatus(`「${label}」 — ${view.label || ''}`);
+        }
+    };
+
+    window.clearOriginGoodsFilter = function () {
+        clearGoodCategories();
+    };
+
+    window.selectOriginMapView = function (viewId) {
+        selectView(viewId);
     };
 
     window.invalidateOriginGoodQtyCache = async function () {
