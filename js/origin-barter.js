@@ -14,7 +14,8 @@
     /**
      * 마을별 교환목록
      * ingredients: 재료 비율 (defaultRatio)
-     * result: 결과물 비율 (defaultRatio) — 재료 나눔에 포함하지 않음
+     * result: 결과물 비율 (defaultRatio)
+     * 계획: 적재량 = 결과 목표 → 묶음수 = 적재/결과비율 → 재료 = 묶음수 × 재료비율
      */
     const BARTER_VILLAGES = [
         {
@@ -396,58 +397,42 @@
     }
 
     /**
-     * 재료 목표: 적재량을 재료 비율만으로 분배
-     * 결과 목표: (재료목표 / 재료비율) × 결과비율  (적재량 직접 사용 안 함)
-     * 결과 현황: 적재량
-     * 결과 과부족: 적재량 − 결과목표
+     * 결과 목표: 적재량 (배에 채울 결과물 수량)
+     * 묶음수: 적재량 / 결과비율
+     * 재료 목표: 묶음수 × 각 재료비율
+     * 결과 현황: 적재량 (목표와 동일 = 만재 기준)
+     * 결과 과부족: 0
      */
     function computePlan() {
         const exchange = currentExchange();
         if (!exchange || !exchange.ingredients || !exchange.ingredients.length) return null;
+        if (!exchange.result) return null;
 
         const capacity = getCapacity();
         if (capacity <= 0) return null;
 
-        const totalRatio = exchange.ingredients.reduce((sum, ing) => {
-            return sum + (currentRatios[ing.name] || 0);
-        }, 0);
-        if (totalRatio === 0) return null;
+        const resultRatio = currentResultRatio || exchange.result.defaultRatio || 0;
+        if (resultRatio <= 0) return null;
+
+        const hasMaterialRatio = exchange.ingredients.some(ing => (currentRatios[ing.name] || 0) > 0);
+        if (!hasMaterialRatio) return null;
+
+        // 적재량만큼 결과물을 얻기 위한 교환 묶음 수
+        const batches = capacity / resultRatio;
 
         const materials = exchange.ingredients.map(ing => {
             const ratio = currentRatios[ing.name] || 0;
-            const amount = Math.round((capacity * ratio) / totalRatio);
+            const amount = Math.round(batches * ratio);
             return { name: ing.name, amount, ratio };
         });
 
-        const totalAmount = materials.reduce((a, b) => a + b.amount, 0);
-        const diff = capacity - totalAmount;
-        if (diff !== 0) {
-            const maxItem = materials.reduce((a, b) => (a.amount > b.amount ? a : b));
-            maxItem.amount += diff;
-        }
-
-        let result = null;
-        if (exchange.result) {
-            const resultRatio = currentResultRatio || exchange.result.defaultRatio || 0;
-            // 재료 목표에서 묶음 수 산출 (비율 있는 항목 평균 → 반올림 오차 ±1 흡수)
-            let batchSum = 0;
-            let batchCount = 0;
-            materials.forEach(m => {
-                if (m.ratio > 0) {
-                    batchSum += m.amount / m.ratio;
-                    batchCount += 1;
-                }
-            });
-            const batches = batchCount > 0 ? (batchSum / batchCount) : 0;
-            const amount = Math.round(batches * resultRatio);
-            result = {
-                name: exchange.result.name,
-                ratio: resultRatio,
-                amount,
-                have: capacity,
-                delta: capacity - amount,
-            };
-        }
+        const result = {
+            name: exchange.result.name,
+            ratio: resultRatio,
+            amount: capacity,
+            have: capacity,
+            delta: 0,
+        };
 
         return { materials, result, capacity };
     }
