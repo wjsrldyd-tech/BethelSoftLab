@@ -268,7 +268,7 @@
         라구사: [
             { name: '오레가노', category: '향신료', specialty: false, peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '개암', category: '식료품', specialty: false, peak: ['가을', '건기'], off: ['봄'] },
-            { name: '문어', category: '식료품', specialty: false },
+            { name: '문어', category: '식료품', specialty: false, peak: ['가을', '건기'], off: ['봄'] },
             { name: '순무', category: '식료품', specialty: false, peak: ['가을', '건기'], off: ['봄'] },
             { name: '올리브', category: '식료품', specialty: false, peak: ['가을', '건기'], off: ['봄'] },
             { name: '올리브기름', category: '조미료', specialty: false, peak: ['여름', '건기'], off: ['겨울'] },
@@ -319,7 +319,7 @@
             { name: '테라 베르데', category: '염료', specialty: true, lock: 'monopoly', peak: ['여름', '우기'], off: ['겨울', '건기'] },
         ],
         나폴리: [
-            { name: '벨벳', category: '직물', specialty: true },
+            { name: '벨벳', category: '직물', specialty: true, peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '은 식기', category: '공예품', specialty: false },
             { name: '파스타', category: '식료품', specialty: true, peak: ['가을', '건기'], off: ['봄'] },
             { name: '청동상', category: '미술품', specialty: false },
@@ -330,7 +330,7 @@
             { name: '대형 방패', category: '무기류', specialty: true, lock: 'vassal' },
         ],
         피사: [
-            { name: '벨벳', category: '직물', specialty: true },
+            { name: '벨벳', category: '직물', specialty: true, peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '대리석상', category: '미술품', specialty: false },
             { name: '개암', category: '식료품', specialty: false, peak: ['가을', '건기'], off: ['봄'] },
             { name: '피클', category: '기호품', specialty: false, peak: ['가을', '건기'], off: ['봄', '우기'] },
@@ -339,9 +339,9 @@
             { name: '테라 베르데', category: '염료', specialty: true, lock: 'monopoly', peak: ['여름', '우기'], off: ['겨울', '건기'] },
         ],
         제노바: [
-            { name: '벨벳', category: '직물', specialty: true },
+            { name: '벨벳', category: '직물', specialty: true, peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '은 식기', category: '공예품', specialty: false },
-            { name: '문어', category: '식료품', specialty: false },
+            { name: '문어', category: '식료품', specialty: false, peak: ['가을', '건기'], off: ['봄'] },
             { name: '밀', category: '식료품', specialty: false },
             { name: '레이스', category: '직물', specialty: false, peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '니트', category: '직물', specialty: false, peak: ['봄', '건기'], off: ['가을', '우기'] },
@@ -378,7 +378,7 @@
             { name: '다르부카', category: '공예품', specialty: true, lock: 'monopoly' },
         ],
         마르세유: [
-            { name: '코듀로이', category: '직물', specialty: false },
+            { name: '코듀로이', category: '직물', specialty: false, peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '석류석', category: '보석', specialty: true, peak: ['여름', '우기'], off: ['겨울', '건기'] },
             { name: '서양 대포', category: '총포류', specialty: false },
             { name: '종이', category: '잡화', specialty: false, peak: ['우기'] },
@@ -388,7 +388,7 @@
             { name: '조젯', category: '직물', specialty: false, peak: ['봄', '건기'], off: ['가을', '우기'] },
         ],
         몽펠리에: [
-            { name: '코듀로이', category: '직물', specialty: false },
+            { name: '코듀로이', category: '직물', specialty: false, peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '굴', category: '식료품', specialty: false, peak: ['가을', '건기'], off: ['봄'] },
             { name: '석류석', category: '보석', specialty: true, peak: ['여름', '우기'], off: ['겨울', '건기'] },
             { name: '당근', category: '식료품', specialty: false, peak: ['가을', '건기'], off: ['봄'] },
@@ -961,7 +961,7 @@
             { name: '전승정종', category: '주류', specialty: true, peak: ['겨울', '건기'], off: ['여름', '우기'] },
         ],
         사카이: [
-            { name: '니시진오리', category: '직물', specialty: true },
+            { name: '니시진오리', category: '직물', specialty: true, peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '일본도', category: '무기류', specialty: false },
             { name: '순백자', category: '공예품', specialty: true },
             { name: '간장', category: '조미료', specialty: false, peak: ['여름', '건기'], off: ['겨울'] },
@@ -1439,7 +1439,7 @@
             { name: '물소', category: '가축', specialty: true, lock: 'monopoly', peak: ['겨울', '건기'], off: ['여름'] },
         ],
         고아: [
-            { name: '캐시미어', category: '직물', specialty: true },
+            { name: '캐시미어', category: '직물', specialty: true, peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '루비', category: '보석', specialty: true, peak: ['여름', '우기'], off: ['겨울', '건기'] },
             { name: '후추', category: '향신료', specialty: true, peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '산양모', category: '섬유', specialty: false, peak: ['겨울', '우기'], off: ['여름'] },
@@ -1490,7 +1490,7 @@
             { name: '물소', category: '가축', specialty: true, lock: 'monopoly', peak: ['겨울', '건기'], off: ['여름'] },
         ],
         마실리파트남: [
-            { name: '면직물', category: '직물', specialty: true },
+            { name: '면직물', category: '직물', specialty: true, peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '사파이어', category: '보석', specialty: true },
             { name: '콩', category: '식료품', specialty: false, peak: ['가을', '건기'], off: ['봄'] },
             { name: '강황', category: '염료', specialty: false, peak: ['여름', '우기'], off: ['겨울', '건기'] },
@@ -1588,7 +1588,7 @@
             { name: '아라크', category: '주류', specialty: true, lock: 'monopoly', peak: ['겨울', '건기'], off: ['여름', '우기'] },
         ],
         시라즈: [
-            { name: '호박단', category: '직물', specialty: true },
+            { name: '호박단', category: '직물', specialty: true, peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '요구르트', category: '기호품', specialty: true, peak: ['가을', '건기'], off: ['봄', '우기'] },
             { name: '센나', category: '의약품', specialty: false, peak: ['봄', '우기'], off: ['가을'] },
             { name: '낙타털', category: '섬유', specialty: false, peak: ['겨울', '우기'], off: ['여름'] },
@@ -1598,7 +1598,7 @@
             { name: '아위', category: '향신료', specialty: true, lock: 'monopoly', peak: ['봄', '건기'], off: ['가을', '우기'] },
         ],
         바스라: [
-            { name: '모슬린', category: '직물', specialty: true },
+            { name: '모슬린', category: '직물', specialty: true, peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '요구르트', category: '기호품', specialty: true, peak: ['가을', '건기'], off: ['봄', '우기'] },
             { name: '센나', category: '의약품', specialty: false, peak: ['봄', '우기'], off: ['가을'] },
             { name: '석유', category: '공업품', specialty: false },
@@ -1678,7 +1678,7 @@
             { name: '고산족 의복', category: '직물', specialty: true, lock: 'monopoly', peak: ['봄', '건기'], off: ['가을', '우기'] },
         ],
         리마: [
-            { name: '아과요', category: '직물', specialty: true },
+            { name: '아과요', category: '직물', specialty: true, peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '아보카도', category: '기호품', specialty: true, peak: ['가을', '건기'], off: ['봄', '우기'] },
             { name: '퀴노아', category: '식료품', specialty: false, peak: ['가을', '건기'], off: ['봄'] },
             { name: '마카', category: '의약품', specialty: false, peak: ['봄', '우기'], off: ['가을'] },
