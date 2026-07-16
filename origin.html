@@ -95,34 +95,6 @@
         opacity: 0.45;
       }
 
-      .ot-view-tab-badge {
-        display: inline-block;
-        margin-left: 0.28rem;
-        min-width: 1.1rem;
-        padding: 0.05rem 0.28rem;
-        border-radius: 999px;
-        background: rgba(250, 204, 21, 0.25);
-        color: #fde68a;
-        font-size: 0.68rem;
-        font-weight: 700;
-        line-height: 1.2;
-        text-align: center;
-        vertical-align: 0.05em;
-      }
-
-      .ot-status {
-        flex: 0 1 auto;
-        min-width: 0;
-        max-width: 14rem;
-        font-size: 0.76rem;
-        color: var(--text);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .ot-status.is-error { color: #f87171; }
-
       /* ===== 좌우 본문 =====
          맵 비율(~1024/673)에 맞는 가로폭만 오른쪽에 주고, 남은 폭은 왼쪽으로 */
       .ot-main {
@@ -1339,7 +1311,6 @@
         <a href="game.html" class="back-link">← 게임</a>
         <span class="ot-toolbar-title">대항오 헬퍼</span>
         <nav id="ot-view-tabs" class="ot-view-tabs" aria-label="해역 메뉴"></nav>
-        <p id="ot-status" class="ot-status" aria-live="polite"></p>
         <div class="ot-edit-controls">
           <button type="button" id="ot-edit-toggle" class="ot-edit-btn" aria-pressed="false">위치 수정</button>
           <button type="button" id="ot-edit-save" class="ot-edit-btn ot-edit-btn-save" hidden>저장</button>

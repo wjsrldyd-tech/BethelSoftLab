@@ -217,17 +217,16 @@
 
     // ─── 해역 선택 ───────────────────────────────────────────────────
 
-    function countMatchingPortsInView(viewId) {
-        if (!selectedGoodCategories.length || typeof window.getOriginPortGoods !== 'function') return 0;
+    function viewHasMatchingPorts(viewId) {
+        if (!selectedGoodCategories.length || typeof window.getOriginPortGoods !== 'function') return false;
         const pins = typeof window.getOriginMapPins === 'function'
             ? window.getOriginMapPins(viewId)
             : [];
-        let count = 0;
         for (const pin of pins) {
             const goods = window.getOriginPortGoods(pin.name, selectedGoodCategories, { byName: filterByName });
-            if (goods.length) count += 1;
+            if (goods.length) return true;
         }
-        return count;
+        return false;
     }
 
     function renderViewTabs() {
@@ -235,22 +234,18 @@
         const filterOn = !!(selectedGoodCategories.length && !editMode);
 
         viewTabsEl.innerHTML = MAP_VIEWS.map(v => {
-            const matchCount = filterOn ? countMatchingPortsInView(v.id) : 0;
-            const hasMatch = matchCount > 0;
+            const hasMatch = filterOn && viewHasMatchingPorts(v.id);
             const classes = [
                 'ot-view-tab',
                 v.id === selectedViewId ? 'is-active' : '',
                 hasMatch ? 'has-goods' : '',
                 filterOn && !hasMatch ? 'is-dim' : '',
             ].filter(Boolean).join(' ');
-            const badge = hasMatch
-                ? `<span class="ot-view-tab-badge" aria-hidden="true">${matchCount}</span>`
-                : '';
-            const ariaExtra = hasMatch ? ` · 재료 항구 ${matchCount}` : (filterOn ? ' · 재료 없음' : '');
+            const ariaExtra = hasMatch ? ' · 재료 있음' : (filterOn ? ' · 재료 없음' : '');
             return `
           <button type="button" class="${classes}"
             data-view-id="${escapeAttr(v.id)}"
-            aria-label="${escapeAttr(v.label + ariaExtra)}">${escapeHtml(v.label)}${badge}</button>`;
+            aria-label="${escapeAttr(v.label + ariaExtra)}">${escapeHtml(v.label)}</button>`;
         }).join('');
     }
 
