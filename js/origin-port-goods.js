@@ -19,29 +19,20 @@
         '명산품',
     ];
 
-    /** @type {string[]} 일반 교역품 분류 — 복수 선택(OR) */
-    window.ORIGIN_GOOD_CATEGORIES = [
-        '식료품',
-        '조미료',
-        '가축',
-        '의약품',
-        '잡화',
-        '주류',
-        '염료',
-        '광석',
-        '공업품',
-        '기호품',
-        '섬유',
-        '직물',
-        '공예품',
-        '미술품',
-        '향신료',
-        '귀금속',
-        '향료',
-        '보석',
-        '무기류',
-        '총포류',
+    /**
+     * 일반 교역품 분류 — 대유행 묶음(중복 없이 이웃 배치, 5×4)
+     * @type {{ label: string, categories: string[] }[]}
+     */
+    window.ORIGIN_GOOD_CATEGORY_GROUPS = [
+        { label: '축제·홍수', categories: ['기호품', '식료품', '조미료', '직물', '공업품'] },
+        { label: '개발·전염', categories: ['광석', '주류', '잡화', '의약품', '섬유'] },
+        { label: '후원·사치', categories: ['향신료', '공예품', '염료', '향료', '미술품'] },
+        { label: '호황·전쟁', categories: ['귀금속', '보석', '총포류', '무기류', '가축'] },
     ];
+
+    /** @type {string[]} 일반 교역품 분류 — 복수 선택(OR), 그룹 전개 */
+    window.ORIGIN_GOOD_CATEGORIES = window.ORIGIN_GOOD_CATEGORY_GROUPS
+        .reduce((acc, g) => acc.concat(g.categories), []);
 
     /**
      * 게임 달력 — 월(1~12)별 사계절 / 건기·우기

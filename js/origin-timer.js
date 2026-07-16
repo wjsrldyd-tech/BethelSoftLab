@@ -657,8 +657,17 @@
     function renderGoodsCategories() {
         if (!goodsCatsEl) return;
         const specials = window.ORIGIN_SPECIAL_CATEGORIES || ['명산품'];
-        const normals = window.ORIGIN_GOOD_CATEGORIES || [];
+        const groups = window.ORIGIN_GOOD_CATEGORY_GROUPS
+            || [{ label: '', categories: window.ORIGIN_GOOD_CATEGORIES || [] }];
         const hasFilter = selectedGoodCategories.length > 0;
+        const rowsHtml = groups.map(g => {
+            const labelText = String(g.label || '').replace(/·/g, '\n');
+            const label = g.label
+                ? `<span class="ot-goods-cat-label">${escapeHtml(labelText)}</span>`
+                : '';
+            const btns = (g.categories || []).map(catButtonHtml).join('');
+            return `<div class="ot-goods-cat-row">${label}${btns}</div>`;
+        }).join('');
         goodsCatsEl.innerHTML = `
           <div class="ot-goods-cats-special" role="group" aria-label="특수 분류">
             ${specials.map(catButtonHtml).join('')}
@@ -669,7 +678,7 @@
           </div>
           <div class="ot-goods-cats-divider" aria-hidden="true"></div>
           <div class="ot-goods-cats-normal" role="group" aria-label="일반 분류">
-            ${normals.map(catButtonHtml).join('')}
+            ${rowsHtml}
           </div>`;
     }
 
