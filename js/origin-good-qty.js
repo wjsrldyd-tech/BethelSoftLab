@@ -129,16 +129,16 @@
 
             return `
               <div class="ot-qty-row" data-good="${escapeHtml(g.name)}">
-                <div class="ot-qty-info">
-                  <span class="${nameClass}"${g.specialty ? ' title="명산품"' : ''}>${escapeHtml(g.name)}</span>
-                  <span class="ot-qty-cat">${escapeHtml(g.category || '')}</span>
-                </div>
                 <input type="number" class="ot-qty-input${seasonClass}" min="0" step="any"
                   inputmode="decimal" placeholder="—"
                   data-good-name="${escapeHtml(g.name)}"
                   value="${escapeHtml(visible)}"
                   title="${escapeHtml(seasonTitle)}"
                   aria-label="${escapeHtml(g.name)} 보이는 수량${seasonTitle ? ' (' + seasonTitle + ')' : ''}">
+                <div class="ot-qty-info">
+                  <span class="${nameClass}"${g.specialty ? ' title="명산품"' : ''}>${escapeHtml(g.name)}</span>
+                  <span class="ot-qty-cat">${escapeHtml(g.category || '')}</span>
+                </div>
               </div>`;
         }).join('');
     }
