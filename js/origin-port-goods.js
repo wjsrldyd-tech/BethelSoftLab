@@ -581,7 +581,7 @@
             { name: '콩크 진주', category: '보석', specialty: true, lock: 'monopoly', peak: ['여름', '우기'], off: ['겨울', '건기'] },
         ],
         산티아고: [
-            { name: '바닐라', category: '향신료', specialty: false },
+            { name: '바닐라', category: '향신료', specialty: false, peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '사금', category: '귀금속', specialty: false, peak: ['겨울', '건기'], off: ['여름', '우기'] },
             { name: '땅콩', category: '기호품', specialty: true, peak: ['가을', '건기'], off: ['봄', '우기'] },
             { name: '카카오', category: '기호품', specialty: true, peak: ['가을', '건기'], off: ['봄', '우기'] },
@@ -626,7 +626,7 @@
             { name: '콩크 진주', category: '보석', specialty: true, lock: 'monopoly', peak: ['여름', '우기'], off: ['겨울', '건기'] },
         ],
         메리다: [
-            { name: '치클', category: '기호품', specialty: true },
+            { name: '치클', category: '기호품', specialty: true, peak: ['가을', '건기'], off: ['봄', '우기'] },
             { name: '흑요석 곤봉', category: '무기류', specialty: false },
             { name: '감자', category: '식료품', specialty: false, peak: ['가을', '건기'], off: ['봄'] },
             { name: '선인장', category: '식료품', specialty: true, peak: ['가을', '건기'], off: ['봄'] },
@@ -678,9 +678,9 @@
         ],
         윌렘스타트: [
             { name: '금', category: '귀금속', specialty: false },
-            { name: '올스파이스', category: '향신료', specialty: true },
+            { name: '올스파이스', category: '향신료', specialty: true, peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '로그우드', category: '염료', specialty: true },
-            { name: '고구마', category: '식료품', specialty: false },
+            { name: '고구마', category: '식료품', specialty: false, peak: ['가을', '건기'], off: ['봄'] },
             { name: '사이잘삼', category: '섬유', specialty: false },
             { name: '무이라푸아마', category: '의약품', specialty: true, lock: 'monopoly' },
         ],
@@ -879,7 +879,7 @@
             { name: '장궁', category: '무기류', specialty: true, lock: 'monopoly' },
         ],
         더블린: [
-            { name: '위스키', category: '주류', specialty: true },
+            { name: '위스키', category: '주류', specialty: true, peak: ['겨울', '건기'], off: ['여름', '우기'] },
             { name: '철재', category: '공업품', specialty: false },
             { name: '흑연', category: '광석', specialty: false, peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '베이컨', category: '식료품', specialty: false, peak: ['가을', '건기'], off: ['봄'] },
@@ -1111,7 +1111,7 @@
             { name: '차', category: '기호품', specialty: false, peak: ['가을', '건기'], off: ['봄', '우기'] },
         ],
         연운: [
-            { name: '중국차', category: '기호품', specialty: true },
+            { name: '중국차', category: '기호품', specialty: true, peak: ['가을', '건기'], off: ['봄', '우기'] },
             { name: '당금', category: '공예품', specialty: true },
             { name: '우황', category: '의약품', specialty: false, peak: ['봄', '우기'], off: ['가을'] },
             { name: '지리바꽃', category: '의약품', specialty: false, peak: ['봄', '우기'], off: ['가을'] },
@@ -1450,7 +1450,7 @@
             { name: '물소', category: '가축', specialty: true, lock: 'monopoly', peak: ['겨울', '건기'], off: ['여름'] },
         ],
         캘리컷: [
-            { name: '후추', category: '향신료', specialty: true },
+            { name: '후추', category: '향신료', specialty: true, peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '사파이어', category: '보석', specialty: true },
             { name: '보석세공', category: '공예품', specialty: false },
             { name: '인디고', category: '염료', specialty: true, peak: ['여름', '우기'], off: ['겨울', '건기'] },
@@ -1469,7 +1469,7 @@
             { name: '물소', category: '가축', specialty: true, lock: 'monopoly', peak: ['겨울', '건기'], off: ['여름'] },
         ],
         실론: [
-            { name: '계피', category: '향신료', specialty: true },
+            { name: '계피', category: '향신료', specialty: true, peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '홍차', category: '기호품', specialty: true, peak: ['가을', '건기'], off: ['봄', '우기'] },
             { name: '루비', category: '보석', specialty: true, peak: ['여름', '우기'], off: ['겨울', '건기'] },
             { name: '월장석', category: '보석', specialty: false, peak: ['여름', '우기'], off: ['겨울', '건기'] },
