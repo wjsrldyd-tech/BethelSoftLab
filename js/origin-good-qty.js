@@ -181,6 +181,9 @@
             setStatus(plain > 0
                 ? `「${goodName}」평시 ${plain} 저장`
                 : `「${goodName}」삭제`);
+            if (typeof window.invalidateOriginGoodQtyCache === 'function') {
+                window.invalidateOriginGoodQtyCache();
+            }
         } catch (err) {
             console.error('[OriginGoodQty] save', err);
             setStatus('저장 실패: ' + (err.message || err), true);

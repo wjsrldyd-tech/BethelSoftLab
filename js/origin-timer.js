@@ -30,6 +30,9 @@
     /** @type {string[]} 선택된 교역품 분류 (명산품은 단독, 일반 분류는 OR 복수) */
     let selectedGoodCategories = [];
     let filterByName = false; // true이면 selectedGoodCategories가 이름 배열
+    /** @type {Record<string, Record<string, number>>} portName -> goodName -> plainQty */
+    let goodQtyCache = {};
+    let goodQtyCacheLoaded = false;
     let tickTimer = null;
 
     /** @type {Record<string, Record<string, {x:number,y:number}>>} */
@@ -341,9 +344,7 @@
                 : '';
 
             const goodsHtml = hasGoods
-                ? `<span class="ot-pin-goods">${goods.map(g => `
-                    <span class="ot-pin-good${g.specialty ? ' is-specialty' : ''}">${escapeHtml(g.name)}</span>
-                  `).join('')}</span>`
+                ? `<span class="ot-pin-goods">${goods.map(g => pinGoodHtml(loc.name, g)).join('')}</span>`
                 : '';
 
             const labelHtml = filterOn
@@ -475,6 +476,49 @@
         return (m >= 1 && m <= 12) ? m : 1;
     }
 
+    async function loadGoodQtyCache() {
+        if (!window.originDb || typeof window.originDb.listGoodPlainQtys !== 'function') {
+            goodQtyCache = {};
+            goodQtyCacheLoaded = true;
+            return;
+        }
+        try {
+            const rows = await window.originDb.listGoodPlainQtys();
+            const next = {};
+            for (const row of (rows || [])) {
+                const port = row.portName;
+                const good = row.goodName;
+                if (!port || !good) continue;
+                if (!next[port]) next[port] = {};
+                next[port][good] = Number(row.plainQty) || 0;
+            }
+            goodQtyCache = next;
+            goodQtyCacheLoaded = true;
+        } catch (err) {
+            console.warn('[OriginTimer] good qty cache', err);
+            goodQtyCacheLoaded = true;
+        }
+    }
+
+    function formatVisibleQty(plain, mult) {
+        const v = (Number(plain) || 0) * (Number(mult) || 1);
+        if (!v) return '';
+        return Number.isInteger(v) ? String(v) : String(Math.round(v * 10) / 10);
+    }
+
+    function pinGoodHtml(portName, g) {
+        const month = getSelectedMonth();
+        const plain = (goodQtyCache[portName] && goodQtyCache[portName][g.name]) || 0;
+        const mult = (typeof window.getOriginGoodSeasonQtyMult === 'function')
+            ? window.getOriginGoodSeasonQtyMult(g, month)
+            : 1;
+        const qtyText = plain > 0 ? formatVisibleQty(plain, mult) : '';
+        const qtyHtml = qtyText
+            ? `<span class="ot-pin-good-qty">${escapeHtml(qtyText)}</span>`
+            : '';
+        return `<span class="ot-pin-good${g.specialty ? ' is-specialty' : ''}">${escapeHtml(g.name)}${qtyHtml}</span>`;
+    }
+
     function monthLabel(month) {
         const cal = (window.ORIGIN_SEASON_CALENDAR || []).find(r => r.month === month);
         if (!cal) return `${month}월`;
@@ -492,6 +536,7 @@
             window.originGoodQtyOnMonthChange();
         }
         renderPanel();
+        if (selectedGoodCategories.length) renderMap();
     }
 
     function portNameHeadingHtml(portName) {
@@ -1059,7 +1104,7 @@
         renderViewTabs();
         renderGoodsCategories();
         selectView(selectedViewId);
-        await Promise.all([reload(false), loadPinsFromDb()]);
+        await Promise.all([reload(false), loadPinsFromDb(), loadGoodQtyCache()]);
         tickTimer = setInterval(tickAll, 1000);
     }
 
@@ -1073,18 +1118,24 @@
     };
 
     // 물물교환: 재료 이름으로 맵 필터링
-    window.filterMapByGoodNames = function (goodNames) {
+    window.filterMapByGoodNames = async function (goodNames) {
         if (!goodNames || !goodNames.length) return;
 
         selectedGoodCategories = goodNames;
         filterByName = true;
         renderGoodsCategories();
         renderViewTabs();
+        await loadGoodQtyCache();
         renderMap();
 
         const label = goodNames.join(', ');
         const view = currentView();
         setStatus(`「${label}」 — ${view.label || ''}`);
+    };
+
+    window.invalidateOriginGoodQtyCache = async function () {
+        await loadGoodQtyCache();
+        if (selectedGoodCategories.length) renderMap();
     };
 
 
