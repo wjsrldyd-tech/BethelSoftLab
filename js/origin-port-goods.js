@@ -775,7 +775,7 @@
             { name: '토마토', category: '식료품', specialty: false, peak: ['가을', '건기'], off: ['봄'] },
             { name: '캐슈너트', category: '기호품', specialty: false, peak: ['가을', '건기'], off: ['봄', '우기'] },
             { name: '고추', category: '향신료', specialty: true, peak: ['봄', '건기'], off: ['가을', '우기'] },
-            { name: '비쿠냐털', category: '섬유', specialty: true, lock: 'vassal', peak: ['겨울', '우기'], off: ['여름'] },
+            { name: '비쿠냐털', category: '섬유', specialty: true, peak: ['겨울', '우기'], off: ['여름'] },
             { name: '레드우드', category: '공업품', specialty: true, lock: 'monopoly' },
         ],
         코콜라: [
