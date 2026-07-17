@@ -305,7 +305,7 @@
      * - south-4seasons: 남반구 사계절 (9~11 봄, 12~2 여름, 3~5 가을, 6~8 겨울)
      * - dry-rainy-dry: 건기-우기-건기 (11~5 건기, 6~10 우기)
      * - dry+1-rainy-dry: 건기+1-우기-건기 (12~6 건기, 7~11 우기)
-     * - rainy-dry-rainy: 우기-건기-우기 (12~5 우기, 6~11 건기) - 추후 추가
+     * - rainy-dry-rainy: 우기-건기-우기 (12~5 우기, 6~11 건기)
      * - tropical: 열대 (성수기 없음)
      * - arctic: 한대 (성수기 없음)
      * @type {Record<string, string>}
@@ -459,6 +459,9 @@
         '산후안': 'dry+1-rainy-dry',
         '하바나': 'dry+1-rainy-dry',
         '포트로열': 'dry+1-rainy-dry',
+
+        // 우기-건기-우기 (1개) — 12~5 우기, 6~11 건기
+        '페르남부쿠': 'rainy-dry-rainy',
 
         // 열대 (22개)
         '카옌': 'tropical',

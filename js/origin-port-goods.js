@@ -141,7 +141,7 @@
             '건기', '건기', '건기', '건기', '건기', '건기',
             '우기', '우기', '우기', '우기', '우기', '건기'
         ],
-        // 우기-건기-우기: 12~5 우기, 6~11 건기 (추후 도시 추가)
+        // 우기-건기-우기: 12~5 우기, 6~11 건기
         'rainy-dry-rainy': [
             '우기', '우기', '우기', '우기', '우기', '건기',
             '건기', '건기', '건기', '건기', '건기', '우기'
@@ -1704,7 +1704,7 @@
             { name: '무이라푸아마', category: '의약품', specialty: true, lock: 'monopoly', peak: ['봄', '우기'], off: ['가을'] },
         ],
         페르남부쿠: [
-            { name: '크롬 광석', category: '광석', specialty: false },
+            { name: '크롬 광석', category: '광석', specialty: false, peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '아보카도', category: '기호품', specialty: true, peak: ['가을', '건기'], off: ['봄', '우기'] },
             { name: '카카오', category: '기호품', specialty: true, peak: ['가을', '건기'], off: ['봄', '우기'] },
             { name: '무이라푸아마', category: '의약품', specialty: true, lock: 'monopoly', peak: ['봄', '우기'], off: ['가을'] },
