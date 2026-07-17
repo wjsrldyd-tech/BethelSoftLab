@@ -9,13 +9,14 @@
     const LS_EXCHANGE = 'originBarterExchange';
     const LS_RATIOS = 'originBarterRatios';
     const LS_HAVE = 'originBarterHave';
+    const LS_BATCHES = 'originBarterBatches';
     const LS_RECIPE_LEGACY = 'originBarterRecipe';
+    const MAX_BATCHES = 8;
 
     /**
      * 마을 → 교환목록
-     * ingredients: 재료 비율 (defaultRatio)
-     * result: 결과물 비율 (defaultRatio)
-     * 계획: 적재량 = 결과 목표 → 묶음수 = 적재/결과비율 → 재료 = 묶음수 × 재료비율
+     * ingredients / result defaultRatio = 교환 1회분 재료·결과
+     * 계획: 선택한 배수 N → 목표 = N × 1회 비율
      */
     const BARTER_VILLAGES = [
         {
@@ -145,6 +146,8 @@
 
     let selectedVillageId = null;
     let selectedExchangeId = null;
+    /** 교환 횟수 배수 (1~8) — 목표 = 비율 × N */
+    let selectedBatches = 1;
     /** 재료 비율만 (결과물 비율 제외) */
     let currentRatios = {};
     /** 결과물 비율 */
@@ -163,6 +166,7 @@
             exchangeSelect: document.getElementById('barter-exchange'),
             exchangeBadge: document.getElementById('barter-exchange-badge'),
             matrixDiv: document.getElementById('barter-matrix'),
+            multBtns: document.getElementById('barter-mult-btns'),
             progressClearBtn: document.getElementById('barter-progress-clear'),
             filterBtn: document.getElementById('barter-filter-map'),
         };
@@ -260,6 +264,35 @@
         }
     }
 
+    function clampBatches(n) {
+        const v = parseInt(n, 10);
+        if (!Number.isFinite(v) || v < 1) return 1;
+        if (v > MAX_BATCHES) return MAX_BATCHES;
+        return v;
+    }
+
+    function saveBatches() {
+        localStorage.setItem(LS_BATCHES, String(selectedBatches));
+    }
+
+    function syncMultButtons() {
+        const { multBtns } = els();
+        if (!multBtns) return;
+        multBtns.querySelectorAll('[data-mult]').forEach(btn => {
+            const n = clampBatches(btn.dataset.mult);
+            const on = n === selectedBatches;
+            btn.classList.toggle('is-active', on);
+            btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+    }
+
+    function setBatches(n) {
+        selectedBatches = clampBatches(n);
+        saveBatches();
+        syncMultButtons();
+        refreshMatrix();
+    }
+
     function saveSelection() {
         if (selectedVillageId) localStorage.setItem(LS_VILLAGE, selectedVillageId);
         if (selectedExchangeId) localStorage.setItem(LS_EXCHANGE, selectedExchangeId);
@@ -334,7 +367,7 @@
     }
 
     function init() {
-        const { capacityInput, villageSelect, exchangeSelect, filterBtn, matrixDiv, progressClearBtn } = els();
+        const { capacityInput, villageSelect, exchangeSelect, filterBtn, matrixDiv, progressClearBtn, multBtns } = els();
         if (!capacityInput || !villageSelect || !exchangeSelect || inited) return;
         inited = true;
 
@@ -352,6 +385,9 @@
             capacityInput.value = String(savedCapacity);
         }
 
+        selectedBatches = clampBatches(localStorage.getItem(LS_BATCHES) || '1');
+        syncMultButtons();
+
         fillVillageOptions();
 
         window.originBarterOnMonthChange = function (month) {
@@ -366,6 +402,13 @@
             saveCapacity();
             refreshMatrix();
         });
+        if (multBtns) {
+            multBtns.addEventListener('click', (e) => {
+                const btn = e.target.closest('[data-mult]');
+                if (!btn || !multBtns.contains(btn)) return;
+                setBatches(btn.dataset.mult);
+            });
+        }
         if (filterBtn) {
             filterBtn.addEventListener('click', filterMapByIngredients);
         }
@@ -538,10 +581,9 @@
     }
 
     /**
-     * 결과 목표: 함대 적재량
-     * 묶음수(목표): 적재량 / 결과비율 → 재료 목표 = 묶음수 × 재료비율
+     * 목표: 선택한 교환 횟수 N × 1회 비율
      * 결과 적재: 실제 실은 재료 중 가장 부족한 비율(병목) 기준으로 교환 예상량
-     * 결과 초과: 결과 적재 − 결과 목표
+     * 결과 초과: 결과 적재 − 함대 적재량
      * 재료 사용: 병목 묶음 × 비율, 잔량: 입력 − 사용
      */
     function computePlan() {
@@ -549,17 +591,15 @@
         if (!exchange || !exchange.ingredients || !exchange.ingredients.length) return null;
         if (!exchange.result) return null;
 
-        const capacity = getCapacity();
-        if (capacity <= 0) return null;
-
         const resultRatio = currentResultRatio || exchange.result.defaultRatio || 0;
         if (resultRatio <= 0) return null;
 
         const hasMaterialRatio = exchange.ingredients.some(ing => (currentRatios[ing.name] || 0) > 0);
         if (!hasMaterialRatio) return null;
 
-        // 만재 목표 기준 묶음 수 → 재료 목표
-        const goalBatches = capacity / resultRatio;
+        const goalBatches = selectedBatches;
+        const resultGoal = Math.round(goalBatches * resultRatio);
+        const capacity = getCapacity();
 
         // 실제 적재 재료로 가능한 묶음 = min(적재_i / 비율_i)
         let haveBatches = null;
@@ -585,12 +625,14 @@
         const result = {
             name: exchange.result.name,
             ratio: resultRatio,
-            amount: capacity,
+            amount: resultGoal,
             have: resultHave,
-            delta: resultHave - capacity,
+            // 결과 적재 − 함대 적재량 (+면 적재 초과)
+            delta: capacity > 0 ? resultHave - capacity : null,
+            capacity,
         };
 
-        return { materials, result, capacity };
+        return { materials, result, capacity, batches: goalBatches };
     }
 
     function computeGoals() {
@@ -697,8 +739,10 @@
             if (goalRow.cells[col]) goalRow.cells[col].innerHTML = goalCellHtml(r ? r.amount : null);
             if (haveRow.cells[col]) haveRow.cells[col].innerHTML = haveCellHtml(r ? r.have : null);
             if (deltaRow.cells[col]) {
-                deltaRow.cells[col].innerHTML = r
-                    ? deltaFromValues(r.have, r.amount)
+                // 결과 초과: 결과 적재 − 함대 적재량
+                const cap = r && r.capacity > 0 ? r.capacity : (plan && plan.capacity > 0 ? plan.capacity : null);
+                deltaRow.cells[col].innerHTML = (r && cap != null)
+                    ? deltaFromValues(r.have, cap)
                     : deltaCellHtml(null, 0);
             }
         }
@@ -780,8 +824,8 @@
             return `<td>${deltaCellHtml(goal, have)}</td>`;
         }).join('')
             + (exchange.result
-                ? `<td class="ot-barter-result-col">${result
-                    ? deltaFromValues(result.have, result.amount)
+                ? `<td class="ot-barter-result-col">${result && result.capacity > 0
+                    ? deltaFromValues(result.have, result.capacity)
                     : deltaCellHtml(null, 0)}</td>`
                 : '');
 

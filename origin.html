@@ -1315,10 +1315,47 @@
         align-items: center;
         justify-content: space-between;
         gap: 0.5rem;
+        flex-wrap: wrap;
       }
 
       .ot-barter-label-row .ot-barter-label {
         margin: 0;
+      }
+
+      .ot-barter-mult-btns {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.28rem;
+        align-items: center;
+        margin-right: auto;
+      }
+
+      .ot-barter-mult-btn {
+        min-width: 1.85rem;
+        height: 1.85rem;
+        padding: 0 0.35rem;
+        border-radius: 6px;
+        border: 1px solid rgba(148, 163, 184, 0.28);
+        background: rgba(255, 255, 255, 0.04);
+        color: #cbd5e1;
+        font-size: 0.9rem;
+        font-weight: 650;
+        font-family: inherit;
+        font-variant-numeric: tabular-nums;
+        cursor: pointer;
+        line-height: 1;
+      }
+
+      .ot-barter-mult-btn:hover {
+        border-color: rgba(14, 165, 233, 0.5);
+        color: #e2e8f0;
+        background: rgba(14, 165, 233, 0.1);
+      }
+
+      .ot-barter-mult-btn.is-active {
+        border-color: rgba(14, 165, 233, 0.75);
+        background: rgba(14, 165, 233, 0.22);
+        color: #f8fafc;
       }
 
       .ot-barter-clear-btn {
@@ -1749,6 +1786,16 @@
                 <div class="ot-barter-section">
                   <div class="ot-barter-label-row">
                     <p class="ot-barter-label">재료 계획</p>
+                    <div id="barter-mult-btns" class="ot-barter-mult-btns" role="group" aria-label="교환 횟수 배수">
+                      <button type="button" class="ot-barter-mult-btn" data-mult="1" aria-pressed="false">1</button>
+                      <button type="button" class="ot-barter-mult-btn" data-mult="2" aria-pressed="false">2</button>
+                      <button type="button" class="ot-barter-mult-btn" data-mult="3" aria-pressed="false">3</button>
+                      <button type="button" class="ot-barter-mult-btn" data-mult="4" aria-pressed="false">4</button>
+                      <button type="button" class="ot-barter-mult-btn" data-mult="5" aria-pressed="false">5</button>
+                      <button type="button" class="ot-barter-mult-btn" data-mult="6" aria-pressed="false">6</button>
+                      <button type="button" class="ot-barter-mult-btn" data-mult="7" aria-pressed="false">7</button>
+                      <button type="button" class="ot-barter-mult-btn" data-mult="8" aria-pressed="false">8</button>
+                    </div>
                     <button type="button" id="barter-progress-clear" class="ot-barter-clear-btn">현황 초기화</button>
                   </div>
                   <div id="barter-matrix" class="ot-barter-matrix">
