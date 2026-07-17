@@ -5,54 +5,97 @@
     'use strict';
 
     const LS_CAPACITY = 'originBarterCapacity';
+    const LS_VILLAGE = 'originBarterVillage';
     const LS_EXCHANGE = 'originBarterExchange';
     const LS_RATIOS = 'originBarterRatios';
     const LS_HAVE = 'originBarterHave';
     const LS_RECIPE_LEGACY = 'originBarterRecipe';
-    const LS_VILLAGE_LEGACY = 'originBarterVillage';
 
     /**
-     * 교환목록 (마을 무관 — 동일 교환은 재료 구성이 같고, 비율만 수동 입력)
+     * 마을 → 교환목록
      * ingredients: 재료 비율 (defaultRatio)
      * result: 결과물 비율 (defaultRatio)
      * 계획: 적재량 = 결과 목표 → 묶음수 = 적재/결과비율 → 재료 = 묶음수 × 재료비율
      */
-    const BARTER_EXCHANGES = [
+    const BARTER_VILLAGES = [
         {
-            id: 'mastic',
-            name: '매스틱',
-            category: '기호품',
-            result: { name: '매스틱', defaultRatio: 680 },
-            ingredients: [
-                { name: '은 식기', defaultRatio: 194 },
-                { name: '커피', defaultRatio: 174 },
-                { name: '포도주', defaultRatio: 174 },
+            id: 'turk',
+            name: '튀르크',
+            exchanges: [
+                {
+                    id: 'mastic',
+                    name: '매스틱',
+                    category: '기호품',
+                    result: { name: '매스틱', defaultRatio: 680 },
+                    ingredients: [
+                        { name: '은 식기', defaultRatio: 194 },
+                        { name: '커피', defaultRatio: 174 },
+                        { name: '포도주', defaultRatio: 174 },
+                    ],
+                },
+                {
+                    id: 'chaidanruk',
+                    name: '차이단륵',
+                    category: '미술품',
+                    result: { name: '차이단륵', defaultRatio: 626 },
+                    ingredients: [
+                        { name: '사금', defaultRatio: 174 },
+                        { name: '주석 광석', defaultRatio: 174 },
+                        { name: '아주라이트', defaultRatio: 174 },
+                    ],
+                },
+                {
+                    id: 'damascus_steel',
+                    name: '다마스쿠스 강철',
+                    category: '공업품',
+                    result: { name: '다마스쿠스 강철', defaultRatio: 626 },
+                    ingredients: [
+                        { name: '철광석', defaultRatio: 174 },
+                        { name: '석탄', defaultRatio: 174 },
+                        { name: '목재', defaultRatio: 174 },
+                    ],
+                },
             ],
         },
         {
-            id: 'chaidanruk',
-            name: '차이단륵',
-            category: '미술품',
-            result: { name: '차이단륵', defaultRatio: 626 },
-            ingredients: [
-                { name: '사금', defaultRatio: 174 },
-                { name: '주석 광석', defaultRatio: 174 },
-                { name: '아주라이트', defaultRatio: 174 },
-            ],
-        },
-        {
-            id: 'damascus_steel',
-            name: '다마스쿠스 강철',
-            category: '공업품',
-            result: { name: '다마스쿠스 강철', defaultRatio: 626 },
-            ingredients: [
-                { name: '철광석', defaultRatio: 174 },
-                { name: '석탄', defaultRatio: 174 },
-                { name: '목재', defaultRatio: 174 },
+            id: 'apache',
+            name: '아파치',
+            exchanges: [
+                {
+                    id: 'camas',
+                    name: '카마스',
+                    category: '식료품',
+                    result: { name: '카마스', defaultRatio: 756 },
+                    ingredients: [
+                        { name: '아보카도', defaultRatio: 134 },
+                        { name: '카사바', defaultRatio: 154 },
+                    ],
+                },
+                {
+                    id: 'pulque',
+                    name: '풀케',
+                    category: '주류',
+                    result: { name: '풀케', defaultRatio: 816 },
+                    ingredients: [
+                        { name: '산호', defaultRatio: 154 },
+                        { name: '은', defaultRatio: 134 },
+                    ],
+                },
+                {
+                    id: 'wampum',
+                    name: '왐품',
+                    category: '공예품',
+                    result: { name: '왐품', defaultRatio: 504 },
+                    ingredients: [
+                        { name: '백금', defaultRatio: 134 },
+                        { name: '월하향', defaultRatio: 134 },
+                    ],
+                },
             ],
         },
     ];
 
+    let selectedVillageId = null;
     let selectedExchangeId = null;
     /** 재료 비율만 (결과물 비율 제외) */
     let currentRatios = {};
@@ -68,6 +111,7 @@
     function els() {
         return {
             capacityInput: document.getElementById('barter-capacity'),
+            villageSelect: document.getElementById('barter-village'),
             exchangeSelect: document.getElementById('barter-exchange'),
             exchangeBadge: document.getElementById('barter-exchange-badge'),
             matrixDiv: document.getElementById('barter-matrix'),
@@ -84,12 +128,31 @@
             .replace(/"/g, '&quot;');
     }
 
-    function getExchange(exchangeId) {
-        return BARTER_EXCHANGES.find(e => e.id === exchangeId) || null;
+    function getVillage(villageId) {
+        return BARTER_VILLAGES.find(v => v.id === villageId) || null;
+    }
+
+    function getExchange(villageId, exchangeId) {
+        const village = getVillage(villageId);
+        if (!village || !village.exchanges) return null;
+        return village.exchanges.find(e => e.id === exchangeId) || null;
+    }
+
+    function findExchangeAnywhere(exchangeId) {
+        if (!exchangeId) return null;
+        for (const village of BARTER_VILLAGES) {
+            const ex = (village.exchanges || []).find(e => e.id === exchangeId);
+            if (ex) return { village, exchange: ex };
+        }
+        return null;
+    }
+
+    function currentVillage() {
+        return getVillage(selectedVillageId);
     }
 
     function currentExchange() {
-        return getExchange(selectedExchangeId);
+        return getExchange(selectedVillageId, selectedExchangeId);
     }
 
     function renderExchangeBadge() {
@@ -105,13 +168,18 @@
         exchangeBadge.setAttribute('aria-label', badge ? badge.label : '');
     }
 
+    /** 저장키: 마을ID:교환ID (구버전 교환ID만 있던 키도 읽기) */
     function ratioKey() {
-        return selectedExchangeId || null;
+        if (!selectedVillageId || !selectedExchangeId) return null;
+        return selectedVillageId + ':' + selectedExchangeId;
     }
 
-    /** 구버전 키(마을:교환)도 읽기 */
-    function pickStoreEntry(store, exchangeId) {
+    function pickStoreEntry(store, villageId, exchangeId) {
         if (!store || !exchangeId) return null;
+        if (villageId) {
+            const compound = villageId + ':' + exchangeId;
+            if (store[compound] && typeof store[compound] === 'object') return store[compound];
+        }
         if (store[exchangeId] && typeof store[exchangeId] === 'object') return store[exchangeId];
         const legacyColon = Object.keys(store).find(k => k.endsWith(':' + exchangeId));
         if (legacyColon && store[legacyColon] && typeof store[legacyColon] === 'object') {
@@ -145,6 +213,7 @@
     }
 
     function saveSelection() {
+        if (selectedVillageId) localStorage.setItem(LS_VILLAGE, selectedVillageId);
         if (selectedExchangeId) localStorage.setItem(LS_EXCHANGE, selectedExchangeId);
     }
 
@@ -162,14 +231,14 @@
     }
 
     function loadSavedRatios() {
-        return pickStoreEntry(readRatioStore(), selectedExchangeId) || {};
+        return pickStoreEntry(readRatioStore(), selectedVillageId, selectedExchangeId) || {};
     }
 
     function loadSavedHave() {
         try {
             const raw = localStorage.getItem(LS_HAVE);
             const store = raw ? JSON.parse(raw) : {};
-            const entry = pickStoreEntry(store, selectedExchangeId);
+            const entry = pickStoreEntry(store, selectedVillageId, selectedExchangeId);
             if (entry) return { ...entry };
         } catch { /* ignore */ }
         return {};
@@ -190,9 +259,35 @@
         localStorage.setItem(LS_HAVE, JSON.stringify(store));
     }
 
+    function fillVillageOptions() {
+        const { villageSelect } = els();
+        if (!villageSelect) return;
+        villageSelect.innerHTML = '<option value="">선택하세요</option>';
+        BARTER_VILLAGES.forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v.id;
+            opt.textContent = v.name;
+            villageSelect.appendChild(opt);
+        });
+    }
+
+    function fillExchangeOptions(villageId) {
+        const { exchangeSelect } = els();
+        if (!exchangeSelect) return;
+        exchangeSelect.innerHTML = '<option value="">선택하세요</option>';
+        const village = getVillage(villageId);
+        if (!village || !village.exchanges) return;
+        village.exchanges.forEach(ex => {
+            const opt = document.createElement('option');
+            opt.value = ex.id;
+            opt.textContent = ex.name;
+            exchangeSelect.appendChild(opt);
+        });
+    }
+
     function init() {
-        const { capacityInput, exchangeSelect, filterBtn, matrixDiv, progressClearBtn } = els();
-        if (!capacityInput || !exchangeSelect || inited) return;
+        const { capacityInput, villageSelect, exchangeSelect, filterBtn, matrixDiv, progressClearBtn } = els();
+        if (!capacityInput || !villageSelect || !exchangeSelect || inited) return;
         inited = true;
 
         const savedMonth = parseInt(localStorage.getItem('originBarterMonth') || '', 10);
@@ -209,13 +304,7 @@
             capacityInput.value = String(savedCapacity);
         }
 
-        exchangeSelect.innerHTML = '<option value="">선택하세요</option>';
-        BARTER_EXCHANGES.forEach(ex => {
-            const opt = document.createElement('option');
-            opt.value = ex.id;
-            opt.textContent = ex.name;
-            exchangeSelect.appendChild(opt);
-        });
+        fillVillageOptions();
 
         window.originBarterOnMonthChange = function (month) {
             selectedMonth = parseInt(month, 10);
@@ -223,6 +312,7 @@
             refreshMatrix();
         };
 
+        villageSelect.addEventListener('change', onVillageChange);
         exchangeSelect.addEventListener('change', onExchangeChange);
         capacityInput.addEventListener('input', () => {
             saveCapacity();
@@ -244,25 +334,50 @@
 
         initSideToolTabs();
 
+        let savedVillage = localStorage.getItem(LS_VILLAGE);
         let savedExchange = localStorage.getItem(LS_EXCHANGE);
         const legacyRecipe = localStorage.getItem(LS_RECIPE_LEGACY);
-        if (!savedExchange && legacyRecipe && getExchange(legacyRecipe)) {
-            savedExchange = legacyRecipe;
+
+        if (!savedExchange && legacyRecipe) {
+            const found = findExchangeAnywhere(legacyRecipe);
+            if (found) {
+                savedExchange = legacyRecipe;
+                if (!savedVillage) savedVillage = found.village.id;
+            }
         }
 
-        const prefer = (savedExchange && getExchange(savedExchange))
-            ? savedExchange
-            : (BARTER_EXCHANGES[0] && BARTER_EXCHANGES[0].id);
+        // 교환만 저장된 구버전: 해당 교환이 있는 마을로 복원
+        if (savedExchange && !getVillage(savedVillage)) {
+            const found = findExchangeAnywhere(savedExchange);
+            if (found) savedVillage = found.village.id;
+        }
 
-        if (prefer) {
-            selectedExchangeId = prefer;
-            exchangeSelect.value = prefer;
-            onExchangeChange();
+        const preferVillage = (savedVillage && getVillage(savedVillage))
+            ? savedVillage
+            : (BARTER_VILLAGES[0] && BARTER_VILLAGES[0].id);
+
+        if (preferVillage) {
+            selectedVillageId = preferVillage;
+            villageSelect.value = preferVillage;
+            fillExchangeOptions(preferVillage);
+
+            const village = getVillage(preferVillage);
+            const preferExchange = (savedExchange && getExchange(preferVillage, savedExchange))
+                ? savedExchange
+                : (village && village.exchanges[0] && village.exchanges[0].id);
+
+            if (preferExchange) {
+                selectedExchangeId = preferExchange;
+                exchangeSelect.value = preferExchange;
+                onExchangeChange();
+            } else {
+                selectedExchangeId = null;
+                renderExchangeBadge();
+                showMatrixEmpty('교환목록을 선택하세요');
+            }
         } else {
-            showMatrixEmpty('교환목록을 선택하세요');
+            showMatrixEmpty('마을을 선택하세요');
         }
-
-        try { localStorage.removeItem(LS_VILLAGE_LEGACY); } catch { /* ignore */ }
     }
 
     function initSideToolTabs() {
@@ -285,6 +400,24 @@
                 });
             });
         });
+    }
+
+    function onVillageChange() {
+        const { villageSelect, exchangeSelect } = els();
+        selectedVillageId = villageSelect.value || null;
+        selectedExchangeId = null;
+        fillExchangeOptions(selectedVillageId);
+        renderExchangeBadge();
+        saveSelection();
+
+        const village = currentVillage();
+        if (village && village.exchanges && village.exchanges.length) {
+            selectedExchangeId = village.exchanges[0].id;
+            exchangeSelect.value = selectedExchangeId;
+            onExchangeChange();
+        } else {
+            showMatrixEmpty(selectedVillageId ? '교환목록을 선택하세요' : '마을을 선택하세요');
+        }
     }
 
     function onExchangeChange() {
@@ -535,7 +668,7 @@
         const exchange = currentExchange();
         if (!exchange) {
             lastGoals = [];
-            showMatrixEmpty('교환목록을 선택하세요');
+            showMatrixEmpty(selectedVillageId ? '교환목록을 선택하세요' : '마을을 선택하세요');
             return;
         }
         if (!exchange.ingredients || !exchange.ingredients.length) {
@@ -644,7 +777,8 @@
     }
 
     window.originBarterInit = init;
-    window.ORIGIN_BARTER_EXCHANGES = BARTER_EXCHANGES;
+    window.ORIGIN_BARTER_VILLAGES = BARTER_VILLAGES;
+    window.ORIGIN_BARTER_EXCHANGES = BARTER_VILLAGES.flatMap(v => v.exchanges || []);
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
