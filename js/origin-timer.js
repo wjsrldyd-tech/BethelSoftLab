@@ -1,16 +1,16 @@
 // =============== origin-timer.js ===============
 // 대항해시대 오리진 교역소 재고 타이머 UI
 // 절대 시각(anchor_at) 기준 30분 주기 · 해역별 맵 핀
-// 게임 시계 드리프트(970분당 ~3초)는 계산만 보정, DB anchor는 유지
+// 게임 시계 드리프트(1200분당 ~3초)는 계산만 보정, DB anchor는 유지
 
 (function () {
     'use strict';
 
     const INTERVAL_MIN = 30;
     const INTERVAL_MS  = INTERVAL_MIN * 60 * 1000;
-    /** 게임 시계가 현실보다 빠름: 970분당 약 3초 (측정값). DB anchor는 그대로 두고 계산만 보정. */
+    /** 게임 시계가 현실보다 빠름: 1200분당 약 3초 (측정값). DB anchor는 그대로 두고 계산만 보정. */
     const DRIFT_AHEAD_MS = 3000;
-    const DRIFT_OVER_MS  = 970 * 60 * 1000;
+    const DRIFT_OVER_MS  = 1200 * 60 * 1000;
     const DRIFT_RATE     = DRIFT_AHEAD_MS / DRIFT_OVER_MS;
     const DEFAULT_PORT = '이스탄불';
     const DEFAULT_VIEW = 'eastmed';
