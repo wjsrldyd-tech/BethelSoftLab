@@ -93,6 +93,54 @@
                 },
             ],
         },
+        {
+            id: 'svear',
+            name: '스비아인',
+            exchanges: [
+                {
+                    id: 'birch',
+                    name: '자작나무',
+                    category: '공업품',
+                    result: { name: '자작나무', defaultRatio: 551 },
+                    ingredients: [
+                        { name: '철재', defaultRatio: 108 },
+                        { name: '화승총', defaultRatio: 54 },
+                        { name: '양초', defaultRatio: 94 },
+                    ],
+                },
+                {
+                    id: 'naverslojd',
+                    name: '네베르스로이드',
+                    category: '공예품',
+                    result: { name: '네베르스로이드', defaultRatio: 1019 },
+                    ingredients: [
+                        { name: '자작나무', defaultRatio: 308 },
+                        { name: '철재', defaultRatio: 154 },
+                    ],
+                },
+                {
+                    id: 'juniper_berry',
+                    name: '주니퍼 베리',
+                    category: '향신료',
+                    result: { name: '주니퍼 베리', defaultRatio: 787 },
+                    ingredients: [
+                        { name: '링곤베리', defaultRatio: 77 },
+                        { name: '보드카', defaultRatio: 154 },
+                    ],
+                },
+                {
+                    id: 'meteorite',
+                    name: '운철',
+                    category: '공업품',
+                    result: { name: '운철', defaultRatio: 945 },
+                    ingredients: [
+                        { name: '컴퍼스', defaultRatio: 134 },
+                        { name: '초롱', defaultRatio: 134 },
+                        { name: '올리브기름', defaultRatio: 134 },
+                    ],
+                },
+            ],
+        },
     ];
 
     let selectedVillageId = null;
