@@ -1676,7 +1676,7 @@
             { name: '고산족 의복', category: '직물', specialty: true, lock: 'monopoly', peak: ['봄', '건기'], off: ['가을', '우기'] },
         ],
         부에노스아이레스: [
-            { name: '은', category: '귀금속', specialty: false },
+            { name: '은', category: '귀금속', specialty: false, peak: ['겨울', '건기'], off: ['여름', '우기'] },
             { name: '사금', category: '귀금속', specialty: false, peak: ['겨울', '건기'], off: ['여름', '우기'] },
             { name: '양파', category: '식료품', specialty: false, peak: ['가을', '건기'], off: ['봄'] },
             { name: '아보카도', category: '기호품', specialty: true, peak: ['가을', '건기'], off: ['봄', '우기'] },
