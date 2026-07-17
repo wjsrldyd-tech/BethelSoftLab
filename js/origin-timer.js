@@ -1,17 +1,21 @@
 // =============== origin-timer.js ===============
 // 대항해시대 오리진 교역소 재고 타이머 UI
 // 절대 시각(anchor_at) 기준 30분 주기 · 해역별 맵 핀
-// 게임 시계 드리프트(1200분당 ~3초)는 계산만 보정, DB anchor는 유지
+// 게임 시계 드리프트(N분당 ~3초, 설정 가능)는 계산만 보정, DB anchor는 유지
 
 (function () {
     'use strict';
 
     const INTERVAL_MIN = 30;
     const INTERVAL_MS  = INTERVAL_MIN * 60 * 1000;
-    /** 게임 시계가 현실보다 빠름: 1200분당 약 3초 (측정값). DB anchor는 그대로 두고 계산만 보정. */
+    /** 게임 시계가 현실보다 빠름: N분당 약 3초. N은 DB 설정(driftOverMin), 기본 1200. */
     const DRIFT_AHEAD_MS = 3000;
-    const DRIFT_OVER_MS  = 1200 * 60 * 1000;
-    const DRIFT_RATE     = DRIFT_AHEAD_MS / DRIFT_OVER_MS;
+    const DEFAULT_DRIFT_OVER_MIN = 1200;
+    let driftOverMin = DEFAULT_DRIFT_OVER_MIN;
+    function driftRate() {
+        const overMs = Math.max(60, driftOverMin) * 60 * 1000;
+        return DRIFT_AHEAD_MS / overMs;
+    }
     const DEFAULT_PORT = '이스탄불';
     const DEFAULT_VIEW = 'eastmed';
     const MAP_VIEWS = window.ORIGIN_MAP_VIEWS || [];
@@ -28,6 +32,13 @@
     const editToggleBtn = $('#ot-edit-toggle');
     const editSaveBtn   = $('#ot-edit-save');
     const editCancelBtn = $('#ot-edit-cancel');
+    const settingsToggleBtn = $('#ot-settings-toggle');
+    const settingsOverlay = $('#ot-settings-overlay');
+    const settingsCloseBtn = $('#ot-settings-close');
+    const settingsDriftInput = $('#ot-settings-drift-over');
+    const settingsDriftSaveBtn = $('#ot-settings-drift-save');
+    const settingsDriftMeta = $('#ot-settings-drift-meta');
+    const settingsStatusEl = $('#ot-settings-status');
 
     let ports = [];
     let selectedName = null;
@@ -101,21 +112,22 @@
 
     /** 기준 이후 현실 경과에 따른 게임 시계 앞섬(ms). anchor 저장값은 수정하지 않음. */
     function getDriftMs(elapsedMs) {
-        return Math.max(0, elapsedMs) * DRIFT_RATE;
+        return Math.max(0, elapsedMs) * driftRate();
     }
 
     /**
      * 다음 리셋 절대 시각(현실 시계).
-     * 게임은 DRIFT_RATE만큼 빠르므로, 같은 anchor로도 리셋이 조금 더 일찍 온다.
+     * 게임은 driftRate만큼 빠르므로, 같은 anchor로도 리셋이 조금 더 일찍 온다.
      */
     function getNextResetMs(anchorAt, now = Date.now()) {
         const anchor = parseAnchorMs(anchorAt);
         const elapsed = Math.max(0, now - anchor);
+        const rate = driftRate();
         const gameElapsed = elapsed + getDriftMs(elapsed);
         const cycles = Math.floor(gameElapsed / INTERVAL_MS);
         const nextBoundaryGame = (cycles + 1) * INTERVAL_MS;
-        // 게임 경과 → 현실 경과로 환산 (게임 = 현실 × (1 + DRIFT_RATE))
-        const realElapsedAtNext = nextBoundaryGame / (1 + DRIFT_RATE);
+        // 게임 경과 → 현실 경과로 환산 (게임 = 현실 × (1 + rate))
+        const realElapsedAtNext = nextBoundaryGame / (1 + rate);
         return anchor + realElapsedAtNext;
     }
 
@@ -1102,6 +1114,36 @@
     if (editCancelBtn) {
         editCancelBtn.addEventListener('click', () => { exitEditMode(false); });
     }
+    if (settingsToggleBtn) {
+        settingsToggleBtn.addEventListener('click', () => openSettings());
+    }
+    if (settingsCloseBtn) {
+        settingsCloseBtn.addEventListener('click', () => closeSettings());
+    }
+    if (settingsOverlay) {
+        settingsOverlay.addEventListener('click', (e) => {
+            if (e.target === settingsOverlay) closeSettings();
+        });
+    }
+    if (settingsDriftSaveBtn) {
+        settingsDriftSaveBtn.addEventListener('click', () => { saveDriftSetting(); });
+    }
+    if (settingsDriftInput) {
+        settingsDriftInput.addEventListener('input', () => {
+            if (settingsDriftMeta) settingsDriftMeta.textContent = driftMetaText(settingsDriftInput.value);
+        });
+        settingsDriftInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                saveDriftSetting();
+            }
+        });
+    }
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && settingsOverlay && !settingsOverlay.hidden) {
+            closeSettings();
+        }
+    });
 
     if (panelEl) {
         panelEl.addEventListener('change', (e) => {
@@ -1218,6 +1260,84 @@
 
     // ─── 시작 ────────────────────────────────────────────────────────
 
+    function driftMetaText(n) {
+        const over = Math.max(60, parseInt(n, 10) || DEFAULT_DRIFT_OVER_MIN);
+        const perSec = Math.round(over / 3);
+        return `약 ${perSec}분마다 -1초 (현재 ${over}분당 3초)`;
+    }
+
+    function setSettingsStatus(msg, kind) {
+        if (!settingsStatusEl) return;
+        settingsStatusEl.textContent = msg || '';
+        settingsStatusEl.classList.toggle('is-error', kind === 'error');
+        settingsStatusEl.classList.toggle('is-warn', kind === 'warn');
+    }
+
+    function applyDriftOverMin(n) {
+        let v = parseInt(n, 10);
+        if (!Number.isFinite(v) || v < 60) v = DEFAULT_DRIFT_OVER_MIN;
+        if (v > 100000) v = 100000;
+        driftOverMin = v;
+        if (settingsDriftInput) settingsDriftInput.value = String(v);
+        if (settingsDriftMeta) settingsDriftMeta.textContent = driftMetaText(v);
+        return v;
+    }
+
+    function openSettings() {
+        if (!settingsOverlay) return;
+        if (settingsDriftInput) settingsDriftInput.value = String(driftOverMin);
+        if (settingsDriftMeta) settingsDriftMeta.textContent = driftMetaText(driftOverMin);
+        setSettingsStatus('');
+        settingsOverlay.hidden = false;
+        if (settingsDriftInput) settingsDriftInput.focus();
+    }
+
+    function closeSettings() {
+        if (settingsOverlay) settingsOverlay.hidden = true;
+    }
+
+    async function loadSettingsFromDb() {
+        if (!window.originDb || typeof window.originDb.loadSettings !== 'function') {
+            applyDriftOverMin(DEFAULT_DRIFT_OVER_MIN);
+            return;
+        }
+        try {
+            const s = await window.originDb.loadSettings();
+            applyDriftOverMin(s && s.driftOverMin);
+            if (s && s._fromLocal) {
+                console.warn('[OriginTimer] 설정: DB 테이블 미반영 — 로컬값 사용');
+            }
+        } catch (err) {
+            console.error('[OriginTimer] 설정 로드 실패', err);
+            applyDriftOverMin(DEFAULT_DRIFT_OVER_MIN);
+            setStatus('설정 불러오기 실패: ' + (err.message || err) + ' — origin_settings 마이그레이션을 확인하세요.', true);
+        }
+    }
+
+    async function saveDriftSetting() {
+        if (!settingsDriftInput) return;
+        const next = applyDriftOverMin(settingsDriftInput.value);
+        if (!window.originDb || typeof window.originDb.saveSettings !== 'function') {
+            setSettingsStatus('로컬에만 반영했습니다.', 'warn');
+            return;
+        }
+        if (settingsDriftSaveBtn) settingsDriftSaveBtn.disabled = true;
+        try {
+            const saved = await window.originDb.saveSettings({ driftOverMin: next });
+            applyDriftOverMin(saved.driftOverMin);
+            if (saved._fromLocal) {
+                setSettingsStatus('DB 테이블이 아직 API에 안 보입니다(404). 로컬에 저장했습니다. SQL 실행 후 스키마 Reload를 하세요.', 'warn');
+            } else {
+                setSettingsStatus('저장했습니다. 보정값이 바로 적용됩니다.');
+            }
+        } catch (err) {
+            console.error('[OriginTimer] 설정 저장 실패', err);
+            setSettingsStatus('저장 실패: ' + (err.message || err), 'error');
+        } finally {
+            if (settingsDriftSaveBtn) settingsDriftSaveBtn.disabled = false;
+        }
+    }
+
     async function loadPinsFromDb() {
         try {
             pinOverrides = await window.originDb.loadPinOverrides();
@@ -1238,7 +1358,7 @@
         renderViewTabs();
         renderGoodsCategories();
         selectView(selectedViewId);
-        await Promise.all([reload(false), loadPinsFromDb(), loadGoodQtyCache()]);
+        await Promise.all([reload(false), loadPinsFromDb(), loadGoodQtyCache(), loadSettingsFromDb()]);
         tickTimer = setInterval(tickAll, 1000);
     }
 

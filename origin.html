@@ -970,6 +970,169 @@
 
       .ot-edit-btn[hidden] { display: none; }
 
+      /* ===== 설정 패널 ===== */
+      .ot-settings-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 80;
+        display: flex;
+        align-items: stretch;
+        justify-content: center;
+        padding: 0.75rem;
+        background: rgba(2, 6, 23, 0.72);
+        backdrop-filter: blur(4px);
+      }
+
+      .ot-settings-overlay[hidden] {
+        display: none !important;
+      }
+
+      .ot-settings-panel {
+        width: min(520px, 100%);
+        max-height: calc(100svh - 1.5rem);
+        margin: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0.85rem;
+        padding: 1rem 1.05rem 1.15rem;
+        border-radius: 14px;
+        border: 1px solid rgba(148, 163, 184, 0.28);
+        background: #0f172a;
+        box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+        overflow: auto;
+      }
+
+      .ot-settings-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+      }
+
+      .ot-settings-title {
+        margin: 0;
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--text-h);
+      }
+
+      .ot-settings-close {
+        padding: 0.3rem 0.65rem;
+        border-radius: 6px;
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        background: transparent;
+        color: #94a3b8;
+        font-size: 0.88rem;
+        font-family: inherit;
+        cursor: pointer;
+      }
+
+      .ot-settings-close:hover {
+        color: #fecaca;
+        border-color: rgba(248, 113, 113, 0.45);
+      }
+
+      .ot-settings-section {
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+        padding: 0.85rem 0.9rem;
+        border-radius: 10px;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        background: rgba(15, 23, 42, 0.65);
+      }
+
+      .ot-settings-section-title {
+        margin: 0;
+        font-size: 0.98rem;
+        font-weight: 650;
+        color: #e2e8f0;
+      }
+
+      .ot-settings-hint {
+        margin: 0;
+        font-size: 0.86rem;
+        line-height: 1.45;
+        color: rgba(148, 163, 184, 0.95);
+      }
+
+      .ot-settings-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: end;
+        gap: 0.55rem 0.75rem;
+      }
+
+      .ot-settings-field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.28rem;
+        min-width: 0;
+        flex: 1 1 10rem;
+      }
+
+      .ot-settings-label {
+        font-size: 0.88rem;
+        font-weight: 600;
+        color: rgba(203, 213, 225, 0.95);
+      }
+
+      .ot-settings-input {
+        width: 100%;
+        padding: 0.45rem 0.55rem;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text-h);
+        font-size: 1.02rem;
+        font-weight: 650;
+        font-family: inherit;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .ot-settings-input:focus {
+        outline: none;
+        border-color: var(--origin);
+        background: rgba(14, 165, 233, 0.08);
+      }
+
+      .ot-settings-save {
+        padding: 0.45rem 0.9rem;
+        border-radius: 8px;
+        border: 1px solid rgba(14, 165, 233, 0.45);
+        background: rgba(14, 165, 233, 0.16);
+        color: #7dd3fc;
+        font-size: 0.92rem;
+        font-weight: 650;
+        font-family: inherit;
+        cursor: pointer;
+        flex-shrink: 0;
+      }
+
+      .ot-settings-save:hover {
+        background: rgba(14, 165, 233, 0.28);
+      }
+
+      .ot-settings-save:disabled {
+        opacity: 0.55;
+        cursor: default;
+      }
+
+      .ot-settings-status {
+        margin: 0;
+        min-height: 1.1em;
+        font-size: 0.86rem;
+        color: #86efac;
+      }
+
+      .ot-settings-status.is-error {
+        color: #fca5a5;
+      }
+
+      .ot-settings-status.is-warn {
+        color: #fcd34d;
+      }
+
       /* ===== 교역품 / 물물교환 탭 ===== */
       .ot-side-tools {
         display: flex;
@@ -1499,10 +1662,39 @@
         <nav id="ot-view-tabs" class="ot-view-tabs" aria-label="해역 메뉴"></nav>
         <div class="ot-edit-controls">
           <button type="button" id="ot-edit-toggle" class="ot-edit-btn" aria-pressed="false">위치 수정</button>
+          <button type="button" id="ot-settings-toggle" class="ot-edit-btn">설정</button>
           <button type="button" id="ot-edit-save" class="ot-edit-btn ot-edit-btn-save" hidden>저장</button>
           <button type="button" id="ot-edit-cancel" class="ot-edit-btn ot-edit-btn-cancel" hidden>취소</button>
         </div>
       </header>
+
+      <div id="ot-settings-overlay" class="ot-settings-overlay" hidden>
+        <div class="ot-settings-panel" role="dialog" aria-modal="true" aria-labelledby="ot-settings-title">
+          <div class="ot-settings-head">
+            <h2 id="ot-settings-title" class="ot-settings-title">설정</h2>
+            <button type="button" id="ot-settings-close" class="ot-settings-close">닫기</button>
+          </div>
+
+          <section class="ot-settings-section" aria-labelledby="ot-settings-drift-title">
+            <h3 id="ot-settings-drift-title" class="ot-settings-section-title">타이머 보정 (Offset)</h3>
+            <p class="ot-settings-hint">
+              게임 시계가 현실보다 빠른 정도를 보정합니다.
+              <strong>N분당 3초</strong> 앞섬으로 계산합니다.
+              (예: 1200 → 약 400분마다 -1초)
+            </p>
+            <div class="ot-settings-row">
+              <div class="ot-settings-field">
+                <label class="ot-settings-label" for="ot-settings-drift-over">N분 (분당 보정 기준)</label>
+                <input type="number" id="ot-settings-drift-over" class="ot-settings-input"
+                  min="60" max="100000" step="10" value="1200" inputmode="numeric">
+              </div>
+              <button type="button" id="ot-settings-drift-save" class="ot-settings-save">저장</button>
+            </div>
+            <p id="ot-settings-drift-meta" class="ot-settings-hint">약 400분마다 -1초</p>
+            <p id="ot-settings-status" class="ot-settings-status" aria-live="polite"></p>
+          </section>
+        </div>
+      </div>
 
       <div class="ot-main">
         <aside class="ot-side">

@@ -2,6 +2,7 @@
 // 대항해시대 오리진 교역소 타이머 ↔ Supabase origin_trade_posts
 // 항구 핀 좌표 ↔ Supabase origin_pin_overrides
 // 교역품 평시 수량 ↔ Supabase origin_good_plain_qty
+// 앱 설정 ↔ Supabase origin_settings
 // tenant_id: BETHEL_TENANT_ID (app_storage, d3_scripts와 공통)
 
 (function () {
@@ -12,9 +13,12 @@
     const TBL               = 'origin_trade_posts';
     const TBL_PINS          = 'origin_pin_overrides';
     const TBL_QTY           = 'origin_good_plain_qty';
+    const TBL_SETTINGS      = 'origin_settings';
     const LS_KEY            = 'origin_trade_posts_v1';
     const LS_PIN_KEY        = 'origin_pin_overrides_v1';
     const LS_QTY_KEY        = 'origin_good_plain_qty_v1';
+    const LS_SETTINGS_KEY   = 'origin_settings_v1';
+    const DEFAULT_DRIFT_OVER_MIN = 1200;
 
     function getTenantId() {
         let id = localStorage.getItem(TENANT_KEY);
@@ -27,6 +31,42 @@
 
     function genId(prefix) {
         return prefix + Date.now() + Math.random().toString(36).slice(2, 6);
+    }
+
+    /** PostgREST 신규 테이블 미반영(404 / PGRST205) 여부 */
+    function isMissingRelationError(err) {
+        if (!err) return false;
+        const code = String(err.code || err.status || '');
+        const msg = String(err.message || err.details || err.hint || '').toLowerCase();
+        if (code === 'PGRST205' || code === '42P01' || code === '404') return true;
+        if (msg.indexOf('could not find the table') !== -1) return true;
+        if (msg.indexOf('does not exist') !== -1 && msg.indexOf('schema cache') !== -1) return true;
+        if (msg.indexOf('relation') !== -1 && msg.indexOf('does not exist') !== -1) return true;
+        return false;
+    }
+
+    function normalizeSettings(raw) {
+        const out = {};
+        const src = (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw : {};
+        let drift = parseInt(src.driftOverMin, 10);
+        if (!Number.isFinite(drift) || drift < 60) drift = DEFAULT_DRIFT_OVER_MIN;
+        if (drift > 100000) drift = 100000;
+        out.driftOverMin = drift;
+        return out;
+    }
+
+    function readLocalSettings() {
+        try {
+            const raw = localStorage.getItem(LS_SETTINGS_KEY);
+            if (!raw) return normalizeSettings({});
+            return normalizeSettings(JSON.parse(raw));
+        } catch {
+            return normalizeSettings({});
+        }
+    }
+
+    function writeLocalSettings(data) {
+        localStorage.setItem(LS_SETTINGS_KEY, JSON.stringify(normalizeSettings(data)));
     }
 
     function rowToPort(row) {
@@ -210,6 +250,68 @@
     }
 
     /**
+     * @returns {Promise<{ driftOverMin: number, _fromLocal?: boolean }>}
+     */
+    async function loadSettings() {
+        const tenantId = getTenantId();
+        const { data, error } = await client
+            .from(TBL_SETTINGS)
+            .select('data')
+            .eq('tenant_id', tenantId)
+            .maybeSingle();
+
+        if (error) {
+            if (isMissingRelationError(error)) {
+                console.warn('[OriginDB] origin_settings 미반영(404) — localStorage 사용. SQL 마이그레이션/스키마 Reload를 확인하세요.', error);
+                return { ...readLocalSettings(), _fromLocal: true };
+            }
+            throw error;
+        }
+
+        let settings = normalizeSettings(data && data.data);
+        const local = readLocalSettings();
+        const dbEmpty = !data || !data.data || Object.keys(data.data).length === 0;
+        if (dbEmpty && local.driftOverMin !== DEFAULT_DRIFT_OVER_MIN) {
+            try {
+                await saveSettings(local);
+                settings = local;
+            } catch (e) {
+                if (!isMissingRelationError(e)) throw e;
+                return { ...local, _fromLocal: true };
+            }
+        } else {
+            writeLocalSettings(settings);
+        }
+        return settings;
+    }
+
+    /**
+     * @param {{ driftOverMin?: number }} partial
+     * @returns {Promise<{ driftOverMin: number, _fromLocal?: boolean }>}
+     */
+    async function saveSettings(partial) {
+        const tenantId = getTenantId();
+        const merged = normalizeSettings({ ...readLocalSettings(), ...(partial || {}) });
+        writeLocalSettings(merged);
+        const row = {
+            tenant_id:  tenantId,
+            data:       merged,
+            updated_at: new Date().toISOString(),
+        };
+        const { error } = await client
+            .from(TBL_SETTINGS)
+            .upsert(row, { onConflict: 'tenant_id' });
+        if (error) {
+            if (isMissingRelationError(error)) {
+                console.warn('[OriginDB] origin_settings 저장 실패(404) — 로컬만 유지', error);
+                return { ...merged, _fromLocal: true };
+            }
+            throw error;
+        }
+        return merged;
+    }
+
+    /**
      * @param {string} [portName]
      * @returns {Promise<{ portName: string, goodName: string, plainQty: number, updatedAt?: string }[]>}
      */
@@ -343,6 +445,12 @@
             savePinOverrides: async (pinData) => {
                 writeLocalPins(pinData);
             },
+            loadSettings: async () => readLocalSettings(),
+            saveSettings: async (partial) => {
+                const merged = normalizeSettings({ ...readLocalSettings(), ...(partial || {}) });
+                writeLocalSettings(merged);
+                return merged;
+            },
             listGoodPlainQtys: async (portName) => {
                 const all = readLocalQtys();
                 const out = [];
@@ -398,6 +506,8 @@
         deletePort,
         loadPinOverrides,
         savePinOverrides,
+        loadSettings,
+        saveSettings,
         listGoodPlainQtys,
         saveGoodPlainQty,
         deleteGoodPlainQty,
