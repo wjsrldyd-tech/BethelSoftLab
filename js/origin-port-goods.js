@@ -1712,7 +1712,7 @@
             { name: '무이라푸아마', category: '의약품', specialty: true, lock: 'monopoly', peak: ['봄', '우기'], off: ['가을'] },
         ],
         코피아포: [
-            { name: '은', category: '귀금속', specialty: false },
+            { name: '은', category: '귀금속', specialty: false, peak: ['겨울', '건기'], off: ['여름', '우기'] },
             { name: '아과요', category: '직물', specialty: true, peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '계관석', category: '염료', specialty: true, peak: ['여름', '우기'], off: ['겨울', '건기'] },
             { name: '퀴노아', category: '식료품', specialty: false, peak: ['가을', '건기'], off: ['봄'] },
