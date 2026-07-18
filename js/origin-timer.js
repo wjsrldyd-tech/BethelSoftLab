@@ -595,8 +595,8 @@
     function formatVisibleQty(plain, mult) {
         const v = (Number(plain) || 0) * (Number(mult) || 1);
         if (!v) return '';
-        // 시즌 배수(1.5/0.5) 계산 시 소수점은 버림
-        const n = Math.floor(v);
+        // 시즌 배수(1.5/0.5) 계산 시 소수점은 올림
+        const n = Math.ceil(v);
         return n > 0 ? String(n) : '';
     }
 
