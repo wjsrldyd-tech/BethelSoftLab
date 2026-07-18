@@ -1740,6 +1740,7 @@
             { name: '알파카 털실', category: '섬유', specialty: true, peak: ['겨울', '우기'], off: ['여름'] },
             { name: '툼바가', category: '공예품', specialty: false },
             { name: '구와이아우드', category: '의약품', specialty: true, peak: ['봄', '우기'], off: ['가을'] },
+            { name: '비쿠냐털', category: '섬유', specialty: true, peak: ['겨울', '우기'], off: ['여름'] },
         ],
         툼베스: [
             { name: '금', category: '귀금속', specialty: false },
