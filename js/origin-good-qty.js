@@ -46,8 +46,8 @@
     function visibleFromPlain(plain, mult) {
         const v = (Number(plain) || 0) * (Number(mult) || 1);
         if (!v) return '';
-        // 시즌 배수(1.5/0.5) 계산 시 소수점은 올림
-        const n = Math.ceil(v);
+        // 시즌 배수(1.5/0.5) 계산 시 소수점은 반올림
+        const n = Math.round(v);
         return n > 0 ? String(n) : '';
     }
 

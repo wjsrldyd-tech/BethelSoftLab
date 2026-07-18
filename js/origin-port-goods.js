@@ -2353,8 +2353,8 @@
      */
     window.getOriginGoodSeasonQty = function (g, plainQty, month, axisOrPort) {
         const base = Number(plainQty) || 0;
-        // 시즌 배수(1.5/0.5) 계산 시 소수점은 올림
-        return Math.ceil(base * window.getOriginGoodSeasonQtyMult(g, month, axisOrPort));
+        // 시즌 배수(1.5/0.5) 계산 시 소수점은 반올림
+        return Math.round(base * window.getOriginGoodSeasonQtyMult(g, month, axisOrPort));
     };
 
     /**
