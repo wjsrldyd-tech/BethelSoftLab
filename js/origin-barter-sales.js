@@ -108,24 +108,26 @@
         const { listEl } = els();
         if (!listEl) return;
         if (!listCache.length) {
-            listEl.innerHTML = '<div class="ot-sales-empty">저장된 기록이 없습니다.</div>';
+            listEl.innerHTML = '<div class="ot-sales-empty">저장된 기록이 없습니다</div>';
             return;
         }
         listEl.innerHTML = listCache.map(s => `
           <div class="ot-sales-item" data-id="${escapeHtml(s.id)}">
-            <div class="ot-sales-item-main">
-              <div class="ot-sales-item-title">
-                <strong>${escapeHtml(s.goodName)}</strong>
-                <span class="ot-sales-item-port">${escapeHtml(s.portName)}</span>
+            <div class="ot-sales-item-good">${escapeHtml(s.goodName)}</div>
+            <div class="ot-sales-item-port">${escapeHtml(s.portName)}</div>
+            <div class="ot-sales-item-numbers">
+              <div class="ot-sales-item-number">
+                <span class="ot-sales-item-number-label">시세</span>
+                <span class="ot-sales-item-number-value">${formatNum(s.marketPct)}%</span>
               </div>
-              <div class="ot-sales-item-meta">
-                <span>시세 ${formatNum(s.marketPct)}%</span>
-                <span>판매가 ${formatNum(s.salePrice)}</span>
-                <span class="ot-sales-item-unit">단가 ${formatNum(s.unitPrice)}</span>
-                <span class="ot-sales-item-time">${escapeHtml(formatDate(s.soldAt))}</span>
+              <div class="ot-sales-item-number">
+                <span class="ot-sales-item-number-label">판매</span>
+                <span class="ot-sales-item-number-value">${formatNum(s.salePrice)}</span>
               </div>
             </div>
-            <button type="button" class="ot-sales-del" data-id="${escapeHtml(s.id)}" aria-label="삭제">삭제</button>
+            <div class="ot-sales-item-unit">${formatNum(s.unitPrice)}</div>
+            <div class="ot-sales-item-time">${escapeHtml(formatDate(s.soldAt))}</div>
+            <button type="button" class="ot-sales-del" data-id="${escapeHtml(s.id)}" aria-label="삭제">×</button>
           </div>
         `).join('');
     }
