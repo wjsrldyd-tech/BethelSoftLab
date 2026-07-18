@@ -242,6 +242,7 @@
             { name: '로즈메리', category: '향신료', specialty: false, peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '세피아', category: '염료', specialty: false, peak: ['여름', '우기'], off: ['겨울', '건기'] },
             { name: '창', category: '무기류', specialty: false },
+            { name: '라임', category: '식료품', specialty: false, peak: ['가을', '건기'], off: ['봄'] },
         ],
         칸디아: [
             { name: '대리석', category: '공업품', specialty: true },
