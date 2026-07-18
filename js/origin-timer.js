@@ -855,6 +855,9 @@
         if (typeof window.refreshOriginGoodQty === 'function') {
             window.refreshOriginGoodQty(name);
         }
+        try {
+            window.dispatchEvent(new CustomEvent('origin-port-selected', { detail: { portName: name } }));
+        } catch (_) { /* ignore */ }
     }
 
     function refreshAll() {

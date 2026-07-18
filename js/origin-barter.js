@@ -519,6 +519,11 @@
         loadRatiosIntoState();
         currentHave = loadSavedHave();
         refreshMatrix();
+        try {
+            window.dispatchEvent(new CustomEvent('origin-barter-exchange-changed', {
+                detail: { resultName: (currentExchange() && currentExchange().result && currentExchange().result.name) || '' },
+            }));
+        } catch (_) { /* ignore */ }
     }
 
     function loadRatiosIntoState() {
@@ -869,6 +874,11 @@
     }
 
     window.originBarterInit = init;
+
+    window.getOriginBarterResultName = function () {
+        const exchange = currentExchange();
+        return (exchange && exchange.result && exchange.result.name) || '';
+    };
     window.ORIGIN_BARTER_VILLAGES = BARTER_VILLAGES;
     window.ORIGIN_BARTER_EXCHANGES = BARTER_VILLAGES.flatMap(v => v.exchanges || []);
 

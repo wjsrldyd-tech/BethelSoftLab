@@ -1512,6 +1512,139 @@
         background: #0ea5e9;
       }
 
+      .ot-barter-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+        margin-top: 0.65rem;
+      }
+
+      .ot-barter-sales-btn {
+        background: #b45309;
+      }
+
+      .ot-barter-sales-btn:hover {
+        background: #d97706;
+      }
+
+      .ot-sales-panel {
+        width: min(560px, 100%);
+      }
+
+      .ot-sales-port {
+        padding: 0.5rem 0.65rem;
+        border-radius: 8px;
+        border: 1px solid rgba(148, 163, 184, 0.28);
+        background: rgba(15, 23, 42, 0.8);
+        color: #e2e8f0;
+        font-size: 1rem;
+        font-weight: 650;
+      }
+
+      .ot-sales-port.is-empty {
+        color: #94a3b8;
+        font-weight: 500;
+      }
+
+      .ot-sales-unit-row {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 0.75rem;
+        padding: 0.45rem 0.15rem 0.1rem;
+      }
+
+      .ot-sales-unit-value {
+        font-size: 1.25rem;
+        font-weight: 750;
+        color: #fbbf24;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .ot-sales-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+        max-height: min(42vh, 320px);
+        overflow: auto;
+      }
+
+      .ot-sales-empty {
+        padding: 0.55rem 0.2rem;
+        color: #94a3b8;
+        font-size: 0.9rem;
+      }
+
+      .ot-sales-item {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.55rem;
+        padding: 0.55rem 0.6rem;
+        border-radius: 8px;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        background: rgba(2, 6, 23, 0.35);
+      }
+
+      .ot-sales-item-main {
+        min-width: 0;
+        flex: 1;
+      }
+
+      .ot-sales-item-title {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 0.35rem 0.55rem;
+        margin-bottom: 0.25rem;
+        color: #f1f5f9;
+        font-size: 0.95rem;
+      }
+
+      .ot-sales-item-port {
+        color: #94a3b8;
+        font-size: 0.86rem;
+        font-weight: 500;
+      }
+
+      .ot-sales-item-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem 0.65rem;
+        color: #cbd5e1;
+        font-size: 0.82rem;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .ot-sales-item-unit {
+        color: #fbbf24;
+        font-weight: 650;
+      }
+
+      .ot-sales-item-time {
+        color: #64748b;
+      }
+
+      .ot-sales-del {
+        flex: 0 0 auto;
+        padding: 0.25rem 0.5rem;
+        border-radius: 6px;
+        border: 1px solid rgba(248, 113, 113, 0.35);
+        background: transparent;
+        color: #fca5a5;
+        font-size: 0.8rem;
+        font-family: inherit;
+        cursor: pointer;
+      }
+
+      .ot-sales-del:hover {
+        background: rgba(248, 113, 113, 0.12);
+      }
+
+      .ot-settings-status.is-error {
+        color: #fca5a5;
+      }
+
       /* ===== 추천 (루트별 소제목 + 추천1~5) ===== */
       .ot-recommend-panel {
         display: flex;
@@ -1733,6 +1866,58 @@
         </div>
       </div>
 
+      <div id="ot-sales-overlay" class="ot-settings-overlay" hidden>
+        <div class="ot-settings-panel ot-sales-panel" role="dialog" aria-modal="true" aria-labelledby="ot-sales-title">
+          <div class="ot-settings-head">
+            <h2 id="ot-sales-title" class="ot-settings-title">판매 기록</h2>
+            <button type="button" id="ot-sales-close" class="ot-settings-close">닫기</button>
+          </div>
+
+          <section class="ot-settings-section" aria-labelledby="ot-sales-form-title">
+            <h3 id="ot-sales-form-title" class="ot-settings-section-title">새 기록</h3>
+            <p class="ot-settings-hint">품목은 교환목록, 판매처는 맵 선택 항구입니다. 단가 = 판매가 ÷ (시세% ÷ 100)</p>
+
+            <div class="ot-settings-field">
+              <span class="ot-settings-label">품목명</span>
+              <div id="ot-sales-good" class="ot-sales-port is-empty">교환목록을 선택하세요</div>
+            </div>
+
+            <div class="ot-settings-field">
+              <span class="ot-settings-label">판매처</span>
+              <div id="ot-sales-port" class="ot-sales-port is-empty">맵에서 항구를 선택하세요</div>
+            </div>
+
+            <div class="ot-settings-row">
+              <div class="ot-settings-field">
+                <label class="ot-settings-label" for="ot-sales-market">시세 (%)</label>
+                <input type="number" id="ot-sales-market" class="ot-settings-input"
+                  min="1" max="999" step="1" placeholder="104" inputmode="decimal">
+              </div>
+              <div class="ot-settings-field">
+                <label class="ot-settings-label" for="ot-sales-price">판매가</label>
+                <input type="number" id="ot-sales-price" class="ot-settings-input"
+                  min="1" step="1" placeholder="실제 파는 가격" inputmode="decimal">
+              </div>
+            </div>
+
+            <div class="ot-sales-unit-row">
+              <span class="ot-settings-label">100% 단가</span>
+              <strong id="ot-sales-unit" class="ot-sales-unit-value">—</strong>
+            </div>
+
+            <div class="ot-settings-row">
+              <button type="button" id="ot-sales-save" class="ot-settings-save">저장</button>
+            </div>
+            <p id="ot-sales-status" class="ot-settings-status" aria-live="polite"></p>
+          </section>
+
+          <section class="ot-settings-section" aria-labelledby="ot-sales-list-title">
+            <h3 id="ot-sales-list-title" class="ot-settings-section-title">최근 기록</h3>
+            <div id="ot-sales-list" class="ot-sales-list"></div>
+          </section>
+        </div>
+      </div>
+
       <div class="ot-main">
         <aside class="ot-side">
           <div id="ot-panel" class="ot-panel" aria-live="polite">
@@ -1803,9 +1988,14 @@
                   </div>
                 </div>
 
-                <button type="button" id="barter-filter-map" class="ot-barter-filter-btn">
-                  맵에 재료 항구 표시
-                </button>
+                <div class="ot-barter-actions">
+                  <button type="button" id="barter-filter-map" class="ot-barter-filter-btn">
+                    맵에 재료 항구 표시
+                  </button>
+                  <button type="button" id="barter-sales-open" class="ot-barter-filter-btn ot-barter-sales-btn">
+                    판매 기록
+                  </button>
+                </div>
               </div>
             </section>
 
@@ -1839,6 +2029,7 @@
     <script src="js/origin-port-goods.js"></script>
     <script src="js/origin-recommend.js"></script>
     <script src="js/origin-barter.js"></script>
+    <script src="js/origin-barter-sales.js"></script>
     <script src="js/origin-good-qty.js"></script>
     <script src="js/origin-timer.js"></script>
   </body>

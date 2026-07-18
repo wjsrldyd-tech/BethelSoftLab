@@ -3,6 +3,7 @@
 // 항구 핀 좌표 ↔ Supabase origin_pin_overrides
 // 교역품 평시 수량 ↔ Supabase origin_good_plain_qty
 // 앱 설정 ↔ Supabase origin_settings
+// 물물교환 판매 기록 ↔ Supabase origin_barter_sales
 // tenant_id: BETHEL_TENANT_ID (app_storage, d3_scripts와 공통)
 
 (function () {
@@ -14,10 +15,12 @@
     const TBL_PINS          = 'origin_pin_overrides';
     const TBL_QTY           = 'origin_good_plain_qty';
     const TBL_SETTINGS      = 'origin_settings';
+    const TBL_SALES         = 'origin_barter_sales';
     const LS_KEY            = 'origin_trade_posts_v1';
     const LS_PIN_KEY        = 'origin_pin_overrides_v1';
     const LS_QTY_KEY        = 'origin_good_plain_qty_v1';
     const LS_SETTINGS_KEY   = 'origin_settings_v1';
+    const LS_SALES_KEY      = 'origin_barter_sales_v1';
     const DEFAULT_DRIFT_OVER_MIN = 1200;
 
     function getTenantId() {
@@ -97,6 +100,75 @@
             plainQty:  Number(row.plain_qty) || 0,
             updatedAt: row.updated_at,
         };
+    }
+
+    function rowToBarterSale(row) {
+        return {
+            id:         row.id,
+            tenantId:   row.tenant_id,
+            goodName:   row.good_name,
+            portName:   row.port_name,
+            marketPct:  Number(row.market_pct),
+            salePrice:  Number(row.sale_price),
+            unitPrice:  Number(row.unit_price),
+            soldAt:     row.sold_at,
+            updatedAt:  row.updated_at,
+        };
+    }
+
+    function calcBarterUnitPrice(salePrice, marketPct) {
+        const sale = Number(salePrice);
+        const pct = Number(marketPct);
+        if (!Number.isFinite(sale) || sale <= 0) return 0;
+        if (!Number.isFinite(pct) || pct <= 0) return 0;
+        // 단가 = 판매가 ÷ (시세%/100) → 소수점 반올림
+        return Math.round((sale * 100) / pct);
+    }
+
+    function readLocalSales() {
+        try {
+            const raw = localStorage.getItem(LS_SALES_KEY);
+            if (!raw) return [];
+            const list = JSON.parse(raw);
+            return Array.isArray(list) ? list : [];
+        } catch {
+            return [];
+        }
+    }
+
+    function writeLocalSales(list) {
+        localStorage.setItem(LS_SALES_KEY, JSON.stringify(Array.isArray(list) ? list : []));
+    }
+
+    function upsertLocalSale(sale) {
+        const list = readLocalSales().filter(s => s.id !== sale.id);
+        list.push(sale);
+        list.sort((a, b) => String(b.soldAt || '').localeCompare(String(a.soldAt || '')));
+        writeLocalSales(list);
+    }
+
+    function removeLocalSale(id) {
+        writeLocalSales(readLocalSales().filter(s => s.id !== id));
+    }
+
+    function listLocalBarterSales(opts) {
+        const goodName = opts && opts.goodName ? String(opts.goodName).trim() : '';
+        const portName = opts && opts.portName ? String(opts.portName).trim() : '';
+        const limit = opts && opts.limit > 0 ? Math.min(Math.trunc(opts.limit), 500) : 100;
+        let list = readLocalSales().slice();
+        if (goodName) list = list.filter(s => s.goodName === goodName);
+        if (portName) list = list.filter(s => s.portName === portName);
+        list.sort((a, b) => String(b.soldAt || '').localeCompare(String(a.soldAt || '')));
+        return list.slice(0, limit).map(s => ({
+            id: s.id,
+            goodName: s.goodName,
+            portName: s.portName,
+            marketPct: Number(s.marketPct),
+            salePrice: Number(s.salePrice),
+            unitPrice: Number(s.unitPrice),
+            soldAt: s.soldAt,
+            updatedAt: s.updatedAt,
+        }));
     }
 
     function toIsoOrNull(v) {
@@ -376,6 +448,126 @@
         }
     }
 
+    /**
+     * @param {{ goodName?: string, portName?: string, limit?: number }} [opts]
+     * @returns {Promise<{ id: string, goodName: string, portName: string, marketPct: number, salePrice: number, unitPrice: number, soldAt: string }[]>}
+     */
+    async function listBarterSales(opts) {
+        const goodName = opts && opts.goodName ? String(opts.goodName).trim() : '';
+        const portName = opts && opts.portName ? String(opts.portName).trim() : '';
+        const limit = opts && opts.limit > 0 ? Math.min(Math.trunc(opts.limit), 500) : 100;
+
+        let q = client
+            .from(TBL_SALES)
+            .select('*')
+            .eq('tenant_id', getTenantId())
+            .order('sold_at', { ascending: false })
+            .limit(limit);
+        if (goodName) q = q.eq('good_name', goodName);
+        if (portName) q = q.eq('port_name', portName);
+
+        const { data, error } = await q;
+        if (error) {
+            if (isMissingRelationError(error)) {
+                console.warn('[OriginDB] origin_barter_sales 미반영 — localStorage 사용', error);
+                return listLocalBarterSales({ goodName, portName, limit });
+            }
+            throw error;
+        }
+
+        const rows = (data || []).map(rowToBarterSale);
+        // 전체 목록 조회일 때만 로컬 캐시 동기화 (필터 조회 시 다른 기록 덮어쓰기 방지)
+        if (!goodName && !portName) {
+            writeLocalSales(rows.map(s => ({
+                id: s.id,
+                goodName: s.goodName,
+                portName: s.portName,
+                marketPct: s.marketPct,
+                salePrice: s.salePrice,
+                unitPrice: s.unitPrice,
+                soldAt: s.soldAt,
+                updatedAt: s.updatedAt,
+            })));
+        }
+        return rows;
+    }
+
+    /**
+     * @param {{ id?: string, goodName: string, portName: string, marketPct: number, salePrice: number, soldAt?: string }} item
+     */
+    async function saveBarterSale(item) {
+        const goodName = (item.goodName || '').trim();
+        const portName = (item.portName || '').trim();
+        if (!goodName) throw new Error('품목명이 필요합니다.');
+        if (!portName) throw new Error('판매처(항구)가 필요합니다.');
+        const marketPct = Number(item.marketPct);
+        const salePrice = Number(item.salePrice);
+        if (!Number.isFinite(marketPct) || marketPct <= 0) {
+            throw new Error('시세(%)가 올바르지 않습니다.');
+        }
+        if (!Number.isFinite(salePrice) || salePrice <= 0) {
+            throw new Error('판매가가 올바르지 않습니다.');
+        }
+        const unitPrice = calcBarterUnitPrice(salePrice, marketPct);
+        const id = (item.id || '').trim() || genId('bs');
+        const soldAt = item.soldAt
+            ? (item.soldAt instanceof Date ? item.soldAt.toISOString() : String(item.soldAt))
+            : new Date().toISOString();
+        const updatedAt = new Date().toISOString();
+        const sale = {
+            id,
+            goodName,
+            portName,
+            marketPct,
+            salePrice,
+            unitPrice,
+            soldAt,
+            updatedAt,
+        };
+        upsertLocalSale(sale);
+
+        const row = {
+            tenant_id:   getTenantId(),
+            id,
+            good_name:   goodName,
+            port_name:   portName,
+            market_pct:  marketPct,
+            sale_price:  salePrice,
+            unit_price:  unitPrice,
+            sold_at:     soldAt,
+            updated_at:  updatedAt,
+        };
+        const { error } = await client
+            .from(TBL_SALES)
+            .upsert(row, { onConflict: 'tenant_id,id' });
+        if (error) {
+            if (isMissingRelationError(error)) {
+                console.warn('[OriginDB] origin_barter_sales 저장 실패(404) — 로컬만 유지', error);
+                return { ...sale, _fromLocal: true };
+            }
+            throw error;
+        }
+        return sale;
+    }
+
+    async function deleteBarterSale(id) {
+        const saleId = (id || '').trim();
+        if (!saleId) throw new Error('기록 ID가 필요합니다.');
+        removeLocalSale(saleId);
+        const { error } = await client
+            .from(TBL_SALES)
+            .delete()
+            .eq('tenant_id', getTenantId())
+            .eq('id', saleId);
+        if (error) {
+            if (isMissingRelationError(error)) {
+                console.warn('[OriginDB] origin_barter_sales 삭제 실패(404) — 로컬만 반영', error);
+                return;
+            }
+            throw error;
+        }
+    }
+
     function makeLocalOnlyDb() {
         function loadAll() {
             try {
@@ -495,6 +687,42 @@
                     writeLocalQtys(local);
                 }
             },
+            listBarterSales: async (opts) => listLocalBarterSales(opts || {}),
+            saveBarterSale: async (item) => {
+                const goodName = (item.goodName || '').trim();
+                const portName = (item.portName || '').trim();
+                if (!goodName) throw new Error('품목명이 필요합니다.');
+                if (!portName) throw new Error('판매처(항구)가 필요합니다.');
+                const marketPct = Number(item.marketPct);
+                const salePrice = Number(item.salePrice);
+                if (!Number.isFinite(marketPct) || marketPct <= 0) {
+                    throw new Error('시세(%)가 올바르지 않습니다.');
+                }
+                if (!Number.isFinite(salePrice) || salePrice <= 0) {
+                    throw new Error('판매가가 올바르지 않습니다.');
+                }
+                const unitPrice = calcBarterUnitPrice(salePrice, marketPct);
+                const id = (item.id || '').trim() || genId('bs');
+                const soldAt = item.soldAt
+                    ? (item.soldAt instanceof Date ? item.soldAt.toISOString() : String(item.soldAt))
+                    : new Date().toISOString();
+                const sale = {
+                    id,
+                    goodName,
+                    portName,
+                    marketPct,
+                    salePrice,
+                    unitPrice,
+                    soldAt,
+                    updatedAt: new Date().toISOString(),
+                };
+                upsertLocalSale(sale);
+                return sale;
+            },
+            deleteBarterSale: async (id) => {
+                removeLocalSale((id || '').trim());
+            },
+            calcBarterUnitPrice,
         };
     }
 
@@ -511,6 +739,10 @@
         listGoodPlainQtys,
         saveGoodPlainQty,
         deleteGoodPlainQty,
+        listBarterSales,
+        saveBarterSale,
+        deleteBarterSale,
+        calcBarterUnitPrice,
     };
 
     console.log('[OriginDB] 초기화 완료 — tenant_id:', getTenantId());
