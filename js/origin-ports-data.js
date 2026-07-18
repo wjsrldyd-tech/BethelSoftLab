@@ -311,14 +311,13 @@
      * @type {Record<string, string>}
      */
     window.ORIGIN_PORT_SEASON_TYPE = {
-        // 북반구-사계절 (93개)
+        // 북반구-사계절 (92개)
         '니코시아': 'north-4seasons',
         '베이루트': 'north-4seasons',
         '안탈리아': 'north-4seasons',
         '야파': 'north-4seasons',
         '이스탄불': 'north-4seasons',
         '트라브존': 'north-4seasons',
-        '나탈': 'north-4seasons',
         '마르세유': 'north-4seasons',
         '몽펠리에': 'north-4seasons',
         '사사리': 'north-4seasons',
@@ -405,7 +404,7 @@
         '바스라': 'north-4seasons',
         '호르무즈': 'north-4seasons',
 
-        // 남반구-사계절 (15개)
+        // 남반구-사계절 (16개)
         '리마': 'south-4seasons',
         '리우데자네이루': 'south-4seasons',
         '발파라이소': 'south-4seasons',
@@ -413,6 +412,7 @@
         '코피아포': 'south-4seasons',
         '툼베스': 'south-4seasons',
         '케이프타운': 'south-4seasons',
+        '나탈': 'south-4seasons',
         '카리비브': 'south-4seasons',
         '마사와': 'south-4seasons',
         '몸바사': 'south-4seasons',
