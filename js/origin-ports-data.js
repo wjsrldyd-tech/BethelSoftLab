@@ -465,7 +465,7 @@
         '바이아': 'rainy-dry-rainy',
         '페르남부쿠': 'rainy-dry-rainy',
 
-        // 열대 (22개)
+        // 열대 (24개)
         '카옌': 'tropical',
         '타마타브': 'tropical',
         '다바오': 'tropical',
@@ -488,6 +488,8 @@
         '페구': 'tropical',
         '프레이노코르': 'tropical',
         '산토도밍고': 'tropical',
+        '수바': 'tropical',
+        '사마라이': 'tropical',
 
         // 한대 (3개)
         '우수아이아': 'arctic',
