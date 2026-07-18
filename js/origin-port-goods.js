@@ -1743,7 +1743,7 @@
             { name: '비쿠냐털', category: '섬유', specialty: true, peak: ['겨울', '우기'], off: ['여름'] },
         ],
         툼베스: [
-            { name: '금', category: '귀금속', specialty: false },
+            { name: '금', category: '귀금속', specialty: false, peak: ['겨울', '건기'], off: ['여름', '우기'] },
             { name: '퀴노아', category: '식료품', specialty: false, peak: ['가을', '건기'], off: ['봄'] },
             { name: '툼바가', category: '공예품', specialty: false },
             { name: '청동', category: '공업품', specialty: false },
