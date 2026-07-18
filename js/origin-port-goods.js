@@ -1724,7 +1724,7 @@
             { name: '고산족 의복', category: '직물', specialty: true, lock: 'monopoly', peak: ['봄', '건기'], off: ['가을', '우기'] },
         ],
         발파라이소: [
-            { name: '금', category: '귀금속', specialty: false },
+            { name: '금', category: '귀금속', specialty: false, peak: ['겨울', '건기'], off: ['여름', '우기'] },
             { name: '사금', category: '귀금속', specialty: false, peak: ['겨울', '건기'], off: ['여름', '우기'] },
             { name: '계관석', category: '염료', specialty: true, peak: ['여름', '우기'], off: ['겨울', '건기'] },
             { name: '카민', category: '염료', specialty: false, peak: ['여름', '우기'], off: ['겨울', '건기'] },
