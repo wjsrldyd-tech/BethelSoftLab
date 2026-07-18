@@ -752,7 +752,7 @@
             { name: '무이라푸아마', category: '의약품', specialty: true, lock: 'monopoly', peak: ['봄', '우기'], off: ['가을'] },
         ],
         아카풀코: [
-            { name: '은', category: '귀금속', specialty: false },
+            { name: '은', category: '귀금속', specialty: false, peak: ['겨울', '건기'], off: ['여름', '우기'] },
             { name: '부채선인장', category: '의약품', specialty: false, peak: ['봄', '우기'], off: ['가을'] },
             { name: '토마토', category: '식료품', specialty: false, peak: ['가을', '건기'], off: ['봄'] },
             { name: '아연 광석', category: '광석', specialty: false, peak: ['봄', '건기'], off: ['가을', '우기'] },

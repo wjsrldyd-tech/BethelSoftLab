@@ -440,7 +440,7 @@
         '캘리컷': 'dry-rainy-dry',
         '롭부리': 'dry-rainy-dry',
 
-        // 건기+1-우기-건기 (18개)
+        // 건기+1-우기-건기 (19개)
         '마라카이보': 'dry+1-rainy-dry',
         '윌렘스타트': 'dry+1-rainy-dry',
         '카라카스': 'dry+1-rainy-dry',
@@ -450,6 +450,7 @@
         '수라바야': 'dry+1-rainy-dry',
         '메리다': 'dry+1-rainy-dry',
         '베라크루스': 'dry+1-rainy-dry',
+        '아카풀코': 'dry+1-rainy-dry',
         '마실리파트남': 'dry+1-rainy-dry',
         '캘커타': 'dry+1-rainy-dry',
         '퐁디셰리': 'dry+1-rainy-dry',
