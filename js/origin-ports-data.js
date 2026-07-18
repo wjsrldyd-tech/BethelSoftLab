@@ -404,7 +404,7 @@
         '바스라': 'north-4seasons',
         '호르무즈': 'north-4seasons',
 
-        // 남반구-사계절 (19개)
+        // 남반구-사계절 (16개)
         '리마': 'south-4seasons',
         '리우데자네이루': 'south-4seasons',
         '발파라이소': 'south-4seasons',
@@ -413,9 +413,6 @@
         '툼베스': 'south-4seasons',
         '케이프타운': 'south-4seasons',
         '나탈': 'south-4seasons',
-        '소팔라': 'south-4seasons',
-        '켈리마느': 'south-4seasons',
-        '모잠비크': 'south-4seasons',
         '카리비브': 'south-4seasons',
         '마사와': 'south-4seasons',
         '몸바사': 'south-4seasons',
@@ -464,9 +461,12 @@
         '하바나': 'dry+1-rainy-dry',
         '포트로열': 'dry+1-rainy-dry',
 
-        // 우기-건기-우기 (2개) — 12~5 우기, 6~11 건기
+        // 우기-건기-우기 (5개) — 12~5 우기, 6~11 건기
         '바이아': 'rainy-dry-rainy',
         '페르남부쿠': 'rainy-dry-rainy',
+        '소팔라': 'rainy-dry-rainy',
+        '켈리마느': 'rainy-dry-rainy',
+        '모잠비크': 'rainy-dry-rainy',
 
         // 열대 (24개)
         '카옌': 'tropical',
