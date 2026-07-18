@@ -115,16 +115,8 @@
           <div class="ot-sales-item" data-id="${escapeHtml(s.id)}">
             <div class="ot-sales-item-good">${escapeHtml(s.goodName)}</div>
             <div class="ot-sales-item-port">${escapeHtml(s.portName)}</div>
-            <div class="ot-sales-item-numbers">
-              <div class="ot-sales-item-number">
-                <span class="ot-sales-item-number-label">시세</span>
-                <span class="ot-sales-item-number-value">${formatNum(s.marketPct)}%</span>
-              </div>
-              <div class="ot-sales-item-number">
-                <span class="ot-sales-item-number-label">판매</span>
-                <span class="ot-sales-item-number-value">${formatNum(s.salePrice)}</span>
-              </div>
-            </div>
+            <div class="ot-sales-item-market">${formatNum(s.marketPct)}%</div>
+            <div class="ot-sales-item-price">${formatNum(s.salePrice)}</div>
             <div class="ot-sales-item-unit">${formatNum(s.unitPrice)}</div>
             <div class="ot-sales-item-time">${escapeHtml(formatDate(s.soldAt))}</div>
             <button type="button" class="ot-sales-del" data-id="${escapeHtml(s.id)}" aria-label="삭제">×</button>

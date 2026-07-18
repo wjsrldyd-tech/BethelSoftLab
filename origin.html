@@ -1679,85 +1679,106 @@
         color: #cbd5e1;
       }
 
-      .ot-sales-list {
+      .ot-sales-list-wrap {
         display: flex;
         flex-direction: column;
-        gap: 0.35rem;
         max-height: min(62vh, 520px);
         overflow-y: auto;
       }
 
+      .ot-sales-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+      }
+
       .ot-sales-empty {
-        padding: 1rem 0.5rem;
+        padding: 2rem 0.5rem;
         text-align: center;
         color: #64748b;
-        font-size: 0.88rem;
+        font-size: 0.92rem;
+      }
+
+      .ot-sales-header {
+        display: grid;
+        grid-template-columns: 9rem 8rem 7rem 8rem 7rem 6rem 3.2rem;
+        gap: 0.65rem;
+        padding: 0.6rem 0.75rem;
+        border-bottom: 2px solid rgba(148, 163, 184, 0.25);
+        background: rgba(15, 23, 42, 0.6);
+        font-size: 0.82rem;
+        font-weight: 650;
+        color: #94a3b8;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+      }
+
+      .ot-sales-header-cell {
+        text-align: left;
+      }
+
+      .ot-sales-header-cell.is-number {
+        text-align: right;
       }
 
       .ot-sales-item {
         display: grid;
-        grid-template-columns: auto 1fr auto auto auto;
+        grid-template-columns: 9rem 8rem 7rem 8rem 7rem 6rem 3.2rem;
         align-items: center;
-        gap: 0.45rem 0.6rem;
-        padding: 0.5rem 0.65rem;
-        border-radius: 7px;
-        border: 1px solid rgba(148, 163, 184, 0.15);
-        background: rgba(2, 6, 23, 0.4);
-        font-size: 0.86rem;
+        gap: 0.65rem;
+        padding: 0.6rem 0.75rem;
+        border-radius: 6px;
+        border: 1px solid rgba(148, 163, 184, 0.12);
+        background: rgba(2, 6, 23, 0.35);
+        font-size: 0.94rem;
         transition: background 0.12s;
       }
 
       .ot-sales-item:hover {
-        background: rgba(2, 6, 23, 0.65);
+        background: rgba(2, 6, 23, 0.6);
+        border-color: rgba(148, 163, 184, 0.22);
       }
 
       .ot-sales-item-good {
         color: #f1f5f9;
         font-weight: 650;
-        font-size: 0.9rem;
+        font-size: 0.98rem;
       }
 
       .ot-sales-item-port {
         color: #94a3b8;
-        font-size: 0.82rem;
+        font-size: 0.9rem;
         font-weight: 500;
       }
 
-      .ot-sales-item-numbers {
-        display: flex;
-        align-items: center;
-        gap: 0.55rem;
-        color: #cbd5e1;
+      .ot-sales-item-market,
+      .ot-sales-item-price,
+      .ot-sales-item-unit {
         font-variant-numeric: tabular-nums;
-      }
-
-      .ot-sales-item-number {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        gap: 0.08rem;
-      }
-
-      .ot-sales-item-number-label {
-        font-size: 0.72rem;
-        color: #64748b;
-        font-weight: 500;
-      }
-
-      .ot-sales-item-number-value {
-        font-size: 0.88rem;
+        text-align: right;
         font-weight: 600;
+      }
+
+      .ot-sales-item-market {
+        color: #cbd5e1;
+        font-size: 0.92rem;
+      }
+
+      .ot-sales-item-price {
+        color: #cbd5e1;
+        font-size: 0.92rem;
       }
 
       .ot-sales-item-unit {
         color: #fbbf24;
         font-weight: 700;
-        font-size: 0.95rem;
+        font-size: 1rem;
       }
 
       .ot-sales-item-time {
-        color: #475569;
-        font-size: 0.78rem;
+        color: #64748b;
+        font-size: 0.84rem;
         text-align: right;
       }
 
@@ -2030,7 +2051,18 @@
 
           <section class="ot-settings-section">
             <h3 class="ot-sales-list-title">최근 기록</h3>
-            <div id="ot-sales-list" class="ot-sales-list"></div>
+            <div class="ot-sales-list-wrap">
+              <div class="ot-sales-header">
+                <div class="ot-sales-header-cell">품목명</div>
+                <div class="ot-sales-header-cell">판매처</div>
+                <div class="ot-sales-header-cell is-number">시세</div>
+                <div class="ot-sales-header-cell is-number">판매가</div>
+                <div class="ot-sales-header-cell is-number">단가</div>
+                <div class="ot-sales-header-cell is-number">시간</div>
+                <div class="ot-sales-header-cell"></div>
+              </div>
+              <div id="ot-sales-list" class="ot-sales-list"></div>
+            </div>
           </section>
         </div>
       </div>
