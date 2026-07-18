@@ -595,7 +595,9 @@
     function formatVisibleQty(plain, mult) {
         const v = (Number(plain) || 0) * (Number(mult) || 1);
         if (!v) return '';
-        return Number.isInteger(v) ? String(v) : String(Math.round(v * 10) / 10);
+        // 시즌 배수(1.5/0.5) 계산 시 소수점은 버림
+        const n = Math.floor(v);
+        return n > 0 ? String(n) : '';
     }
 
     function pinGoodHtml(portName, g) {
