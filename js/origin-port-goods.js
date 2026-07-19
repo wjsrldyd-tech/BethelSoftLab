@@ -1556,7 +1556,7 @@
             { name: '물소', category: '가축', specialty: true, lock: 'monopoly', peak: ['겨울', '건기'], off: ['여름'] },
         ],
         캘커타: [
-            { name: '루비', category: '보석', specialty: true },
+            { name: '루비', category: '보석', specialty: true, peak: ['여름', '우기'], off: ['겨울', '건기'] },
             { name: '면직물', category: '직물', specialty: true, peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '비단', category: '직물', specialty: false, peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '생사', category: '섬유', specialty: false, peak: ['겨울', '우기'], off: ['여름'] },
