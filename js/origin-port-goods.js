@@ -1625,7 +1625,7 @@
             { name: '아라크', category: '주류', specialty: true, lock: 'monopoly', peak: ['겨울', '건기'], off: ['여름', '우기'] },
         ],
         호르무즈: [
-            { name: '청금석', category: '보석', specialty: true },
+            { name: '청금석', category: '보석', specialty: true, peak: ['여름', '우기'], off: ['겨울', '건기'] },
             { name: '터키석', category: '보석', specialty: true, peak: ['여름', '우기'], off: ['겨울', '건기'] },
             { name: '모슬린', category: '직물', specialty: true, peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '양고기', category: '식료품', specialty: false, peak: ['가을', '건기'], off: ['봄'] },
