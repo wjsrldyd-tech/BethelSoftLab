@@ -1515,7 +1515,7 @@
             { name: '사향', category: '향료', specialty: false, peak: ['가을', '우기'], off: ['봄', '건기'] },
         ],
         코친: [
-            { name: '인디고', category: '염료', specialty: true },
+            { name: '인디고', category: '염료', specialty: true, peak: ['여름', '우기'], off: ['겨울', '건기'] },
             { name: '후추', category: '향신료', specialty: true, peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '사향', category: '향료', specialty: false, peak: ['가을', '우기'], off: ['봄', '건기'] },
             { name: '말린 망고', category: '기호품', specialty: false, peak: ['가을', '건기'], off: ['봄', '우기'] },
