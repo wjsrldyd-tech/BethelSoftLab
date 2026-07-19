@@ -1538,7 +1538,7 @@
             { name: '산호', category: '보석', specialty: false, peak: ['여름', '우기'], off: ['겨울', '건기'] },
         ],
         퐁디셰리: [
-            { name: '사파이어', category: '보석', specialty: true },
+            { name: '사파이어', category: '보석', specialty: true, peak: ['여름', '우기'], off: ['겨울', '건기'] },
             { name: '계피', category: '향신료', specialty: true, peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '재스민', category: '향료', specialty: true, peak: ['가을', '우기'], off: ['봄', '건기'] },
             { name: '강황', category: '염료', specialty: false, peak: ['여름', '우기'], off: ['겨울', '건기'] },
