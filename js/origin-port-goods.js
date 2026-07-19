@@ -288,6 +288,7 @@
             { name: '향수', category: '향료', specialty: false, peak: ['가을', '우기'], off: ['봄', '건기'] },
             { name: '우유', category: '식료품', specialty: false, peak: ['가을', '건기'], off: ['봄'] },
             { name: '치즈', category: '식료품', specialty: false, peak: ['가을', '건기'], off: ['봄'] },
+            { name: '병아리콩', category: '식료품', specialty: false, peak: ['가을', '건기'], off: ['봄'] },
             { name: '낙타', category: '가축', specialty: true, lock: 'vassal', peak: ['겨울', '건기'], off: ['여름'] },
             { name: '다르부카', category: '공예품', specialty: true, lock: 'monopoly' },
         ],
