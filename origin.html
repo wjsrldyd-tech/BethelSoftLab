@@ -872,12 +872,12 @@
         box-shadow: none;
       }
 
-      /* 수량 색 = 시즌 (평시 하늘색 / 성수 초록 / 비수 빨강). 수량 없으면 미표시 */
+      /* 수량 색 = 시즌 (평시=품명색 / 성수 초록 / 비수 빨강). 수량 없으면 미표시 */
       .ot-pin-good-qty {
         margin-left: 0.28rem;
         font-weight: 700;
         font-variant-numeric: tabular-nums;
-        color: #7dd3fc;
+        color: inherit;
       }
 
       .ot-pin-good-qty.is-peak {
@@ -894,10 +894,6 @@
 
       .ot-pin-good.is-specialty .ot-pin-good-qty.is-off {
         color: #b91c1c;
-      }
-
-      .ot-pin-good.is-specialty .ot-pin-good-qty:not(.is-peak):not(.is-off) {
-        color: #0369a1;
       }
 
       .ot-pin-good.is-specialty {
