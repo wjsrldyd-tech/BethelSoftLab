@@ -1546,7 +1546,7 @@
         ],
         마실리파트남: [
             { name: '면직물', category: '직물', specialty: true, peak: ['봄', '건기'], off: ['가을', '우기'] },
-            { name: '사파이어', category: '보석', specialty: true },
+            { name: '사파이어', category: '보석', specialty: true, peak: ['여름', '우기'], off: ['겨울', '건기'] },
             { name: '콩', category: '식료품', specialty: false, peak: ['가을', '건기'], off: ['봄'] },
             { name: '강황', category: '염료', specialty: false, peak: ['여름', '우기'], off: ['겨울', '건기'] },
             { name: '생사', category: '섬유', specialty: false, peak: ['겨울', '우기'], off: ['여름'] },
