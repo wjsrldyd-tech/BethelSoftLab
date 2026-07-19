@@ -1084,7 +1084,7 @@
             { name: '황동 향로', category: '미술품', specialty: true, lock: 'monopoly' },
         ],
         제주: [
-            { name: '자근', category: '염료', specialty: true },
+            { name: '자근', category: '염료', specialty: true, peak: ['여름', '우기'], off: ['겨울', '건기'] },
             { name: '호안석', category: '보석', specialty: true, peak: ['여름', '우기'], off: ['겨울', '건기'] },
             { name: '귤피', category: '의약품', specialty: false, peak: ['봄', '우기'], off: ['가을'] },
             { name: '다시마', category: '식료품', specialty: false, peak: ['가을', '건기'], off: ['봄'] },
