@@ -1486,7 +1486,7 @@
             { name: '트날락', category: '직물', specialty: true, lock: 'monopoly', peak: ['봄', '건기'], off: ['가을', '우기'] },
         ],
         디우: [
-            { name: '사금석', category: '보석', specialty: true },
+            { name: '사금석', category: '보석', specialty: true, peak: ['여름', '우기'], off: ['겨울', '건기'] },
             { name: '홍차', category: '기호품', specialty: true, peak: ['가을', '건기'], off: ['봄', '우기'] },
             { name: '겨자', category: '향신료', specialty: false, peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '사향', category: '향료', specialty: false, peak: ['가을', '우기'], off: ['봄', '건기'] },
