@@ -410,6 +410,7 @@
         '발파라이소': 'south-4seasons',
         '부에노스아이레스': 'south-4seasons',
         '코피아포': 'south-4seasons',
+        '소다섬': 'south-4seasons',
         '툼베스': 'south-4seasons',
         '케이프타운': 'south-4seasons',
         '나탈': 'south-4seasons',
