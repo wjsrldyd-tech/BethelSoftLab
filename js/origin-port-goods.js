@@ -1693,7 +1693,7 @@
             { name: '무이라푸아마', category: '의약품', specialty: true, lock: 'monopoly', peak: ['봄', '우기'], off: ['가을'] },
         ],
         소다섬: [
-            { name: '다이아몬드', category: '보석', specialty: true },
+            { name: '다이아몬드', category: '보석', specialty: true, peak: ['여름', '우기'], off: ['겨울', '건기'] },
             { name: '루벨라이트', category: '보석', specialty: false, peak: ['여름', '우기'], off: ['겨울', '건기'] },
             { name: '토파즈', category: '보석', specialty: true, peak: ['여름', '우기'], off: ['겨울', '건기'] },
             { name: '공작석', category: '보석', specialty: false, peak: ['여름', '우기'], off: ['겨울', '건기'] },
