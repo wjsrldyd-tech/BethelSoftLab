@@ -1525,6 +1525,15 @@
         background: #0ea5e9;
       }
 
+      .ot-barter-filter-btn.is-active {
+        background: #0369a1;
+        box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.28);
+      }
+
+      .ot-barter-filter-btn.is-active:hover {
+        background: #0284c7;
+      }
+
       .ot-barter-actions {
         display: flex;
         flex-direction: column;
@@ -2151,7 +2160,8 @@
                 </div>
 
                 <div class="ot-barter-actions">
-                  <button type="button" id="barter-filter-map" class="ot-barter-filter-btn">
+                  <button type="button" id="barter-filter-map" class="ot-barter-filter-btn"
+                    aria-pressed="false">
                     맵에 재료 항구 표시
                   </button>
                   <button type="button" id="barter-sales-open" class="ot-barter-filter-btn ot-barter-sales-btn">

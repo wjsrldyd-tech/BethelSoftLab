@@ -794,6 +794,9 @@
         renderViewTabs();
         renderMap();
         setStatus(currentView().label || '');
+        try {
+            window.dispatchEvent(new CustomEvent('origin-goods-filter-changed'));
+        } catch (_) { /* ignore */ }
     }
 
     function selectGoodCategory(category) {
@@ -824,6 +827,9 @@
         setStatus(label
             ? `「${label}」 — 맵에서 해당 항구를 확인하세요.`
             : (currentView().label || ''));
+        try {
+            window.dispatchEvent(new CustomEvent('origin-goods-filter-changed'));
+        } catch (_) { /* ignore */ }
     }
 
     function tickPanel() {
@@ -1410,6 +1416,15 @@
             const label = goodNames.join(', ');
             setStatus(`「${label}」 — ${view.label || ''}`);
         }
+        try {
+            window.dispatchEvent(new CustomEvent('origin-goods-filter-changed'));
+        } catch (_) { /* ignore */ }
+    };
+
+    /** @returns {string[]|null} 이름 필터 중이면 품명 배열, 아니면 null */
+    window.getOriginGoodsNameFilter = function () {
+        if (!filterByName || !selectedGoodCategories.length) return null;
+        return selectedGoodCategories.slice();
     };
 
     window.clearOriginGoodsFilter = function () {

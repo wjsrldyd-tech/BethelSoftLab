@@ -412,6 +412,7 @@
         if (filterBtn) {
             filterBtn.addEventListener('click', filterMapByIngredients);
         }
+        window.addEventListener('origin-goods-filter-changed', syncIngredientFilterBtn);
         if (matrixDiv) {
             matrixDiv.addEventListener('input', onMatrixInput);
         }
@@ -469,6 +470,7 @@
         } else {
             showMatrixEmpty('마을을 선택하세요');
         }
+        syncIngredientFilterBtn();
     }
 
     function initSideToolTabs() {
@@ -519,6 +521,7 @@
         loadRatiosIntoState();
         currentHave = loadSavedHave();
         refreshMatrix();
+        syncIngredientFilterBtn();
         try {
             window.dispatchEvent(new CustomEvent('origin-barter-exchange-changed', {
                 detail: { resultName: (currentExchange() && currentExchange().result && currentExchange().result.name) || '' },
@@ -863,14 +866,53 @@
           </table>`;
     }
 
-    function filterMapByIngredients() {
-        const exchange = currentExchange();
-        if (!exchange || !exchange.ingredients || !exchange.ingredients.length) return;
+    function sameNameList(a, b) {
+        if (!a || !b || a.length !== b.length) return false;
+        const sa = a.slice().sort().join('\0');
+        const sb = b.slice().sort().join('\0');
+        return sa === sb;
+    }
 
-        const ingredientNames = exchange.ingredients.map(ing => ing.name);
-        if (typeof window.filterMapByGoodNames === 'function') {
-            window.filterMapByGoodNames(ingredientNames);
+    function currentIngredientNames() {
+        const exchange = currentExchange();
+        if (!exchange || !exchange.ingredients || !exchange.ingredients.length) return [];
+        return exchange.ingredients.map(ing => ing.name);
+    }
+
+    function isIngredientMapFilterOn() {
+        const names = currentIngredientNames();
+        if (!names.length) return false;
+        const current = (typeof window.getOriginGoodsNameFilter === 'function')
+            ? window.getOriginGoodsNameFilter()
+            : null;
+        return !!(current && sameNameList(current, names));
+    }
+
+    function syncIngredientFilterBtn() {
+        const { filterBtn } = els();
+        if (!filterBtn) return;
+        const on = isIngredientMapFilterOn();
+        filterBtn.classList.toggle('is-active', on);
+        filterBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        filterBtn.textContent = on ? '재료 항구 표시 해제' : '맵에 재료 항구 표시';
+    }
+
+    function filterMapByIngredients() {
+        const names = currentIngredientNames();
+        if (!names.length) return;
+
+        if (isIngredientMapFilterOn()) {
+            if (typeof window.clearOriginGoodsFilter === 'function') {
+                window.clearOriginGoodsFilter();
+            }
+            syncIngredientFilterBtn();
+            return;
         }
+
+        if (typeof window.filterMapByGoodNames === 'function') {
+            window.filterMapByGoodNames(names);
+        }
+        syncIngredientFilterBtn();
     }
 
     window.originBarterInit = init;
