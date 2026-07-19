@@ -1506,7 +1506,7 @@
         ],
         캘리컷: [
             { name: '후추', category: '향신료', specialty: true, peak: ['봄', '건기'], off: ['가을', '우기'] },
-            { name: '사파이어', category: '보석', specialty: true },
+            { name: '사파이어', category: '보석', specialty: true, peak: ['여름', '우기'], off: ['겨울', '건기'] },
             { name: '보석세공', category: '공예품', specialty: false },
             { name: '인디고', category: '염료', specialty: true, peak: ['여름', '우기'], off: ['겨울', '건기'] },
             { name: '홍차', category: '기호품', specialty: true, peak: ['가을', '건기'], off: ['봄', '우기'] },
