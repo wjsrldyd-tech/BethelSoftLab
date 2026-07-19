@@ -1664,7 +1664,7 @@
             { name: '아위', category: '향신료', specialty: true, lock: 'monopoly', peak: ['봄', '건기'], off: ['가을', '우기'] },
         ],
         바그다드: [
-            { name: '청금석', category: '보석', specialty: true },
+            { name: '청금석', category: '보석', specialty: true, peak: ['여름', '우기'], off: ['겨울', '건기'] },
             { name: '호박단', category: '직물', specialty: true, peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '보석세공', category: '공예품', specialty: false },
             { name: '잼', category: '조미료', specialty: false, peak: ['여름', '건기'], off: ['겨울'] },
