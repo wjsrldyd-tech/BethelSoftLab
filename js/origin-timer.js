@@ -607,9 +607,24 @@
             ? window.getOriginGoodSeasonQtyMult(g, month, portName)
             : 1;
         const qtyText = plain > 0 ? formatVisibleQty(plain, mult) : '';
-        const qtyHtml = qtyText
-            ? `<span class="ot-pin-good-qty">${escapeHtml(qtyText)}</span>`
-            : '';
+        if (!qtyText) {
+            return `<span class="ot-pin-good${g.specialty ? ' is-specialty' : ''}">${escapeHtml(g.name)}</span>`;
+        }
+        const status = (typeof window.getOriginGoodSeasonStatus === 'function')
+            ? window.getOriginGoodSeasonStatus(g, month, portName)
+            : 'plain';
+        let seasonClass = '';
+        let seasonTitle = '';
+        if (status === 'peak') {
+            seasonClass = ' is-peak';
+            seasonTitle = '성수기';
+        } else if (status === 'off') {
+            seasonClass = ' is-off';
+            seasonTitle = '비수기';
+        } else {
+            seasonTitle = '평시';
+        }
+        const qtyHtml = `<span class="ot-pin-good-qty${seasonClass}" title="${escapeAttr(seasonTitle)}">${escapeHtml(qtyText)}</span>`;
         return `<span class="ot-pin-good${g.specialty ? ' is-specialty' : ''}">${escapeHtml(g.name)}${qtyHtml}</span>`;
     }
 
