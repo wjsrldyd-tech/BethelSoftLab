@@ -433,7 +433,7 @@
         '상투메': 'dry-rainy-dry',
         '시에라리온': 'dry-rainy-dry',
         '아비장': 'dry-rainy-dry',
-        '엘미나': 'dry-rainy-dry',
+        '엘미나': 'rainy-dry-rainy',
         '고아': 'dry-rainy-dry',
         '코친': 'dry-rainy-dry',
         '디우': 'dry-rainy-dry',
