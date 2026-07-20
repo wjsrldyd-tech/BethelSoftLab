@@ -51,8 +51,10 @@
     /** @type {string[]} 조선 티어 필터 — 항구명 목록 */
     let selectedPortNames = [];
     let filterByPort = false;
-    /** @type {string} 항구 필터 시 핀 아래 표시 문구 (재료명 등) */
+    /** @type {string} 단일 라벨 (티어 1개) */
     let portFilterPinLabel = '';
+    /** @type {Record<string, string[]>|null} 항구별 티어 라벨 목록 */
+    let portFilterPinLabels = null;
     /** @type {Record<string, Record<string, number>>} portName -> goodName -> plainQty */
     let goodQtyCache = {};
     let goodQtyCacheLoaded = false;
@@ -508,6 +510,29 @@
         return (mapEl && mapEl.querySelector('.ot-map-canvas')) || mapEl;
     }
 
+    /** 조선 재료가 있는 항구명 Set */
+    function getShipyardPortSet() {
+        const set = new Set();
+        const tiers = window.ORIGIN_SHIPYARD_TIERS || [];
+        for (const t of tiers) {
+            for (const p of (t.ports || [])) set.add(p);
+        }
+        return set;
+    }
+
+    /** 항구명 뒤 조 뱃지 — 재료 항구만. 구매 후 is-bought(주황) */
+    function shipyardBadgeHtml(portName, bought) {
+        if (!getShipyardPortSet().has(portName)) return '';
+        const on = !!bought;
+        return `<span class="ot-pin-badge ot-pin-badge-jo${on ? ' is-bought' : ''}" data-pin-jo`
+            + ` title="${on ? '조선소 구매함' : '조선소 재료'}"`
+            + ` aria-label="${on ? '조선소 구매함' : '조선소 재료'}">조</span>`;
+    }
+
+    function pinNameHtml(portName, shipyardBought) {
+        return `<span class="ot-pin-name">${escapeHtml(portName)}${shipyardBadgeHtml(portName, shipyardBought)}</span>`;
+    }
+
     function renderMap() {
         if (!mapEl) return;
         const now = Date.now();
@@ -542,7 +567,6 @@
                 sold ? 'is-sold-out' : '',
                 ready && !sold ? 'is-ready' : '',
                 toolShop ? 'is-tool-shop' : '',
-                shipyard ? 'is-shipyard' : '',
                 active ? 'is-active' : '',
                 filterOn ? 'is-goods-focus' : '',
                 (hasGoods || hasPortMatch) ? 'has-goods' : '',
@@ -556,16 +580,22 @@
             if (hasGoods) {
                 extraHtml = `<span class="ot-pin-goods">${goods.map(g => pinGoodHtml(loc.name, g)).join('')}</span>`;
             } else if (hasPortMatch) {
-                const label = portFilterPinLabel || '조선';
-                extraHtml = `<span class="ot-pin-goods"><span class="ot-pin-good is-shipyard-mat">${escapeHtml(label)}</span></span>`;
+                const labels = (portFilterPinLabels && portFilterPinLabels[loc.name])
+                    || (portFilterPinLabel ? [portFilterPinLabel] : []);
+                if (labels.length) {
+                    extraHtml = `<span class="ot-pin-goods">${labels.map(lb =>
+                        `<span class="ot-pin-good is-shipyard-mat">${escapeHtml(lb)}</span>`
+                    ).join('')}</span>`;
+                }
             }
 
+            const nameHtml = pinNameHtml(loc.name, shipyard);
             const labelHtml = filterOn
                 ? `<span class="ot-pin-head">
-                    <span class="ot-pin-name">${escapeHtml(loc.name)}</span>
+                    ${nameHtml}
                     ${timeHtml}
                   </span>${extraHtml}`
-                : `<span class="ot-pin-name">${escapeHtml(loc.name)}</span>${timeHtml}`;
+                : `${nameHtml}${timeHtml}`;
 
             return `
               <button type="button" class="${classes}"
@@ -659,7 +689,13 @@
             let timeEl = pin.querySelector('[data-pin-time]');
 
             if (!tracked) {
-                pin.classList.remove('is-ready', 'is-sold-out', 'is-tool-shop', 'is-shipyard');
+                pin.classList.remove('is-ready', 'is-sold-out', 'is-tool-shop');
+                const jo = pin.querySelector('[data-pin-jo]');
+                if (jo) {
+                    jo.classList.remove('is-bought');
+                    jo.title = '조선소 재료';
+                    jo.setAttribute('aria-label', '조선소 재료');
+                }
                 if (timeEl) timeEl.remove();
                 return;
             }
@@ -672,7 +708,13 @@
             pin.classList.toggle('is-sold-out', sold);
             pin.classList.toggle('is-ready', ready && !sold);
             pin.classList.toggle('is-tool-shop', toolShop);
-            pin.classList.toggle('is-shipyard', shipyard);
+
+            const jo = pin.querySelector('[data-pin-jo]');
+            if (jo) {
+                jo.classList.toggle('is-bought', shipyard);
+                jo.title = shipyard ? '조선소 구매함' : '조선소 재료';
+                jo.setAttribute('aria-label', shipyard ? '조선소 구매함' : '조선소 재료');
+            }
 
             if (!timeEl) {
                 timeEl = document.createElement('span');
@@ -938,6 +980,7 @@
         selectedPortNames = [];
         filterByPort = false;
         portFilterPinLabel = '';
+        portFilterPinLabels = null;
         renderGoodsCategories();
         renderViewTabs();
         renderMap();
@@ -953,6 +996,7 @@
         selectedPortNames = [];
         filterByPort = false;
         portFilterPinLabel = '';
+        portFilterPinLabels = null;
         renderViewTabs();
         renderMap();
         setStatus(currentView().label || '');
@@ -968,6 +1012,7 @@
         selectedPortNames = [];
         filterByPort = false;
         portFilterPinLabel = '';
+        portFilterPinLabels = null;
 
         if (isSpecialCategory(category)) {
             // 명산품 등: 단독 토글 — 켜면 일반 분류 전부
@@ -1631,6 +1676,7 @@
         selectedPortNames = [];
         filterByPort = false;
         portFilterPinLabel = '';
+        portFilterPinLabels = null;
         selectedGoodCategories = goodNames;
         filterByName = true;
         renderGoodsCategories();
@@ -1651,15 +1697,36 @@
         } catch (_) { /* ignore */ }
     };
 
-    /** 조선 티어 등: 항구 이름으로 맵 필터링 */
-    window.filterMapByPortNames = async function (portNames, statusMsg, pinLabel) {
+    /**
+     * 조선 티어 등: 항구 이름으로 맵 필터링
+     * @param {string[]} portNames
+     * @param {string} [statusMsg]
+     * @param {string|Record<string, string|string[]>|null} [pinLabelOrMap]
+     *   문자열이면 전 항구 공통 라벨,
+     *   객체면 항구별 라벨(문자열 또는 배열)
+     */
+    window.filterMapByPortNames = async function (portNames, statusMsg, pinLabelOrMap) {
         if (!portNames || !portNames.length) return;
 
         selectedGoodCategories = [];
         filterByName = false;
         selectedPortNames = portNames.slice();
         filterByPort = true;
-        portFilterPinLabel = pinLabel || statusMsg || '조선';
+
+        portFilterPinLabel = '';
+        portFilterPinLabels = null;
+        if (pinLabelOrMap && typeof pinLabelOrMap === 'object' && !Array.isArray(pinLabelOrMap)) {
+            const map = {};
+            for (const key of Object.keys(pinLabelOrMap)) {
+                const v = pinLabelOrMap[key];
+                if (Array.isArray(v)) map[key] = v.filter(Boolean).map(String);
+                else if (v != null && v !== '') map[key] = [String(v)];
+            }
+            portFilterPinLabels = map;
+        } else if (pinLabelOrMap != null && pinLabelOrMap !== '') {
+            portFilterPinLabel = String(pinLabelOrMap);
+        }
+
         renderGoodsCategories();
         renderViewTabs();
         renderMap();

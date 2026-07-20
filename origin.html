@@ -583,13 +583,9 @@
 
       .ot-actions-grid {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr 1fr 1fr;
         gap: 0.45rem;
         width: 100%;
-      }
-
-      .ot-actions-grid .ot-btn-visit {
-        grid-column: 1 / -1;
       }
 
       .ot-btn {
@@ -614,10 +610,10 @@
       .ot-btn-tool,
       .ot-btn-shipyard {
         width: 100%;
-        padding: 0.85rem 1rem;
-        font-size: 1.05rem;
+        padding: 0.7rem 0.45rem;
+        font-size: 0.92rem;
         font-weight: 650;
-        letter-spacing: 0.06em;
+        letter-spacing: 0.02em;
         border-radius: 10px;
       }
       .ot-btn-enter {
@@ -625,6 +621,7 @@
         color: #7dd3fc;
       }
       .ot-btn-enter:hover { background: rgba(14, 165, 233, 0.12); }
+      /* 구매 후 공통: 상점 구매와 동일 주황 */
       .ot-btn-visit {
         border-color: #fb923c;
         color: #fdba74;
@@ -638,29 +635,29 @@
       }
       .ot-btn-visit.is-on:hover { background: rgba(251, 146, 60, 0.3); }
       .ot-btn-tool {
-        border-color: #a78bfa;
-        color: #c4b5fd;
+        border-color: #fb923c;
+        color: #fdba74;
       }
-      .ot-btn-tool:hover { background: rgba(167, 139, 250, 0.12); }
+      .ot-btn-tool:hover { background: rgba(251, 146, 60, 0.12); }
       .ot-btn-tool.is-on {
-        background: rgba(167, 139, 250, 0.22);
-        border-color: #a78bfa;
-        color: #ede9fe;
-        box-shadow: inset 0 0 0 1px rgba(167, 139, 250, 0.35);
+        background: rgba(251, 146, 60, 0.22);
+        border-color: #fb923c;
+        color: #ffedd5;
+        box-shadow: inset 0 0 0 1px rgba(251, 146, 60, 0.35);
       }
-      .ot-btn-tool.is-on:hover { background: rgba(167, 139, 250, 0.3); }
+      .ot-btn-tool.is-on:hover { background: rgba(251, 146, 60, 0.3); }
       .ot-btn-shipyard {
-        border-color: #34d399;
-        color: #6ee7b7;
+        border-color: #fb923c;
+        color: #fdba74;
       }
-      .ot-btn-shipyard:hover { background: rgba(52, 211, 153, 0.12); }
+      .ot-btn-shipyard:hover { background: rgba(251, 146, 60, 0.12); }
       .ot-btn-shipyard.is-on {
-        background: rgba(52, 211, 153, 0.22);
-        border-color: #34d399;
-        color: #d1fae5;
-        box-shadow: inset 0 0 0 1px rgba(52, 211, 153, 0.35);
+        background: rgba(251, 146, 60, 0.22);
+        border-color: #fb923c;
+        color: #ffedd5;
+        box-shadow: inset 0 0 0 1px rgba(251, 146, 60, 0.35);
       }
-      .ot-btn-shipyard.is-on:hover { background: rgba(52, 211, 153, 0.3); }
+      .ot-btn-shipyard.is-on:hover { background: rgba(251, 146, 60, 0.3); }
       .ot-btn-danger { border-color: rgba(248, 113, 113, 0.45); color: #fca5a5; }
       .ot-btn-danger:hover { background: rgba(248, 113, 113, 0.1); }
       .ot-btn-ghost { color: var(--text); }
@@ -784,33 +781,8 @@
         transform: none;
       }
 
-      /* 조선소 구매: 마름모 */
-      .ot-pin.is-shipyard:not(.is-tool-shop) .ot-pin-marker {
-        width: 12px;
-        height: 12px;
-        border-radius: 2px;
-        transform: rotate(45deg);
-      }
-
-      /* 도구점+조선소: 네모 + 바깥 링 */
-      .ot-pin.is-tool-shop.is-shipyard .ot-pin-marker {
-        width: 16px;
-        height: 16px;
-        border-radius: 3px;
-        transform: none;
-        box-shadow:
-          0 0 0 2px rgba(52, 211, 153, 0.85),
-          0 1px 4px rgba(0, 0, 0, 0.35);
-      }
-
       .ot-pin.is-active .ot-pin-marker {
         box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.5);
-      }
-
-      .ot-pin.is-tool-shop.is-shipyard.is-active .ot-pin-marker {
-        box-shadow:
-          0 0 0 2px rgba(52, 211, 153, 0.9),
-          0 0 0 5px rgba(14, 165, 233, 0.45);
       }
 
       .ot-pin-name {
@@ -823,6 +795,36 @@
         padding: 0.2rem 0.5rem;
         border-radius: 5px;
         border: 1px solid #3a3a44;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.28rem;
+      }
+
+      /* 조선소 조 뱃지 — 구매 전 흐림 / 구매 후 상점·도구점과 동일 주황 */
+      .ot-pin-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 1.25em;
+        height: 1.35em;
+        padding: 0 0.28rem;
+        border-radius: 4px;
+        font-size: 0.92em;
+        font-weight: 800;
+        line-height: 1;
+        letter-spacing: 0;
+      }
+
+      .ot-pin-badge-jo {
+        border: 1px solid rgba(148, 163, 184, 0.45);
+        background: rgba(71, 85, 105, 0.35);
+        color: #94a3b8;
+      }
+
+      .ot-pin-badge-jo.is-bought {
+        border-color: rgba(251, 146, 60, 0.7);
+        background: rgba(251, 146, 60, 0.28);
+        color: #fdba74;
       }
 
       .ot-pin-time {
@@ -867,16 +869,9 @@
         transform: none;
       }
 
-      .ot-map.is-goods-filter .ot-pin.is-shipyard:not(.is-tool-shop) .ot-pin-marker {
-        width: 14px;
-        height: 14px;
-        border-radius: 2px;
-        transform: rotate(45deg);
-      }
-
       .ot-pin-good.is-shipyard-mat {
-        border-color: rgba(52, 211, 153, 0.45);
-        color: #a7f3d0;
+        border-color: rgba(251, 146, 60, 0.4);
+        color: #fdba74;
       }
 
       .ot-pin-head {
@@ -1918,9 +1913,14 @@
         line-height: 1.35;
       }
 
+      .ot-shipyard-toolbar {
+        justify-content: space-between;
+        width: 100%;
+      }
+
       .ot-shipyard-tiers {
-        display: flex;
-        flex-direction: column;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
         gap: 0.28rem;
       }
 
@@ -1928,13 +1928,17 @@
         display: flex;
         align-items: center;
         justify-content: flex-start;
-        gap: 0.55rem;
+        gap: 0.4rem;
         width: 100%;
+        min-width: 0;
         text-align: left;
+        padding-left: 0.45rem;
+        padding-right: 0.45rem;
       }
 
       .ot-shipyard-tier-num {
-        flex: 0 0 2.6rem;
+        flex: 0 0 auto;
+        min-width: 2.2rem;
         font-weight: 700;
         font-variant-numeric: tabular-nums;
         color: #7dd3fc;
@@ -1949,6 +1953,7 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        font-size: 0.9em;
       }
 
       /* ===== 구매수량 ===== */
@@ -2200,14 +2205,14 @@
 
           <div class="ot-side-tools">
             <div class="ot-side-tool-tabs" role="tablist" aria-label="도구 선택">
-              <button type="button" class="ot-side-tool-tab is-active" data-tool="goods" role="tab" aria-selected="true">교역품 분류</button>
+              <button type="button" class="ot-side-tool-tab is-active" data-tool="goods" role="tab" aria-selected="true">교역품</button>
               <button type="button" class="ot-side-tool-tab" data-tool="qty" role="tab" aria-selected="false">구매수량</button>
               <button type="button" class="ot-side-tool-tab" data-tool="barter" role="tab" aria-selected="false">물물교환</button>
               <button type="button" class="ot-side-tool-tab" data-tool="shipyard" role="tab" aria-selected="false">조선</button>
               <button type="button" class="ot-side-tool-tab" data-tool="recommend" role="tab" aria-selected="false">추천</button>
             </div>
 
-            <section id="ot-tool-goods" class="ot-side-tool-pane ot-goods-section" data-tool-pane="goods" role="tabpanel" aria-label="교역품 분류">
+            <section id="ot-tool-goods" class="ot-side-tool-pane ot-goods-section" data-tool-pane="goods" role="tabpanel" aria-label="교역품">
               <div id="ot-goods-cats" class="ot-goods-cats" role="group" aria-label="분류 선택"></div>
             </section>
 
@@ -2279,7 +2284,9 @@
               <div class="ot-shipyard-panel">
                 <p id="ot-shipyard-reset-meta" class="ot-shipyard-reset-meta">매주 월요일 00:00 (KST) 리셋</p>
                 <div class="ot-goods-cats">
-                  <div class="ot-goods-cats-special" role="group" aria-label="필터 공통">
+                  <div class="ot-goods-cats-special ot-shipyard-toolbar" role="group" aria-label="필터 공통">
+                    <button type="button" id="ot-shipyard-select-all" class="ot-cat-btn"
+                      aria-pressed="false" aria-label="전체선택">전체선택</button>
                     <button type="button" id="ot-shipyard-clear" class="ot-cat-btn ot-cat-clear is-dim" disabled
                       aria-label="필터 해제">필터 해제</button>
                   </div>

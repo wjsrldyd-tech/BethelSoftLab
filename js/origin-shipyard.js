@@ -120,8 +120,8 @@
         },
     ];
 
-    /** @type {string|null} */
-    let selectedTierId = null;
+    /** @type {Set<string>} 선택된 티어 id */
+    const selected = new Set();
 
     function escapeHtml(s) {
         return String(s)
@@ -135,10 +135,28 @@
         return SHIPYARD_TIERS.find(t => t.id === id) || null;
     }
 
+    function selectedTiers() {
+        return SHIPYARD_TIERS.filter(t => selected.has(t.id));
+    }
+
+    function portsForSelected() {
+        const set = new Set();
+        for (const t of selectedTiers()) {
+            for (const p of (t.ports || [])) set.add(p);
+        }
+        return Array.from(set);
+    }
+
+    function isAllSelected() {
+        return SHIPYARD_TIERS.length > 0
+            && SHIPYARD_TIERS.every(t => selected.has(t.id));
+    }
+
     function els() {
         return {
             list: document.getElementById('ot-shipyard-tiers'),
             clearBtn: document.getElementById('ot-shipyard-clear'),
+            selectAllBtn: document.getElementById('ot-shipyard-select-all'),
             resetMeta: document.getElementById('ot-shipyard-reset-meta'),
         };
     }
@@ -151,11 +169,11 @@
     }
 
     function render() {
-        const { list, clearBtn, resetMeta } = els();
+        const { list, clearBtn, selectAllBtn, resetMeta } = els();
         if (!list) return;
 
         list.innerHTML = SHIPYARD_TIERS.map(t => {
-            const on = selectedTierId === t.id;
+            const on = selected.has(t.id);
             return `<button type="button" class="ot-cat-btn ot-shipyard-tier-btn${on ? ' is-active' : ''}"
               data-shipyard-tier="${escapeHtml(t.id)}"
               aria-pressed="${on ? 'true' : 'false'}"
@@ -165,42 +183,76 @@
             </button>`;
         }).join('');
 
-        const has = !!selectedTierId;
+        const has = selected.size > 0;
+        const allOn = isAllSelected();
         if (clearBtn) {
             clearBtn.disabled = !has;
             clearBtn.classList.toggle('is-dim', !has);
+        }
+        if (selectAllBtn) {
+            selectAllBtn.classList.toggle('is-active', allOn);
+            selectAllBtn.setAttribute('aria-pressed', allOn ? 'true' : 'false');
         }
         if (resetMeta) {
             resetMeta.textContent = nextMondayResetLabel();
         }
     }
 
+    function pinLabelsByPort(tiers) {
+        /** @type {Record<string, string[]>} */
+        const map = {};
+        for (const t of tiers) {
+            const label = `${t.tier} · ${t.material}`;
+            for (const p of (t.ports || [])) {
+                if (!map[p]) map[p] = [];
+                if (map[p].indexOf(label) === -1) map[p].push(label);
+            }
+        }
+        return map;
+    }
+
     async function applyFilter() {
         render();
-        const tier = getTier(selectedTierId);
-        if (!tier) {
+        const tiers = selectedTiers();
+        if (!tiers.length) {
             if (typeof window.clearOriginPortNameFilter === 'function') {
                 window.clearOriginPortNameFilter();
             }
             return;
         }
-        if (typeof window.filterMapByPortNames === 'function') {
-            await window.filterMapByPortNames(
-                tier.ports,
-                `조선 티어 ${tier.tier} · ${tier.material}`,
-                `${tier.tier} · ${tier.material}`
-            );
-        }
+
+        const ports = portsForSelected();
+        if (!ports.length || typeof window.filterMapByPortNames !== 'function') return;
+
+        const labels = pinLabelsByPort(tiers);
+        const status = tiers.length === 1
+            ? `조선 티어 ${tiers[0].tier} · ${tiers[0].material}`
+            : (isAllSelected()
+                ? `조선 티어 전체 · ${ports.length}항구`
+                : `조선 티어 ${tiers.length}개 · ${ports.length}항구`);
+
+        await window.filterMapByPortNames(ports, status, labels);
     }
 
     function toggle(tierId) {
-        selectedTierId = (selectedTierId === tierId) ? null : tierId;
+        if (!tierId) return;
+        if (selected.has(tierId)) selected.delete(tierId);
+        else selected.add(tierId);
+        applyFilter();
+    }
+
+    function selectAll() {
+        if (isAllSelected()) {
+            selected.clear();
+        } else {
+            for (const t of SHIPYARD_TIERS) selected.add(t.id);
+        }
         applyFilter();
     }
 
     function clearAll() {
-        if (!selectedTierId) return;
-        selectedTierId = null;
+        if (!selected.size) return;
+        selected.clear();
         render();
         if (typeof window.clearOriginPortNameFilter === 'function') {
             window.clearOriginPortNameFilter();
@@ -209,17 +261,17 @@
 
     function onGoodsFilterChanged() {
         // 교역품/추천 필터가 켜지면 조선 티어 선택 UI만 해제 (맵은 그쪽이 담당)
-        if (!selectedTierId) return;
+        if (!selected.size) return;
         const portFilter = (typeof window.getOriginPortNameFilter === 'function')
             ? window.getOriginPortNameFilter()
             : null;
         if (portFilter && portFilter.length) return;
-        selectedTierId = null;
+        selected.clear();
         render();
     }
 
     function init() {
-        const { list, clearBtn } = els();
+        const { list, clearBtn, selectAllBtn } = els();
         if (!list) return;
 
         list.addEventListener('click', (e) => {
@@ -227,6 +279,9 @@
             if (!btn || !list.contains(btn)) return;
             toggle(btn.dataset.shipyardTier);
         });
+        if (selectAllBtn) {
+            selectAllBtn.addEventListener('click', selectAll);
+        }
         if (clearBtn) {
             clearBtn.addEventListener('click', clearAll);
         }
