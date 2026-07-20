@@ -999,24 +999,54 @@
         }
     }
 
-    async function saveAnchor(id, iso, opts) {
-        const port = ports.find(p => p.id === id);
-        if (!port) return;
+    /** 메모리·화면에 anchor 즉시 반영 (클릭 시점 타이밍 유지) */
+    function applyAnchorLocal(port, iso, opts) {
         const clearSold = opts && opts.clearSoldOut;
         const sync = buildSyncStamp(port.syncedAt);
+        port.anchorAt = iso;
+        port.syncedAt = sync.syncedAt;
+        port.syncedElapsedMin = sync.syncedElapsedMin;
+        if (clearSold) {
+            port.soldOut = false;
+            port.soldOutAt = null;
+        }
+    }
+
+    function refreshAnchorUi(port) {
+        tickPanel();
+        tickMapPins();
+        if (!panelEl || !port) return;
+        if (findPortByName(selectedName)?.id !== port.id) return;
+        const syncEl = panelEl.querySelector('[data-role="synced-at"]');
+        if (syncEl) {
+            syncEl.textContent = formatSyncLine(port.syncedAt, port.syncedElapsedMin);
+        }
+    }
+
+    /** DB 저장 — 실패해도 로컬 반영은 유지 */
+    async function persistAnchorToDb(port) {
         await window.originDb.savePort({
             ...port,
-            anchorAt: iso,
             intervalMin: INTERVAL_MIN,
-            syncedAt: sync.syncedAt,
-            syncedElapsedMin: sync.syncedElapsedMin,
-            soldOut: clearSold ? false : !!port.soldOut,
-            soldOutAt: clearSold ? null : (port.soldOutAt || null),
+            soldOut: !!port.soldOut,
+            soldOutAt: port.soldOutAt || null,
             toolShopBought: !!port.toolShopBought,
             toolShopBoughtAt: port.toolShopBoughtAt || null,
         });
-        await reload(true);
+    }
+
+    function saveAnchor(id, iso, opts) {
+        const port = ports.find(p => p.id === id);
+        if (!port) return;
+
+        applyAnchorLocal(port, iso, opts);
+        refreshAnchorUi(port);
         setStatus(`「${port.portName}」남은 시간을 반영했습니다.`);
+
+        persistAnchorToDb(port).catch((err) => {
+            console.error('[OriginTimer] anchor 저장 실패', err);
+            setStatus(`「${port.portName}」DB 저장 실패 (화면은 반영됨): ${err.message || err}`, true);
+        });
     }
 
     // ─── 이벤트 ──────────────────────────────────────────────────────
@@ -1247,8 +1277,7 @@
                         secs = 0;
                     }
                     const remainingMs = (mins * 60 + secs) * 1000;
-                    btn.disabled = true;
-                    await saveAnchor(tracked.id, remainingToAnchor(remainingMs));
+                    saveAnchor(tracked.id, remainingToAnchor(remainingMs));
                     return;
                 }
 
@@ -1288,8 +1317,7 @@
                     if (!confirm(`「${tracked.portName}」재화로 재고를 초기화했습니까?\n30분 주기가 지금부터 다시 시작됩니다.`)) {
                         return;
                     }
-                    btn.disabled = true;
-                    await saveAnchor(tracked.id, new Date().toISOString(), { clearSoldOut: true });
+                    saveAnchor(tracked.id, new Date().toISOString(), { clearSoldOut: true });
                     setStatus(`「${tracked.portName}」재화 초기화 — 30분 주기를 지금부터 다시 시작합니다.`);
                     return;
                 }
