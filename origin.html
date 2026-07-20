@@ -2205,22 +2205,22 @@
 
           <div class="ot-side-tools">
             <div class="ot-side-tool-tabs" role="tablist" aria-label="도구 선택">
-              <button type="button" class="ot-side-tool-tab is-active" data-tool="goods" role="tab" aria-selected="true">교역품</button>
-              <button type="button" class="ot-side-tool-tab" data-tool="qty" role="tab" aria-selected="false">구매수량</button>
+              <button type="button" class="ot-side-tool-tab is-active" data-tool="qty" role="tab" aria-selected="true">구매수량</button>
+              <button type="button" class="ot-side-tool-tab" data-tool="goods" role="tab" aria-selected="false">교역품</button>
               <button type="button" class="ot-side-tool-tab" data-tool="barter" role="tab" aria-selected="false">물물교환</button>
               <button type="button" class="ot-side-tool-tab" data-tool="shipyard" role="tab" aria-selected="false">조선</button>
               <button type="button" class="ot-side-tool-tab" data-tool="recommend" role="tab" aria-selected="false">추천</button>
             </div>
 
-            <section id="ot-tool-goods" class="ot-side-tool-pane ot-goods-section" data-tool-pane="goods" role="tabpanel" aria-label="교역품">
-              <div id="ot-goods-cats" class="ot-goods-cats" role="group" aria-label="분류 선택"></div>
-            </section>
-
-            <section id="ot-tool-qty" class="ot-side-tool-pane" data-tool-pane="qty" role="tabpanel" aria-label="구매수량" hidden>
+            <section id="ot-tool-qty" class="ot-side-tool-pane" data-tool-pane="qty" role="tabpanel" aria-label="구매수량">
               <div class="ot-qty-panel">
                 <div id="ot-qty-list" class="ot-qty-list" role="list"></div>
                 <p id="ot-qty-status" class="ot-qty-status" aria-live="polite"></p>
               </div>
+            </section>
+
+            <section id="ot-tool-goods" class="ot-side-tool-pane ot-goods-section" data-tool-pane="goods" role="tabpanel" aria-label="교역품" hidden>
+              <div id="ot-goods-cats" class="ot-goods-cats" role="group" aria-label="분류 선택"></div>
             </section>
 
             <section id="ot-tool-barter" class="ot-side-tool-pane" data-tool-pane="barter" role="tabpanel" aria-label="물물교환" hidden>
