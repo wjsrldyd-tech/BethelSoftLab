@@ -240,12 +240,31 @@
         return (data || []).map(rowToPort);
     }
 
+    /** port.id가 없을 때 같은 port_name의 기존 행을 찾아 id를 재사용(중복 생성 방지) */
+    async function findExistingPortId(tenantId, portName) {
+        if (!portName) return null;
+        const { data, error } = await client
+            .from(TBL)
+            .select('id')
+            .eq('tenant_id', tenantId)
+            .eq('port_name', portName)
+            .limit(1)
+            .maybeSingle();
+        if (error) {
+            if (isMissingRelationError(error)) return null;
+            throw error;
+        }
+        return data ? data.id : null;
+    }
+
     async function savePort(port) {
         const tenantId = getTenantId();
+        const portName = (port.portName || '').trim();
+        const id = port.id || await findExistingPortId(tenantId, portName) || genId('op');
         const row = {
-            id:           port.id || genId('op'),
+            id,
             tenant_id:    tenantId,
-            port_name:    (port.portName || '').trim(),
+            port_name:    portName,
             anchor_at:    port.anchorAt instanceof Date
                 ? port.anchorAt.toISOString()
                 : port.anchorAt,
@@ -589,7 +608,11 @@
             ),
             savePort: async (port) => {
                 const all = loadAll();
-                const id = port.id || genId('op');
+                const portName = (port.portName || '').trim();
+                const existingByName = !port.id && portName
+                    ? all.find(e => e.portName === portName)
+                    : null;
+                const id = port.id || (existingByName && existingByName.id) || genId('op');
                 const prev = all.find(e => e.id === id);
                 const soldOut = port.soldOut != null ? !!port.soldOut : !!(prev && prev.soldOut);
                 const toolShopBought = port.toolShopBought != null
@@ -598,7 +621,7 @@
                 const row = {
                     id,
                     tenantId: getTenantId(),
-                    portName: (port.portName || '').trim(),
+                    portName,
                     anchorAt: port.anchorAt instanceof Date
                         ? port.anchorAt.toISOString()
                         : port.anchorAt,
