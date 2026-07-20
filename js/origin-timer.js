@@ -18,6 +18,8 @@
     }
     const DEFAULT_PORT = '이스탄불';
     const DEFAULT_VIEW = 'eastmed';
+    const LS_MAP_VIEW = 'originMapViewId';
+    const LS_MAP_PORT = 'originMapPortName';
     const MAP_VIEWS = window.ORIGIN_MAP_VIEWS || [];
     const DRAG_THRESHOLD = 4;
     const SWIPE_THRESHOLD = 48;
@@ -101,6 +103,28 @@
             return window.getOriginMapView(selectedViewId);
         }
         return MAP_VIEWS[0] || { id: DEFAULT_VIEW, label: '지중해,흑해', anchor: DEFAULT_PORT };
+    }
+
+    /** 현재 해역·선택 항구 — 새로고침 복원용 (로컬만) */
+    function saveMapUiState() {
+        try {
+            if (selectedViewId) localStorage.setItem(LS_MAP_VIEW, selectedViewId);
+            if (selectedName) localStorage.setItem(LS_MAP_PORT, selectedName);
+        } catch (_) { /* ignore */ }
+    }
+
+    function loadMapUiState() {
+        try {
+            const viewId = localStorage.getItem(LS_MAP_VIEW);
+            if (viewId && MAP_VIEWS.some(v => v.id === viewId)) {
+                selectedViewId = viewId;
+            }
+            const portName = localStorage.getItem(LS_MAP_PORT);
+            if (portName) {
+                const rename = window.renameOriginPort || (n => n);
+                selectedName = rename(portName) || portName;
+            }
+        } catch (_) { /* ignore */ }
     }
 
     // ─── 시간 계산 ───────────────────────────────────────────────────
@@ -339,6 +363,7 @@
     function selectView(viewId) {
         if (!viewId) return;
         selectedViewId = viewId;
+        saveMapUiState();
         renderViewTabs();
         renderMap();
         const view = currentView();
@@ -871,6 +896,7 @@
 
     function selectPort(name) {
         selectedName = name;
+        saveMapUiState();
         renderMap();
         renderPanel();
         if (typeof window.refreshOriginGoodQty === 'function') {
@@ -958,7 +984,9 @@
             }));
             const rename = window.renameOriginPort || (n => n);
             if (prev) selectedName = rename(prev);
-            else if (!selectedName && findPortByName(DEFAULT_PORT)) selectedName = DEFAULT_PORT;
+            else if (selectedName) selectedName = rename(selectedName);
+            else if (findPortByName(DEFAULT_PORT)) selectedName = DEFAULT_PORT;
+            saveMapUiState();
             refreshAll();
             if (window.originDb.isLocal) {
                 setStatus('로컬 저장 모드 (Supabase 미연결 또는 테이블 미생성)', false);
@@ -1381,6 +1409,7 @@
             return;
         }
         syncGameMonthIfNeeded();
+        loadMapUiState();
         renderViewTabs();
         renderGoodsCategories();
         selectView(selectedViewId);
