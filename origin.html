@@ -621,7 +621,7 @@
         color: #7dd3fc;
       }
       .ot-btn-enter:hover { background: rgba(14, 165, 233, 0.12); }
-      /* 구매 후 공통: 상점 구매와 동일 주황 */
+      /* 상점 구매 — 주황 (맵 핀 is-sold-out과 동일) */
       .ot-btn-visit {
         border-color: #fb923c;
         color: #fdba74;
@@ -634,30 +634,32 @@
         box-shadow: inset 0 0 0 1px rgba(251, 146, 60, 0.35);
       }
       .ot-btn-visit.is-on:hover { background: rgba(251, 146, 60, 0.3); }
+      /* 도구점 — 보라 (맵은 네모 핀으로 구분, 색 통일 안 함) */
       .ot-btn-tool {
-        border-color: #fb923c;
-        color: #fdba74;
+        border-color: #a78bfa;
+        color: #c4b5fd;
       }
-      .ot-btn-tool:hover { background: rgba(251, 146, 60, 0.12); }
+      .ot-btn-tool:hover { background: rgba(167, 139, 250, 0.12); }
       .ot-btn-tool.is-on {
-        background: rgba(251, 146, 60, 0.22);
-        border-color: #fb923c;
-        color: #ffedd5;
-        box-shadow: inset 0 0 0 1px rgba(251, 146, 60, 0.35);
+        background: rgba(167, 139, 250, 0.22);
+        border-color: #a78bfa;
+        color: #ede9fe;
+        box-shadow: inset 0 0 0 1px rgba(167, 139, 250, 0.35);
       }
-      .ot-btn-tool.is-on:hover { background: rgba(251, 146, 60, 0.3); }
+      .ot-btn-tool.is-on:hover { background: rgba(167, 139, 250, 0.3); }
+      /* 조선소 — 초록 (조 뱃지와 별도, 상점/도구점과 혼동 방지) */
       .ot-btn-shipyard {
-        border-color: #fb923c;
-        color: #fdba74;
+        border-color: #4ade80;
+        color: #86efac;
       }
-      .ot-btn-shipyard:hover { background: rgba(251, 146, 60, 0.12); }
+      .ot-btn-shipyard:hover { background: rgba(74, 222, 128, 0.12); }
       .ot-btn-shipyard.is-on {
-        background: rgba(251, 146, 60, 0.22);
-        border-color: #fb923c;
-        color: #ffedd5;
-        box-shadow: inset 0 0 0 1px rgba(251, 146, 60, 0.35);
+        background: rgba(74, 222, 128, 0.22);
+        border-color: #4ade80;
+        color: #dcfce7;
+        box-shadow: inset 0 0 0 1px rgba(74, 222, 128, 0.35);
       }
-      .ot-btn-shipyard.is-on:hover { background: rgba(251, 146, 60, 0.3); }
+      .ot-btn-shipyard.is-on:hover { background: rgba(74, 222, 128, 0.3); }
       .ot-btn-danger { border-color: rgba(248, 113, 113, 0.45); color: #fca5a5; }
       .ot-btn-danger:hover { background: rgba(248, 113, 113, 0.1); }
       .ot-btn-ghost { color: var(--text); }
