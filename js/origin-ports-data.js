@@ -495,10 +495,11 @@
         '수바': 'tropical',
         '사마라이': 'tropical',
 
-        // 한대 (3개)
+        // 한대 (4개)
         '우수아이아': 'arctic',
         '누탁': 'arctic',
         '레이캬비크': 'arctic',
+        '산타섬': 'arctic',
     };
 
     window.getOriginPortsByRegion = function (region) {
