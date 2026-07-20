@@ -617,7 +617,7 @@
             { name: '시어 버터', category: '의약품', specialty: true, lock: 'monopoly', peak: ['봄', '우기'], off: ['가을'] },
         ],
         산후안: [
-            { name: '로그우드', category: '염료', specialty: true },
+            { name: '로그우드', category: '염료', specialty: true, peak: ['여름', '우기'], off: ['겨울', '건기'] },
             { name: '사금', category: '귀금속', specialty: false, peak: ['겨울', '건기'], off: ['여름', '우기'] },
             { name: '단호박', category: '식료품', specialty: false, peak: ['가을', '건기'], off: ['봄'] },
             { name: '럼', category: '주류', specialty: false, peak: ['겨울', '건기'], off: ['여름', '우기'] },
