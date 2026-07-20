@@ -588,6 +588,10 @@
         width: 100%;
       }
 
+      .ot-actions-grid .ot-btn-visit {
+        grid-column: 1 / -1;
+      }
+
       .ot-btn {
         padding: 0.42rem 0.75rem;
         border-radius: 8px;
@@ -607,7 +611,8 @@
       .ot-btn-accent:hover { background: rgba(245, 158, 11, 0.12); }
       .ot-btn-enter,
       .ot-btn-visit,
-      .ot-btn-tool {
+      .ot-btn-tool,
+      .ot-btn-shipyard {
         width: 100%;
         padding: 0.85rem 1rem;
         font-size: 1.05rem;
@@ -644,6 +649,18 @@
         box-shadow: inset 0 0 0 1px rgba(167, 139, 250, 0.35);
       }
       .ot-btn-tool.is-on:hover { background: rgba(167, 139, 250, 0.3); }
+      .ot-btn-shipyard {
+        border-color: #34d399;
+        color: #6ee7b7;
+      }
+      .ot-btn-shipyard:hover { background: rgba(52, 211, 153, 0.12); }
+      .ot-btn-shipyard.is-on {
+        background: rgba(52, 211, 153, 0.22);
+        border-color: #34d399;
+        color: #d1fae5;
+        box-shadow: inset 0 0 0 1px rgba(52, 211, 153, 0.35);
+      }
+      .ot-btn-shipyard.is-on:hover { background: rgba(52, 211, 153, 0.3); }
       .ot-btn-danger { border-color: rgba(248, 113, 113, 0.45); color: #fca5a5; }
       .ot-btn-danger:hover { background: rgba(248, 113, 113, 0.1); }
       .ot-btn-ghost { color: var(--text); }
@@ -767,8 +784,33 @@
         transform: none;
       }
 
+      /* 조선소 구매: 마름모 */
+      .ot-pin.is-shipyard:not(.is-tool-shop) .ot-pin-marker {
+        width: 12px;
+        height: 12px;
+        border-radius: 2px;
+        transform: rotate(45deg);
+      }
+
+      /* 도구점+조선소: 네모 + 바깥 링 */
+      .ot-pin.is-tool-shop.is-shipyard .ot-pin-marker {
+        width: 16px;
+        height: 16px;
+        border-radius: 3px;
+        transform: none;
+        box-shadow:
+          0 0 0 2px rgba(52, 211, 153, 0.85),
+          0 1px 4px rgba(0, 0, 0, 0.35);
+      }
+
       .ot-pin.is-active .ot-pin-marker {
         box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.5);
+      }
+
+      .ot-pin.is-tool-shop.is-shipyard.is-active .ot-pin-marker {
+        box-shadow:
+          0 0 0 2px rgba(52, 211, 153, 0.9),
+          0 0 0 5px rgba(14, 165, 233, 0.45);
       }
 
       .ot-pin-name {
@@ -823,6 +865,18 @@
         height: 18px;
         border-radius: 3px;
         transform: none;
+      }
+
+      .ot-map.is-goods-filter .ot-pin.is-shipyard:not(.is-tool-shop) .ot-pin-marker {
+        width: 14px;
+        height: 14px;
+        border-radius: 2px;
+        transform: rotate(45deg);
+      }
+
+      .ot-pin-good.is-shipyard-mat {
+        border-color: rgba(52, 211, 153, 0.45);
+        color: #a7f3d0;
       }
 
       .ot-pin-head {
@@ -1848,6 +1902,55 @@
         grid-template-columns: repeat(5, minmax(0, 1fr));
       }
 
+      /* ===== 조선 티어 ===== */
+      .ot-shipyard-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+        min-height: 0;
+        flex: 1 1 auto;
+      }
+
+      .ot-shipyard-reset-meta {
+        margin: 0;
+        font-size: 0.82rem;
+        color: #94a3b8;
+        line-height: 1.35;
+      }
+
+      .ot-shipyard-tiers {
+        display: flex;
+        flex-direction: column;
+        gap: 0.28rem;
+      }
+
+      .ot-shipyard-tier-btn {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 0.55rem;
+        width: 100%;
+        text-align: left;
+      }
+
+      .ot-shipyard-tier-num {
+        flex: 0 0 2.6rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        color: #7dd3fc;
+      }
+
+      .ot-shipyard-tier-btn.is-active .ot-shipyard-tier-num {
+        color: #e0f2fe;
+      }
+
+      .ot-shipyard-tier-mat {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
       /* ===== 구매수량 ===== */
       .ot-qty-panel {
         display: flex;
@@ -2100,6 +2203,7 @@
               <button type="button" class="ot-side-tool-tab is-active" data-tool="goods" role="tab" aria-selected="true">교역품 분류</button>
               <button type="button" class="ot-side-tool-tab" data-tool="qty" role="tab" aria-selected="false">구매수량</button>
               <button type="button" class="ot-side-tool-tab" data-tool="barter" role="tab" aria-selected="false">물물교환</button>
+              <button type="button" class="ot-side-tool-tab" data-tool="shipyard" role="tab" aria-selected="false">조선</button>
               <button type="button" class="ot-side-tool-tab" data-tool="recommend" role="tab" aria-selected="false">추천</button>
             </div>
 
@@ -2171,6 +2275,20 @@
               </div>
             </section>
 
+            <section id="ot-tool-shipyard" class="ot-side-tool-pane" data-tool-pane="shipyard" role="tabpanel" aria-label="조선" hidden>
+              <div class="ot-shipyard-panel">
+                <p id="ot-shipyard-reset-meta" class="ot-shipyard-reset-meta">매주 월요일 00:00 (KST) 리셋</p>
+                <div class="ot-goods-cats">
+                  <div class="ot-goods-cats-special" role="group" aria-label="필터 공통">
+                    <button type="button" id="ot-shipyard-clear" class="ot-cat-btn ot-cat-clear is-dim" disabled
+                      aria-label="필터 해제">필터 해제</button>
+                  </div>
+                  <div class="ot-goods-cats-divider" aria-hidden="true"></div>
+                  <div id="ot-shipyard-tiers" class="ot-shipyard-tiers ot-goods-cats-normal" role="group" aria-label="조선 티어"></div>
+                </div>
+              </div>
+            </section>
+
             <section id="ot-tool-recommend" class="ot-side-tool-pane" data-tool-pane="recommend" role="tabpanel" aria-label="추천" hidden>
               <div class="ot-recommend-panel">
                 <div class="ot-goods-cats">
@@ -2200,6 +2318,7 @@
     <script src="js/origin-ports-coords.js"></script>
     <script src="js/origin-port-goods.js"></script>
     <script src="js/origin-recommend.js"></script>
+    <script src="js/origin-shipyard.js"></script>
     <script src="js/origin-barter.js"></script>
     <script src="js/origin-barter-sales.js"></script>
     <script src="js/origin-good-qty.js"></script>

@@ -48,6 +48,11 @@
     /** @type {string[]} 선택된 교역품 분류 (명산품은 단독, 일반 분류는 OR 복수) */
     let selectedGoodCategories = [];
     let filterByName = false; // true이면 selectedGoodCategories가 이름 배열
+    /** @type {string[]} 조선 티어 필터 — 항구명 목록 */
+    let selectedPortNames = [];
+    let filterByPort = false;
+    /** @type {string} 항구 필터 시 핀 아래 표시 문구 (재료명 등) */
+    let portFilterPinLabel = '';
     /** @type {Record<string, Record<string, number>>} portName -> goodName -> plainQty */
     let goodQtyCache = {};
     let goodQtyCacheLoaded = false;
@@ -258,6 +263,72 @@
         return kstDateKey(at) === kstDateKey(now);
     }
 
+    /** 현실 KST 기준 해당 주의 월요일(YYYY-MM-DD) */
+    function kstMondayWeekKey(ms) {
+        const parts = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'Asia/Seoul',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            weekday: 'short',
+        }).formatToParts(new Date(ms));
+        const get = (t) => {
+            const p = parts.find(x => x.type === t);
+            return p ? p.value : '';
+        };
+        const y = parseInt(get('year'), 10);
+        const m = parseInt(get('month'), 10);
+        const d = parseInt(get('day'), 10);
+        const wd = get('weekday'); // Sun Mon Tue ...
+        const wdMap = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+        const dayIdx = wdMap[wd] != null ? wdMap[wd] : 1;
+        // 월요일=0 으로 보정 (일요일이면 6일 전)
+        const daysFromMon = (dayIdx + 6) % 7;
+        const noonUtc = Date.UTC(y, m - 1, d, 12, 0, 0);
+        const mon = new Date(noonUtc - daysFromMon * 24 * 60 * 60 * 1000);
+        const yy = mon.getUTCFullYear();
+        const mm = String(mon.getUTCMonth() + 1).padStart(2, '0');
+        const dd = String(mon.getUTCDate()).padStart(2, '0');
+        return yy + '-' + mm + '-' + dd;
+    }
+
+    /** 조선소 구매: 현실 KST 같은 주(월~일)면 유효, 다음 월요일 00:00 지나면 해제 */
+    function isShipyardBought(port, now = Date.now()) {
+        if (!port || !port.shipyardBought) return false;
+        const at = port.shipyardBoughtAt ? parseAnchorMs(port.shipyardBoughtAt) : NaN;
+        if (!Number.isFinite(at)) return false;
+        return kstMondayWeekKey(at) === kstMondayWeekKey(now);
+    }
+
+    /** 다음 월요일 KST 00:00까지 남은 시간 문구 */
+    window.getOriginShipyardResetLabel = function (now = Date.now()) {
+        const weekKey = kstMondayWeekKey(now);
+        // weekKey = 이번 주 월요일. 다음 리셋 = 다음 월요일 00:00 KST
+        const [y, m, d] = weekKey.split('-').map(n => parseInt(n, 10));
+        // KST 월요일 00:00 = UTC 일요일 15:00 (UTC+9)
+        const thisMonKstUtc = Date.UTC(y, m - 1, d, 0, 0, 0) - 9 * 60 * 60 * 1000;
+        let nextReset = thisMonKstUtc + 7 * 24 * 60 * 60 * 1000;
+        if (now >= nextReset) nextReset += 7 * 24 * 60 * 60 * 1000;
+        // 이번 주 월요일이 이미 지났으면 nextReset이 맞고,
+        // 아직 이번 주 월요일이면… wait: weekKey is THIS week's Monday.
+        // Reset happens at NEXT Monday 00:00 = thisMon + 7 days.
+        // If now is Tuesday, next reset is next Monday = thisMon + 7. Good.
+        // If now is Sunday before week rolls... weekKey is still this week's Monday (daysFromMon handles it).
+        // Actually if today is Sunday, dayIdx=0, daysFromMon=6, so Monday is 6 days ago = previous Monday. Next reset = that Monday + 7 = tomorrow Monday? 
+        // Sunday: previous Monday + 7 days = this coming Monday. Correct!
+        
+        const rem = Math.max(0, nextReset - now);
+        const totalMin = Math.floor(rem / 60000);
+        const days = Math.floor(totalMin / (60 * 24));
+        const hours = Math.floor((totalMin % (60 * 24)) / 60);
+        const mins = totalMin % 60;
+        const parts = [];
+        if (days > 0) parts.push(days + '일');
+        if (hours > 0 || days > 0) parts.push(hours + '시간');
+        parts.push(mins + '분');
+        return '다음 리셋까지 ' + parts.join(' ') + ' (월 00:00 KST)';
+    };
+
     let soldOutFlushInFlight = false;
 
     /** 리셋 시각이 지난 매진 표시를 DB에서 해제 */
@@ -316,13 +387,46 @@
         }
     }
 
+    let shipyardFlushInFlight = false;
+
+    /** KST 월요일 00:00이 지난 조선소 구매 표시를 DB에서 해제 */
+    async function flushExpiredShipyard() {
+        if (shipyardFlushInFlight) return;
+        const now = Date.now();
+        const expired = ports.filter(p => p.shipyardBought && !isShipyardBought(p, now));
+        if (!expired.length) return;
+
+        shipyardFlushInFlight = true;
+        try {
+            for (const port of expired) {
+                await window.originDb.savePort({
+                    ...port,
+                    shipyardBought: false,
+                    shipyardBoughtAt: null,
+                    intervalMin: INTERVAL_MIN,
+                });
+                port.shipyardBought = false;
+                port.shipyardBoughtAt = null;
+            }
+            refreshAll();
+        } catch (err) {
+            console.error('[OriginTimer] 조선소 해제 실패', err);
+        } finally {
+            shipyardFlushInFlight = false;
+        }
+    }
+
     // ─── 해역 선택 ───────────────────────────────────────────────────
 
     function viewHasMatchingPorts(viewId) {
-        if (!selectedGoodCategories.length || typeof window.getOriginPortGoods !== 'function') return false;
         const pins = typeof window.getOriginMapPins === 'function'
             ? window.getOriginMapPins(viewId)
             : [];
+        if (filterByPort && selectedPortNames.length) {
+            const set = new Set(selectedPortNames);
+            return pins.some(pin => set.has(pin.name));
+        }
+        if (!selectedGoodCategories.length || typeof window.getOriginPortGoods !== 'function') return false;
         for (const pin of pins) {
             const goods = window.getOriginPortGoods(pin.name, selectedGoodCategories, { byName: filterByName });
             if (goods.length) return true;
@@ -332,7 +436,7 @@
 
     function renderViewTabs() {
         if (!viewTabsEl || MAP_VIEWS.length === 0) return;
-        const filterOn = !!(selectedGoodCategories.length && !editMode);
+        const filterOn = !!((selectedGoodCategories.length || selectedPortNames.length) && !editMode);
 
         viewTabsEl.innerHTML = MAP_VIEWS.map(v => {
             const hasMatch = filterOn && viewHasMatchingPorts(v.id);
@@ -409,22 +513,28 @@
         const now = Date.now();
         const view = currentView();
         const hasImage = !!(view.image);
-        const filterOn = !!(selectedGoodCategories.length && !editMode);
+        const goodsFilterOn = !!(selectedGoodCategories.length && !editMode);
+        const portFilterOn = !!(filterByPort && selectedPortNames.length && !editMode);
+        const filterOn = goodsFilterOn || portFilterOn;
+        const portNameSet = portFilterOn ? new Set(selectedPortNames) : null;
 
         const pins = displayPins().map(loc => {
-            const goods = filterOn && typeof window.getOriginPortGoods === 'function'
+            const goods = goodsFilterOn && typeof window.getOriginPortGoods === 'function'
                 ? window.getOriginPortGoods(loc.name, selectedGoodCategories, { byName: filterByName })
                 : [];
             const hasGoods = goods.length > 0;
+            const hasPortMatch = !!(portNameSet && portNameSet.has(loc.name));
 
-            // 분류 필터 ON → 해당 품목 있는 항구만 표시
-            if (filterOn && !hasGoods) return '';
+            // 분류/조선 필터 ON → 해당 항구만 표시
+            if (goodsFilterOn && !hasGoods) return '';
+            if (portFilterOn && !hasPortMatch) return '';
 
             const tracked = findPortByName(loc.name);
             const rem = tracked ? getRemainingMs(tracked.anchorAt, now) : null;
             const ready = tracked && rem <= 1000;
             const sold = tracked && isSoldOut(tracked, now);
             const toolShop = tracked && isToolShopBought(tracked, now);
+            const shipyard = tracked && isShipyardBought(tracked, now);
             const active = selectedName === loc.name;
             const classes = [
                 'ot-pin',
@@ -432,25 +542,29 @@
                 sold ? 'is-sold-out' : '',
                 ready && !sold ? 'is-ready' : '',
                 toolShop ? 'is-tool-shop' : '',
+                shipyard ? 'is-shipyard' : '',
                 active ? 'is-active' : '',
                 filterOn ? 'is-goods-focus' : '',
-                hasGoods ? 'has-goods' : '',
+                (hasGoods || hasPortMatch) ? 'has-goods' : '',
             ].filter(Boolean).join(' ');
 
-            // 필터 OFF: 이름 + 타이머 / 필터 ON: 이름|타이머 + 아래 품목
             const timeHtml = tracked
                 ? `<span class="ot-pin-time" data-pin-time="${escapeAttr(loc.name)}">${formatCountdown(rem)}</span>`
                 : '';
 
-            const goodsHtml = hasGoods
-                ? `<span class="ot-pin-goods">${goods.map(g => pinGoodHtml(loc.name, g)).join('')}</span>`
-                : '';
+            let extraHtml = '';
+            if (hasGoods) {
+                extraHtml = `<span class="ot-pin-goods">${goods.map(g => pinGoodHtml(loc.name, g)).join('')}</span>`;
+            } else if (hasPortMatch) {
+                const label = portFilterPinLabel || '조선';
+                extraHtml = `<span class="ot-pin-goods"><span class="ot-pin-good is-shipyard-mat">${escapeHtml(label)}</span></span>`;
+            }
 
             const labelHtml = filterOn
                 ? `<span class="ot-pin-head">
                     <span class="ot-pin-name">${escapeHtml(loc.name)}</span>
                     ${timeHtml}
-                  </span>${goodsHtml}`
+                  </span>${extraHtml}`
                 : `<span class="ot-pin-name">${escapeHtml(loc.name)}</span>${timeHtml}`;
 
             return `
@@ -545,7 +659,7 @@
             let timeEl = pin.querySelector('[data-pin-time]');
 
             if (!tracked) {
-                pin.classList.remove('is-ready', 'is-sold-out', 'is-tool-shop');
+                pin.classList.remove('is-ready', 'is-sold-out', 'is-tool-shop', 'is-shipyard');
                 if (timeEl) timeEl.remove();
                 return;
             }
@@ -554,9 +668,11 @@
             const sold = isSoldOut(tracked, now);
             const ready = rem <= 1000;
             const toolShop = isToolShopBought(tracked, now);
+            const shipyard = isShipyardBought(tracked, now);
             pin.classList.toggle('is-sold-out', sold);
             pin.classList.toggle('is-ready', ready && !sold);
             pin.classList.toggle('is-tool-shop', toolShop);
+            pin.classList.toggle('is-shipyard', shipyard);
 
             if (!timeEl) {
                 timeEl = document.createElement('span');
@@ -716,6 +832,7 @@
         const rem = untracked ? 0 : getRemainingMs(tracked.anchorAt, now);
         const sold = untracked ? false : isSoldOut(tracked, now);
         const toolShop = untracked ? false : isToolShopBought(tracked, now);
+        const shipyard = untracked ? false : isShipyardBought(tracked, now);
         const ready = !untracked && rem <= 1000;
         const remVal = untracked ? '--:--' : formatCountdown(rem);
         const syncLine = untracked
@@ -745,6 +862,9 @@
                 <button type="button" class="ot-btn ot-btn-tool${toolShop ? ' is-on' : ''}"
                   data-action="tool-shop"
                   aria-pressed="${toolShop ? 'true' : 'false'}">${toolShop ? '도구점 구매 취소' : '도구점 구매'}</button>
+                <button type="button" class="ot-btn ot-btn-shipyard${shipyard ? ' is-on' : ''}"
+                  data-action="shipyard"
+                  aria-pressed="${shipyard ? 'true' : 'false'}">${shipyard ? '조선소 구매 취소' : '조선소 구매'}</button>
                 <button type="button" class="ot-btn ot-btn-visit${sold ? ' is-on' : ''}"
                   data-action="visit"
                   aria-pressed="${sold ? 'true' : 'false'}">${sold ? '상점 구매 취소' : '상점 구매'}</button>
@@ -812,22 +932,42 @@
     }
 
     function clearGoodCategories() {
-        if (!selectedGoodCategories.length) return;
+        if (!selectedGoodCategories.length && !selectedPortNames.length) return;
         selectedGoodCategories = [];
-        filterByName = false; // 이름 필터도 해제
+        filterByName = false;
+        selectedPortNames = [];
+        filterByPort = false;
+        portFilterPinLabel = '';
         renderGoodsCategories();
         renderViewTabs();
         renderMap();
         setStatus(currentView().label || '');
         try {
             window.dispatchEvent(new CustomEvent('origin-goods-filter-changed'));
+            window.dispatchEvent(new CustomEvent('origin-port-filter-changed'));
+        } catch (_) { /* ignore */ }
+    }
+
+    function clearPortNameFilterOnly() {
+        if (!selectedPortNames.length) return;
+        selectedPortNames = [];
+        filterByPort = false;
+        portFilterPinLabel = '';
+        renderViewTabs();
+        renderMap();
+        setStatus(currentView().label || '');
+        try {
+            window.dispatchEvent(new CustomEvent('origin-port-filter-changed'));
         } catch (_) { /* ignore */ }
     }
 
     function selectGoodCategory(category) {
         if (!category) return;
 
-        filterByName = false; // 분류 선택 시 이름 필터 해제
+        filterByName = false;
+        selectedPortNames = [];
+        filterByPort = false;
+        portFilterPinLabel = '';
 
         if (isSpecialCategory(category)) {
             // 명산품 등: 단독 토글 — 켜면 일반 분류 전부
@@ -854,6 +994,7 @@
             : (currentView().label || ''));
         try {
             window.dispatchEvent(new CustomEvent('origin-goods-filter-changed'));
+            window.dispatchEvent(new CustomEvent('origin-port-filter-changed'));
         } catch (_) { /* ignore */ }
     }
 
@@ -866,6 +1007,7 @@
         const rem = getRemainingMs(tracked.anchorAt, now);
         const sold = isSoldOut(tracked, now);
         const toolShop = isToolShopBought(tracked, now);
+        const shipyard = isShipyardBought(tracked, now);
         const ready = rem <= 1000;
 
         panelEl.classList.toggle('is-ready', ready && !sold);
@@ -874,6 +1016,7 @@
         const minSel = panelEl.querySelector('[data-role="remain-min"]');
         const visitBtn = panelEl.querySelector('[data-action="visit"]');
         const toolBtn = panelEl.querySelector('[data-action="tool-shop"]');
+        const shipyardBtn = panelEl.querySelector('[data-action="shipyard"]');
 
         if (cd) cd.textContent = formatCountdown(rem);
         if (visitBtn) {
@@ -885,6 +1028,11 @@
             toolBtn.classList.toggle('is-on', toolShop);
             toolBtn.setAttribute('aria-pressed', toolShop ? 'true' : 'false');
             toolBtn.textContent = toolShop ? '도구점 구매 취소' : '도구점 구매';
+        }
+        if (shipyardBtn) {
+            shipyardBtn.classList.toggle('is-on', shipyard);
+            shipyardBtn.setAttribute('aria-pressed', shipyard ? 'true' : 'false');
+            shipyardBtn.textContent = shipyard ? '조선소 구매 취소' : '조선소 구매';
         }
 
         // 분 선택 중이면 덮어쓰지 않음
@@ -919,6 +1067,7 @@
         syncGameMonthIfNeeded();
         flushExpiredSoldOut();
         flushExpiredToolShop();
+        flushExpiredShipyard();
         tickMapPins();
         tickPanel();
     }
@@ -938,6 +1087,8 @@
             soldOutAt: null,
             toolShopBought: false,
             toolShopBoughtAt: null,
+            shipyardBought: false,
+            shipyardBoughtAt: null,
         });
         setStatus(`「${DEFAULT_PORT}」항구를 추가했습니다.`);
         return window.originDb.listPorts();
@@ -979,6 +1130,8 @@
                 soldOutAt: p.soldOutAt || null,
                 toolShopBought: !!p.toolShopBought,
                 toolShopBoughtAt: p.toolShopBoughtAt || null,
+                shipyardBought: !!p.shipyardBought,
+                shipyardBoughtAt: p.shipyardBoughtAt || null,
                 syncedAt: p.syncedAt || null,
                 syncedElapsedMin: p.syncedElapsedMin != null ? p.syncedElapsedMin : null,
             }));
@@ -1313,6 +1466,22 @@
                     return;
                 }
 
+                if (action === 'shipyard') {
+                    btn.disabled = true;
+                    const turnOn = !isShipyardBought(tracked);
+                    await window.originDb.savePort({
+                        ...tracked,
+                        intervalMin: INTERVAL_MIN,
+                        shipyardBought: turnOn,
+                        shipyardBoughtAt: turnOn ? new Date().toISOString() : null,
+                    });
+                    await reload(true);
+                    setStatus(turnOn
+                        ? `「${tracked.portName}」조선소 구매를 표시했습니다.`
+                        : `「${tracked.portName}」조선소 구매를 취소했습니다.`);
+                    return;
+                }
+
                 if (action === 'gem-reset') {
                     if (!confirm(`「${tracked.portName}」재화로 재고를 초기화했습니까?\n30분 주기가 지금부터 다시 시작됩니다.`)) {
                         return;
@@ -1459,6 +1628,9 @@
     window.filterMapByGoodNames = async function (goodNames, statusMsg) {
         if (!goodNames || !goodNames.length) return;
 
+        selectedPortNames = [];
+        filterByPort = false;
+        portFilterPinLabel = '';
         selectedGoodCategories = goodNames;
         filterByName = true;
         renderGoodsCategories();
@@ -1475,6 +1647,32 @@
         }
         try {
             window.dispatchEvent(new CustomEvent('origin-goods-filter-changed'));
+            window.dispatchEvent(new CustomEvent('origin-port-filter-changed'));
+        } catch (_) { /* ignore */ }
+    };
+
+    /** 조선 티어 등: 항구 이름으로 맵 필터링 */
+    window.filterMapByPortNames = async function (portNames, statusMsg, pinLabel) {
+        if (!portNames || !portNames.length) return;
+
+        selectedGoodCategories = [];
+        filterByName = false;
+        selectedPortNames = portNames.slice();
+        filterByPort = true;
+        portFilterPinLabel = pinLabel || statusMsg || '조선';
+        renderGoodsCategories();
+        renderViewTabs();
+        renderMap();
+
+        const view = currentView();
+        if (statusMsg != null) {
+            setStatus(`${statusMsg} — ${view.label || ''}`);
+        } else {
+            setStatus(`조선 항구 ${portNames.length}곳 — ${view.label || ''}`);
+        }
+        try {
+            window.dispatchEvent(new CustomEvent('origin-goods-filter-changed'));
+            window.dispatchEvent(new CustomEvent('origin-port-filter-changed'));
         } catch (_) { /* ignore */ }
     };
 
@@ -1484,8 +1682,18 @@
         return selectedGoodCategories.slice();
     };
 
+    /** @returns {string[]|null} */
+    window.getOriginPortNameFilter = function () {
+        if (!filterByPort || !selectedPortNames.length) return null;
+        return selectedPortNames.slice();
+    };
+
     window.clearOriginGoodsFilter = function () {
         clearGoodCategories();
+    };
+
+    window.clearOriginPortNameFilter = function () {
+        clearPortNameFilterOnly();
     };
 
     window.selectOriginMapView = function (viewId) {
@@ -1494,7 +1702,7 @@
 
     window.invalidateOriginGoodQtyCache = async function () {
         await loadGoodQtyCache();
-        if (selectedGoodCategories.length) renderMap();
+        if (selectedGoodCategories.length || selectedPortNames.length) renderMap();
     };
 
 

@@ -83,6 +83,8 @@
             soldOutAt:   row.sold_out_at || null,
             toolShopBought: !!row.tool_shop_bought,
             toolShopBoughtAt: row.tool_shop_bought_at || null,
+            shipyardBought: !!row.shipyard_bought,
+            shipyardBoughtAt: row.shipyard_bought_at || null,
             syncedAt:    row.synced_at || null,
             syncedElapsedMin: row.synced_elapsed_min != null
                 ? Number(row.synced_elapsed_min)
@@ -280,6 +282,12 @@
                 ? (port.toolShopBoughtAt instanceof Date
                     ? port.toolShopBoughtAt.toISOString()
                     : (port.toolShopBoughtAt || new Date().toISOString()))
+                : null,
+            shipyard_bought: !!port.shipyardBought,
+            shipyard_bought_at: port.shipyardBought
+                ? (port.shipyardBoughtAt instanceof Date
+                    ? port.shipyardBoughtAt.toISOString()
+                    : (port.shipyardBoughtAt || new Date().toISOString()))
                 : null,
             synced_at:    toIsoOrNull(port.syncedAt),
             synced_elapsed_min: toIntOrNull(port.syncedElapsedMin),
@@ -618,6 +626,9 @@
                 const toolShopBought = port.toolShopBought != null
                     ? !!port.toolShopBought
                     : !!(prev && prev.toolShopBought);
+                const shipyardBought = port.shipyardBought != null
+                    ? !!port.shipyardBought
+                    : !!(prev && prev.shipyardBought);
                 const row = {
                     id,
                     tenantId: getTenantId(),
@@ -637,6 +648,12 @@
                         ? (port.toolShopBoughtAt instanceof Date
                             ? port.toolShopBoughtAt.toISOString()
                             : (port.toolShopBoughtAt || (prev && prev.toolShopBoughtAt) || new Date().toISOString()))
+                        : null,
+                    shipyardBought,
+                    shipyardBoughtAt: shipyardBought
+                        ? (port.shipyardBoughtAt instanceof Date
+                            ? port.shipyardBoughtAt.toISOString()
+                            : (port.shipyardBoughtAt || (prev && prev.shipyardBoughtAt) || new Date().toISOString()))
                         : null,
                     syncedAt: port.syncedAt !== undefined
                         ? toIsoOrNull(port.syncedAt)
