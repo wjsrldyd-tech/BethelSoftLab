@@ -95,6 +95,73 @@
             ],
         },
         {
+            id: 'west_island',
+            name: '신대륙, 서쪽의 섬',
+            exchanges: [
+                {
+                    id: 'west_island_bombilla',
+                    name: '봄빌라',
+                    category: '공예품',
+                    result: { name: '봄빌라', defaultRatio: 652 },
+                    ingredients: [
+                        { name: '은', defaultRatio: 116 },
+                        { name: '금', defaultRatio: 116 },
+                        { name: '석탄', defaultRatio: 101 },
+                    ],
+                },
+                {
+                    id: 'west_island_pisco',
+                    name: '피스코',
+                    category: '주류',
+                    result: { name: '피스코', defaultRatio: 652 },
+                    ingredients: [
+                        { name: '포도', defaultRatio: 134 },
+                        { name: '도자기', defaultRatio: 154 },
+                        { name: '설탕', defaultRatio: 154 },
+                    ],
+                },
+            ],
+        },
+        {
+            id: 'quechua',
+            name: '케추아족의 마을',
+            exchanges: [
+                {
+                    id: 'quechua_bombilla',
+                    name: '봄빌라',
+                    category: '공예품',
+                    result: { name: '봄빌라', defaultRatio: 680 },
+                    ingredients: [
+                        { name: '은', defaultRatio: 116 },
+                        { name: '금', defaultRatio: 116 },
+                        { name: '석탄', defaultRatio: 101 },
+                    ],
+                },
+                {
+                    id: 'quechua_pisco',
+                    name: '피스코',
+                    category: '주류',
+                    result: { name: '피스코', defaultRatio: 680 },
+                    ingredients: [
+                        { name: '포도', defaultRatio: 174 },
+                        { name: '도자기', defaultRatio: 154 },
+                        { name: '설탕', defaultRatio: 154 },
+                    ],
+                },
+                {
+                    id: 'quechua_vicuna_fabric',
+                    name: '비쿠냐 직물',
+                    category: '직물',
+                    result: { name: '비쿠냐 직물', defaultRatio: 340 },
+                    ingredients: [
+                        { name: '비쿠냐털', defaultRatio: 24 },
+                        { name: '차르카', defaultRatio: 116 },
+                        { name: '포우나무', defaultRatio: 70 },
+                    ],
+                },
+            ],
+        },
+        {
             id: 'svear',
             name: '스비아인',
             exchanges: [
@@ -921,7 +988,27 @@
         return ((village && village.exchanges) || []).map((ex) => ex.id);
     }
 
-    /** 맵용으로 선택된 결과물들의 재료 합집합 (선택 없으면 빈 배열) */
+    /** 항구 교역품 이름 집합 — 맵 필터는 이 목록에 있는 재료만 표시 */
+    function getPortGoodsNameSet() {
+        const ports = window.ORIGIN_PORT_GOODS;
+        if (!ports || typeof ports !== 'object') return null;
+        const set = new Set();
+        for (const list of Object.values(ports)) {
+            if (!Array.isArray(list)) continue;
+            for (const g of list) {
+                if (g && g.name) set.add(g.name);
+            }
+        }
+        return set;
+    }
+
+    function isMapFilterableIngredient(name) {
+        const portNames = getPortGoodsNameSet();
+        if (!portNames) return true;
+        return portNames.has(name);
+    }
+
+    /** 맵용으로 선택된 결과물들의 재료 합집합 (항구 교역품만, 선택 없으면 빈 배열) */
     function ingredientNamesForMapFilter() {
         if (!mapFilterExchangeIds.length) return [];
         const seen = Object.create(null);
@@ -930,6 +1017,7 @@
             const names = ingredientNamesForExchange(getExchange(selectedVillageId, id));
             names.forEach((name) => {
                 if (seen[name]) return;
+                if (!isMapFilterableIngredient(name)) return;
                 seen[name] = true;
                 out.push(name);
             });
