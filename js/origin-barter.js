@@ -169,6 +169,7 @@
             multBtns: document.getElementById('barter-mult-btns'),
             progressClearBtn: document.getElementById('barter-progress-clear'),
             filterBtn: document.getElementById('barter-filter-map'),
+            resultBtns: document.getElementById('barter-result-btns'),
         };
     }
 
@@ -412,7 +413,14 @@
         if (filterBtn) {
             filterBtn.addEventListener('click', filterMapByIngredients);
         }
-        window.addEventListener('origin-goods-filter-changed', syncIngredientFilterBtn);
+        const { resultBtns } = els();
+        if (resultBtns) {
+            resultBtns.addEventListener('click', onResultBtnClick);
+        }
+        window.addEventListener('origin-goods-filter-changed', () => {
+            syncIngredientFilterBtn();
+            syncResultButtons();
+        });
         if (matrixDiv) {
             matrixDiv.addEventListener('input', onMatrixInput);
         }
@@ -471,6 +479,7 @@
             showMatrixEmpty('마을을 선택하세요');
         }
         syncIngredientFilterBtn();
+        renderResultButtons();
     }
 
     function initSideToolTabs() {
@@ -510,6 +519,7 @@
             onExchangeChange();
         } else {
             showMatrixEmpty(selectedVillageId ? '교환목록을 선택하세요' : '마을을 선택하세요');
+            renderResultButtons();
         }
     }
 
@@ -522,6 +532,7 @@
         currentHave = loadSavedHave();
         refreshMatrix();
         syncIngredientFilterBtn();
+        renderResultButtons();
         try {
             window.dispatchEvent(new CustomEvent('origin-barter-exchange-changed', {
                 detail: { resultName: (currentExchange() && currentExchange().result && currentExchange().result.name) || '' },
@@ -873,10 +884,13 @@
         return sa === sb;
     }
 
-    function currentIngredientNames() {
-        const exchange = currentExchange();
+    function ingredientNamesForExchange(exchange) {
         if (!exchange || !exchange.ingredients || !exchange.ingredients.length) return [];
         return exchange.ingredients.map(ing => ing.name);
+    }
+
+    function currentIngredientNames() {
+        return ingredientNamesForExchange(currentExchange());
     }
 
     function isIngredientMapFilterOn() {
@@ -895,6 +909,93 @@
         filterBtn.classList.toggle('is-active', on);
         filterBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
         filterBtn.textContent = on ? '재료 항구 표시 해제' : '맵에 재료 항구 표시';
+        syncResultButtons();
+    }
+
+    function renderResultButtons() {
+        const { resultBtns } = els();
+        if (!resultBtns) return;
+        const village = currentVillage();
+        const exchanges = (village && village.exchanges) || [];
+        if (!exchanges.length) {
+            resultBtns.innerHTML = '';
+            return;
+        }
+        const filterNames = (typeof window.getOriginGoodsNameFilter === 'function')
+            ? window.getOriginGoodsNameFilter()
+            : null;
+        resultBtns.innerHTML = exchanges.map((ex) => {
+            const label = (ex.result && ex.result.name) || ex.name;
+            const names = ingredientNamesForExchange(ex);
+            const filterOn = !!(filterNames && names.length && sameNameList(filterNames, names));
+            const selected = ex.id === selectedExchangeId;
+            const active = filterOn || (selected && !filterNames);
+            return `<button type="button" class="ot-barter-result-btn${active ? ' is-active' : ''}" data-exchange-id="${escapeHtml(ex.id)}" aria-pressed="${filterOn ? 'true' : 'false'}">${escapeHtml(label)}</button>`;
+        }).join('');
+    }
+
+    function syncResultButtons() {
+        const { resultBtns } = els();
+        if (!resultBtns || !resultBtns.children.length) {
+            renderResultButtons();
+            return;
+        }
+        const filterNames = (typeof window.getOriginGoodsNameFilter === 'function')
+            ? window.getOriginGoodsNameFilter()
+            : null;
+        resultBtns.querySelectorAll('[data-exchange-id]').forEach((btn) => {
+            const ex = getExchange(selectedVillageId, btn.dataset.exchangeId);
+            const names = ingredientNamesForExchange(ex);
+            const filterOn = !!(filterNames && names.length && sameNameList(filterNames, names));
+            const selected = btn.dataset.exchangeId === selectedExchangeId;
+            btn.classList.toggle('is-active', filterOn || (selected && !filterNames));
+            btn.setAttribute('aria-pressed', filterOn ? 'true' : 'false');
+        });
+    }
+
+    function selectExchangeById(exchangeId) {
+        const { exchangeSelect } = els();
+        if (!exchangeId || !getExchange(selectedVillageId, exchangeId)) return false;
+        if (selectedExchangeId === exchangeId) return true;
+        selectedExchangeId = exchangeId;
+        if (exchangeSelect) exchangeSelect.value = exchangeId;
+        renderExchangeBadge();
+        saveSelection();
+        loadRatiosIntoState();
+        currentHave = loadSavedHave();
+        refreshMatrix();
+        try {
+            window.dispatchEvent(new CustomEvent('origin-barter-exchange-changed', {
+                detail: { resultName: (currentExchange() && currentExchange().result && currentExchange().result.name) || '' },
+            }));
+        } catch (_) { /* ignore */ }
+        return true;
+    }
+
+    function onResultBtnClick(e) {
+        const btn = e.target.closest('[data-exchange-id]');
+        if (!btn) return;
+        const exchangeId = btn.dataset.exchangeId;
+        const exchange = getExchange(selectedVillageId, exchangeId);
+        const names = ingredientNamesForExchange(exchange);
+        if (!names.length) return;
+
+        const current = (typeof window.getOriginGoodsNameFilter === 'function')
+            ? window.getOriginGoodsNameFilter()
+            : null;
+        const alreadyOn = !!(current && sameNameList(current, names));
+
+        selectExchangeById(exchangeId);
+
+        if (alreadyOn) {
+            if (typeof window.clearOriginGoodsFilter === 'function') {
+                window.clearOriginGoodsFilter();
+            }
+        } else if (typeof window.filterMapByGoodNames === 'function') {
+            window.filterMapByGoodNames(names);
+        }
+        syncIngredientFilterBtn();
+        renderResultButtons();
     }
 
     function filterMapByIngredients() {
