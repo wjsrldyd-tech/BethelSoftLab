@@ -801,9 +801,9 @@
         (plan ? plan.materials : []).forEach(g => { matByName[g.name] = g; });
         const result = plan && plan.result ? plan.result : null;
 
-        const head = names.map(n => `<th scope="col">${escapeHtml(n)}</th>`).join('')
+        const head = names.map(n => `<th scope="col" title="${escapeHtml(n)}">${escapeHtml(n)}</th>`).join('')
             + (exchange.result
-                ? `<th scope="col" class="ot-barter-result-col">${escapeHtml(exchange.result.name)}</th>`
+                ? `<th scope="col" class="ot-barter-result-col" title="${escapeHtml(exchange.result.name)}">${escapeHtml(exchange.result.name)}</th>`
                 : '');
 
         const ratioCells = names.map(n => {
