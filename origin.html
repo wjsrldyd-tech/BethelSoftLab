@@ -1210,6 +1210,69 @@
         color: #fcd34d;
       }
 
+      .ot-settings-check {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        margin: 0;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #e2e8f0;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .ot-settings-check input {
+        width: 1.05rem;
+        height: 1.05rem;
+        accent-color: #0ea5e9;
+        cursor: pointer;
+      }
+
+      .ot-settings-check.is-disabled,
+      .ot-settings-field.is-disabled,
+      .ot-settings-row.is-disabled {
+        opacity: 0.45;
+        pointer-events: none;
+      }
+
+      .ot-settings-offset-btns {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+      }
+
+      .ot-settings-offset-btn {
+        min-width: 2.4rem;
+        padding: 0.35rem 0.45rem;
+        border-radius: 6px;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        background: rgba(255, 255, 255, 0.04);
+        color: #cbd5e1;
+        font-size: 0.85rem;
+        font-weight: 650;
+        font-family: inherit;
+        font-variant-numeric: tabular-nums;
+        cursor: pointer;
+      }
+
+      .ot-settings-offset-btn:hover {
+        border-color: rgba(14, 165, 233, 0.5);
+        color: #7dd3fc;
+        background: rgba(14, 165, 233, 0.1);
+      }
+
+      .ot-settings-offset-btns.is-disabled {
+        opacity: 0.45;
+        pointer-events: none;
+      }
+
+      .ot-settings-offset-btn.is-current {
+        border-color: rgba(14, 165, 233, 0.55);
+        color: #7dd3fc;
+        background: rgba(14, 165, 233, 0.16);
+      }
+
       /* ===== 교역품 / 물물교환 탭 ===== */
       .ot-side-tools {
         display: flex;
@@ -2145,21 +2208,45 @@
           </div>
 
           <section class="ot-settings-section" aria-labelledby="ot-settings-drift-title">
-            <h3 id="ot-settings-drift-title" class="ot-settings-section-title">타이머 보정 (Offset)</h3>
-            <p class="ot-settings-hint">
-              게임 시계가 현실보다 빠른 정도를 보정합니다.
-              <strong>N분당 3초</strong> 앞섬으로 계산합니다.
-              (예: 1200 → 약 400분마다 -1초)
-            </p>
-            <div class="ot-settings-row">
+            <h3 id="ot-settings-drift-title" class="ot-settings-section-title">타이머 보정</h3>
+
+            <label class="ot-settings-check" for="ot-settings-drift-enabled">
+              <input type="checkbox" id="ot-settings-drift-enabled" checked>
+              선형 보정 사용
+            </label>
+            <div class="ot-settings-row" id="ot-settings-drift-row">
               <div class="ot-settings-field">
                 <label class="ot-settings-label" for="ot-settings-drift-over">N분 (분당 보정 기준)</label>
                 <input type="number" id="ot-settings-drift-over" class="ot-settings-input"
                   min="60" max="100000" step="10" value="1200" inputmode="numeric">
               </div>
+            </div>
+            <div class="ot-settings-offset-btns" id="ot-settings-drift-history" role="group" aria-label="N분 최근 값"></div>
+
+            <label class="ot-settings-check" for="ot-settings-offset-enabled">
+              <input type="checkbox" id="ot-settings-offset-enabled" checked>
+              전역 영점 사용
+            </label>
+            <div class="ot-settings-row" id="ot-settings-offset-row">
+              <div class="ot-settings-field">
+                <label class="ot-settings-label" for="ot-settings-offset-sec">영점 (초)</label>
+                <input type="number" id="ot-settings-offset-sec" class="ot-settings-input"
+                  min="-120" max="120" step="1" value="0" inputmode="numeric">
+              </div>
+            </div>
+            <div class="ot-settings-offset-btns" id="ot-settings-offset-btns" role="group" aria-label="영점 빠른 조절">
+              <button type="button" class="ot-settings-offset-btn" data-offset-delta="-10">-10</button>
+              <button type="button" class="ot-settings-offset-btn" data-offset-delta="-5">-5</button>
+              <button type="button" class="ot-settings-offset-btn" data-offset-delta="-1">-1</button>
+              <button type="button" class="ot-settings-offset-btn" data-offset-delta="1">+1</button>
+              <button type="button" class="ot-settings-offset-btn" data-offset-delta="5">+5</button>
+              <button type="button" class="ot-settings-offset-btn" data-offset-delta="10">+10</button>
+              <button type="button" class="ot-settings-offset-btn" data-offset-set="0">0</button>
+            </div>
+
+            <div class="ot-settings-row">
               <button type="button" id="ot-settings-drift-save" class="ot-settings-save">저장</button>
             </div>
-            <p id="ot-settings-drift-meta" class="ot-settings-hint">약 400분마다 -1초</p>
             <p id="ot-settings-status" class="ot-settings-status" aria-live="polite"></p>
           </section>
         </div>

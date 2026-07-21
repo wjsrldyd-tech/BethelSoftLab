@@ -48,6 +48,10 @@
         return false;
     }
 
+    const DEFAULT_GLOBAL_OFFSET_SEC = 0;
+    const OFFSET_SEC_MIN = -120;
+    const OFFSET_SEC_MAX = 120;
+
     function normalizeSettings(raw) {
         const out = {};
         const src = (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw : {};
@@ -55,7 +59,22 @@
         if (!Number.isFinite(drift) || drift < 60) drift = DEFAULT_DRIFT_OVER_MIN;
         if (drift > 100000) drift = 100000;
         out.driftOverMin = drift;
+        out.driftEnabled = src.driftEnabled !== false && src.driftEnabled !== 0 && src.driftEnabled !== '0';
+        let offset = parseInt(src.globalOffsetSec, 10);
+        if (!Number.isFinite(offset)) offset = DEFAULT_GLOBAL_OFFSET_SEC;
+        if (offset < OFFSET_SEC_MIN) offset = OFFSET_SEC_MIN;
+        if (offset > OFFSET_SEC_MAX) offset = OFFSET_SEC_MAX;
+        out.globalOffsetSec = offset;
+        out.offsetEnabled = src.offsetEnabled !== false && src.offsetEnabled !== 0 && src.offsetEnabled !== '0';
         return out;
+    }
+
+    function isDefaultSettings(s) {
+        return !!s
+            && s.driftOverMin === DEFAULT_DRIFT_OVER_MIN
+            && s.driftEnabled === true
+            && s.globalOffsetSec === DEFAULT_GLOBAL_OFFSET_SEC
+            && s.offsetEnabled === true;
     }
 
     function readLocalSettings() {
@@ -349,7 +368,7 @@
     }
 
     /**
-     * @returns {Promise<{ driftOverMin: number, _fromLocal?: boolean }>}
+     * @returns {Promise<{ driftOverMin: number, driftEnabled: boolean, globalOffsetSec: number, offsetEnabled: boolean, _fromLocal?: boolean }>}
      */
     async function loadSettings() {
         const tenantId = getTenantId();
@@ -370,7 +389,7 @@
         let settings = normalizeSettings(data && data.data);
         const local = readLocalSettings();
         const dbEmpty = !data || !data.data || Object.keys(data.data).length === 0;
-        if (dbEmpty && local.driftOverMin !== DEFAULT_DRIFT_OVER_MIN) {
+        if (dbEmpty && !isDefaultSettings(local)) {
             try {
                 await saveSettings(local);
                 settings = local;
@@ -385,8 +404,8 @@
     }
 
     /**
-     * @param {{ driftOverMin?: number }} partial
-     * @returns {Promise<{ driftOverMin: number, _fromLocal?: boolean }>}
+     * @param {{ driftOverMin?: number, driftEnabled?: boolean, globalOffsetSec?: number, offsetEnabled?: boolean }} partial
+     * @returns {Promise<{ driftOverMin: number, driftEnabled: boolean, globalOffsetSec: number, offsetEnabled: boolean, _fromLocal?: boolean }>}
      */
     async function saveSettings(partial) {
         const tenantId = getTenantId();

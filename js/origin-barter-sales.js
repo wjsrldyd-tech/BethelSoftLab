@@ -217,8 +217,13 @@
 
         openBtn.addEventListener('click', openModal);
         if (closeBtn) closeBtn.addEventListener('click', closeModal);
+        let overlayPointerDownOnBackdrop = false;
+        overlay.addEventListener('pointerdown', (e) => {
+            overlayPointerDownOnBackdrop = e.target === overlay;
+        });
         overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) closeModal();
+            if (e.target === overlay && overlayPointerDownOnBackdrop) closeModal();
+            overlayPointerDownOnBackdrop = false;
         });
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && !overlay.hidden) closeModal();
