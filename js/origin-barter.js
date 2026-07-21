@@ -146,6 +146,9 @@
 
     let selectedVillageId = null;
     let selectedExchangeId = null;
+    /** 맵 재료 항구용 결과물(교환) 복수 선택 — 계획표와 독립 */
+    /** @type {string[]} */
+    let mapFilterExchangeIds = [];
     /** 교환 횟수 배수 (1~8) — 목표 = 비율 × N */
     let selectedBatches = 1;
     /** 재료 비율만 (결과물 비율 제외) */
@@ -508,6 +511,7 @@
         const { villageSelect, exchangeSelect } = els();
         selectedVillageId = villageSelect.value || null;
         selectedExchangeId = null;
+        clearMapFilterSelection(true);
         fillExchangeOptions(selectedVillageId);
         renderExchangeBadge();
         saveSelection();
@@ -520,6 +524,7 @@
         } else {
             showMatrixEmpty(selectedVillageId ? '교환목록을 선택하세요' : '마을을 선택하세요');
             renderResultButtons();
+            syncIngredientFilterBtn();
         }
     }
 
@@ -893,8 +898,48 @@
         return ingredientNamesForExchange(currentExchange());
     }
 
+    /** 맵용으로 선택된 결과물들의 재료 합집합. 선택 없으면 현재 교환목록 재료. */
+    function ingredientNamesForMapFilter() {
+        if (mapFilterExchangeIds.length) {
+            const seen = Object.create(null);
+            const out = [];
+            mapFilterExchangeIds.forEach((id) => {
+                const names = ingredientNamesForExchange(getExchange(selectedVillageId, id));
+                names.forEach((name) => {
+                    if (seen[name]) return;
+                    seen[name] = true;
+                    out.push(name);
+                });
+            });
+            return out;
+        }
+        return currentIngredientNames();
+    }
+
+    function clearMapFilterSelection(alsoClearMap) {
+        mapFilterExchangeIds = [];
+        if (alsoClearMap && typeof window.clearOriginGoodsFilter === 'function') {
+            const current = (typeof window.getOriginGoodsNameFilter === 'function')
+                ? window.getOriginGoodsNameFilter()
+                : null;
+            if (current && current.length) window.clearOriginGoodsFilter();
+        }
+    }
+
+    function applyMapIngredientFilter(names) {
+        if (!names || !names.length) {
+            if (typeof window.clearOriginGoodsFilter === 'function') {
+                window.clearOriginGoodsFilter();
+            }
+            return;
+        }
+        if (typeof window.filterMapByGoodNames === 'function') {
+            window.filterMapByGoodNames(names);
+        }
+    }
+
     function isIngredientMapFilterOn() {
-        const names = currentIngredientNames();
+        const names = ingredientNamesForMapFilter();
         if (!names.length) return false;
         const current = (typeof window.getOriginGoodsNameFilter === 'function')
             ? window.getOriginGoodsNameFilter()
@@ -921,16 +966,12 @@
             resultBtns.innerHTML = '';
             return;
         }
-        const filterNames = (typeof window.getOriginGoodsNameFilter === 'function')
-            ? window.getOriginGoodsNameFilter()
-            : null;
+        const selected = Object.create(null);
+        mapFilterExchangeIds.forEach((id) => { selected[id] = true; });
         resultBtns.innerHTML = exchanges.map((ex) => {
             const label = (ex.result && ex.result.name) || ex.name;
-            const names = ingredientNamesForExchange(ex);
-            const filterOn = !!(filterNames && names.length && sameNameList(filterNames, names));
-            const selected = ex.id === selectedExchangeId;
-            const active = filterOn || (selected && !filterNames);
-            return `<button type="button" class="ot-barter-result-btn${active ? ' is-active' : ''}" data-exchange-id="${escapeHtml(ex.id)}" aria-pressed="${filterOn ? 'true' : 'false'}">${escapeHtml(label)}</button>`;
+            const on = !!selected[ex.id];
+            return `<button type="button" class="ot-barter-result-btn${on ? ' is-active' : ''}" data-exchange-id="${escapeHtml(ex.id)}" aria-pressed="${on ? 'true' : 'false'}">${escapeHtml(label)}</button>`;
         }).join('');
     }
 
@@ -940,79 +981,46 @@
             renderResultButtons();
             return;
         }
-        const filterNames = (typeof window.getOriginGoodsNameFilter === 'function')
-            ? window.getOriginGoodsNameFilter()
-            : null;
+        const selected = Object.create(null);
+        mapFilterExchangeIds.forEach((id) => { selected[id] = true; });
         resultBtns.querySelectorAll('[data-exchange-id]').forEach((btn) => {
-            const ex = getExchange(selectedVillageId, btn.dataset.exchangeId);
-            const names = ingredientNamesForExchange(ex);
-            const filterOn = !!(filterNames && names.length && sameNameList(filterNames, names));
-            const selected = btn.dataset.exchangeId === selectedExchangeId;
-            btn.classList.toggle('is-active', filterOn || (selected && !filterNames));
-            btn.setAttribute('aria-pressed', filterOn ? 'true' : 'false');
+            const on = !!selected[btn.dataset.exchangeId];
+            btn.classList.toggle('is-active', on);
+            btn.setAttribute('aria-pressed', on ? 'true' : 'false');
         });
-    }
-
-    function selectExchangeById(exchangeId) {
-        const { exchangeSelect } = els();
-        if (!exchangeId || !getExchange(selectedVillageId, exchangeId)) return false;
-        if (selectedExchangeId === exchangeId) return true;
-        selectedExchangeId = exchangeId;
-        if (exchangeSelect) exchangeSelect.value = exchangeId;
-        renderExchangeBadge();
-        saveSelection();
-        loadRatiosIntoState();
-        currentHave = loadSavedHave();
-        refreshMatrix();
-        try {
-            window.dispatchEvent(new CustomEvent('origin-barter-exchange-changed', {
-                detail: { resultName: (currentExchange() && currentExchange().result && currentExchange().result.name) || '' },
-            }));
-        } catch (_) { /* ignore */ }
-        return true;
     }
 
     function onResultBtnClick(e) {
         const btn = e.target.closest('[data-exchange-id]');
         if (!btn) return;
         const exchangeId = btn.dataset.exchangeId;
-        const exchange = getExchange(selectedVillageId, exchangeId);
-        const names = ingredientNamesForExchange(exchange);
-        if (!names.length) return;
+        if (!getExchange(selectedVillageId, exchangeId)) return;
 
-        const current = (typeof window.getOriginGoodsNameFilter === 'function')
-            ? window.getOriginGoodsNameFilter()
-            : null;
-        const alreadyOn = !!(current && sameNameList(current, names));
+        const idx = mapFilterExchangeIds.indexOf(exchangeId);
+        if (idx >= 0) mapFilterExchangeIds.splice(idx, 1);
+        else mapFilterExchangeIds.push(exchangeId);
 
-        selectExchangeById(exchangeId);
-
-        if (alreadyOn) {
-            if (typeof window.clearOriginGoodsFilter === 'function') {
-                window.clearOriginGoodsFilter();
-            }
-        } else if (typeof window.filterMapByGoodNames === 'function') {
-            window.filterMapByGoodNames(names);
-        }
+        applyMapIngredientFilter(ingredientNamesForMapFilter());
         syncIngredientFilterBtn();
         renderResultButtons();
     }
 
     function filterMapByIngredients() {
-        const names = currentIngredientNames();
+        const names = ingredientNamesForMapFilter();
         if (!names.length) return;
 
         if (isIngredientMapFilterOn()) {
-            if (typeof window.clearOriginGoodsFilter === 'function') {
+            if (mapFilterExchangeIds.length) {
+                clearMapFilterSelection(true);
+            } else if (typeof window.clearOriginGoodsFilter === 'function') {
                 window.clearOriginGoodsFilter();
             }
             syncIngredientFilterBtn();
+            renderResultButtons();
             return;
         }
 
-        if (typeof window.filterMapByGoodNames === 'function') {
-            window.filterMapByGoodNames(names);
-        }
+        applyMapIngredientFilter(names);
         syncIngredientFilterBtn();
     }
 
