@@ -227,7 +227,8 @@
 
     function remainingToAnchor(remainingMs, now = Date.now()) {
         const nextReset = now + remainingMs;
-        return new Date(nextReset - INTERVAL_MS).toISOString();
+        // 수동 입력된 시간은 이미 보정된(최종) 시간이므로 anchor 저장 시 globalOffset을 빼서 저장
+        return new Date(nextReset - INTERVAL_MS - getGlobalOffsetMs()).toISOString();
     }
 
     function setStatus(msg, isError) {
