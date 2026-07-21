@@ -10,6 +10,7 @@
     const LS_RATIOS = 'originBarterRatios';
     const LS_HAVE = 'originBarterHave';
     const LS_BATCHES = 'originBarterBatches';
+    const LS_SHIPMENT = 'originBarterShipment';
     const LS_RECIPE_LEGACY = 'originBarterRecipe';
     const MAX_BATCHES = 8;
 
@@ -124,7 +125,7 @@
         },
         {
             id: 'quechua',
-            name: '케추아족의 마을',
+            name: '케추아족',
             exchanges: [
                 {
                     id: 'quechua_bombilla',
@@ -216,6 +217,9 @@
     /** 맵 재료 항구용 결과물(교환) 복수 선택 — 계획표와 독립 */
     /** @type {string[]} */
     let mapFilterExchangeIds = [];
+    /** 선적 합산 포함 — 현재 마을 교환 ID 목록 */
+    /** @type {string[]} */
+    let shipmentExchangeIds = [];
     /** 교환 횟수 배수 (1~8) — 목표 = 비율 × N */
     let selectedBatches = 1;
     /** 재료 비율만 (결과물 비율 제외) */
@@ -232,6 +236,7 @@
     function els() {
         return {
             villageSelect: document.getElementById('barter-village'),
+            exchangeLabel: document.getElementById('barter-exchange-label'),
             exchangeBtns: document.getElementById('barter-exchange-btns'),
             matrixDiv: document.getElementById('barter-matrix'),
             multBtns: document.getElementById('barter-mult-btns'),
@@ -473,6 +478,11 @@
 
         selectedBatches = 1;
         syncMultButtons();
+
+        shipmentExchangeIds = [];
+        saveShipmentForVillage();
+        renderExchangePlanButtons(villageId);
+
         refreshMatrix();
     }
 
@@ -523,6 +533,141 @@
         localStorage.setItem(LS_HAVE, JSON.stringify(store));
     }
 
+    function loadHaveForExchange(villageId, exchangeId) {
+        try {
+            const raw = localStorage.getItem(LS_HAVE);
+            const store = raw ? JSON.parse(raw) : {};
+            const entry = pickStoreEntry(store, villageId, exchangeId);
+            if (entry) return { ...entry };
+        } catch { /* ignore */ }
+        return {};
+    }
+
+    function readShipmentStore() {
+        try {
+            const raw = localStorage.getItem(LS_SHIPMENT);
+            if (!raw) return {};
+            const parsed = JSON.parse(raw);
+            return (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
+        } catch {
+            return {};
+        }
+    }
+
+    function writeShipmentStore(store) {
+        localStorage.setItem(LS_SHIPMENT, JSON.stringify(store || {}));
+    }
+
+    function loadShipmentForVillage(villageId) {
+        if (!villageId) {
+            shipmentExchangeIds = [];
+            return;
+        }
+        const store = readShipmentStore();
+        const ids = store[villageId];
+        const village = getVillage(villageId);
+        const valid = new Set(((village && village.exchanges) || []).map((ex) => ex.id));
+        shipmentExchangeIds = Array.isArray(ids)
+            ? ids.filter((id) => valid.has(id))
+            : [];
+    }
+
+    function saveShipmentForVillage() {
+        if (!selectedVillageId) return;
+        const store = readShipmentStore();
+        store[selectedVillageId] = shipmentExchangeIds.slice();
+        writeShipmentStore(store);
+    }
+
+    function setShipmentIncluded(exchangeId, included) {
+        if (!exchangeId || !getExchange(selectedVillageId, exchangeId)) return;
+        const idx = shipmentExchangeIds.indexOf(exchangeId);
+        if (included) {
+            if (idx < 0) shipmentExchangeIds.push(exchangeId);
+        } else if (idx >= 0) {
+            shipmentExchangeIds.splice(idx, 1);
+        }
+        saveShipmentForVillage();
+        syncShipmentSummary();
+    }
+
+    function buildRatiosForExchange(exchange, saved) {
+        const ratios = {};
+        let resultRatio = 0;
+        if (!exchange || !exchange.ingredients) return { ratios, resultRatio };
+        exchange.ingredients.forEach((ing) => {
+            const ratio = (Number.isFinite(Number(saved[ing.name])) && Number(saved[ing.name]) > 0)
+                ? parseInt(saved[ing.name], 10)
+                : ing.defaultRatio;
+            ratios[ing.name] = ratio;
+        });
+        if (exchange.result) {
+            const rName = exchange.result.name;
+            const savedR = Number(saved[rName]);
+            resultRatio = (Number.isFinite(savedR) && savedR > 0)
+                ? parseInt(saved[rName], 10)
+                : exchange.result.defaultRatio;
+        }
+        return { ratios, resultRatio };
+    }
+
+    /** 교환별 결과 적재(재료 입력 기준) */
+    function computeResultHaveForExchange(villageId, exchangeId) {
+        const exchange = getExchange(villageId, exchangeId);
+        if (!exchange || !exchange.ingredients || !exchange.ingredients.length || !exchange.result) {
+            return 0;
+        }
+        const saved = pickStoreEntry(readRatioStore(), villageId, exchangeId) || {};
+        const { ratios, resultRatio } = buildRatiosForExchange(exchange, saved);
+        if (resultRatio <= 0) return 0;
+        const haveData = loadHaveForExchange(villageId, exchangeId);
+
+        let haveBatches = null;
+        for (const ing of exchange.ingredients) {
+            const ratio = ratios[ing.name] || 0;
+            if (ratio <= 0) continue;
+            const have = Number(haveData[ing.name]) || 0;
+            const b = have / ratio;
+            if (haveBatches == null || b < haveBatches) haveBatches = b;
+        }
+        if (haveBatches == null) haveBatches = 0;
+        return Math.round(haveBatches * resultRatio);
+    }
+
+    /** 선적 포함 교환 결과 적재 합 − 함대 적재량 */
+    function computeShipmentOverflow() {
+        if (!selectedVillageId || !shipmentExchangeIds.length) return null;
+        let sum = 0;
+        shipmentExchangeIds.forEach((id) => {
+            if (getExchange(selectedVillageId, id)) {
+                sum += computeResultHaveForExchange(selectedVillageId, id);
+            }
+        });
+        const capacity = getCapacity();
+        if (capacity <= 0) return null;
+        return sum - capacity;
+    }
+
+    function syncShipmentSummary() {
+        const { exchangeLabel } = els();
+        if (!exchangeLabel) return;
+        const base = '교환목록';
+        if (!shipmentExchangeIds.length) {
+            exchangeLabel.textContent = base;
+            return;
+        }
+        const overflow = computeShipmentOverflow();
+        if (overflow == null) {
+            exchangeLabel.textContent = base;
+            return;
+        }
+        let suffix;
+        if (overflow === 0) suffix = '(0)';
+        else if (overflow > 0) suffix = `(+${overflow.toLocaleString()})`;
+        else suffix = `(${overflow.toLocaleString()})`;
+        exchangeLabel.textContent = `${base} ${suffix}`;
+    }
+
     function fillVillageOptions() {
         const { villageSelect } = els();
         if (!villageSelect) return;
@@ -546,17 +691,28 @@
         const exchanges = (village && village.exchanges) || [];
         if (!exchanges.length) {
             exchangeBtns.innerHTML = '';
+            syncShipmentSummary();
             return;
         }
+        const shipmentSet = Object.create(null);
+        shipmentExchangeIds.forEach((id) => { shipmentSet[id] = true; });
         exchangeBtns.innerHTML = exchanges.map((ex) => {
             const label = (ex.result && ex.result.name) || ex.name;
             const on = ex.id === selectedExchangeId;
-            return `<button type="button" class="ot-barter-exchange-btn${on ? ' is-active' : ''}" data-exchange-id="${escapeHtml(ex.id)}" role="radio" aria-checked="${on ? 'true' : 'false'}">${escapeHtml(label)}</button>`;
+            const ship = !!shipmentSet[ex.id];
+            return `<div class="ot-barter-exchange-item">
+              <input type="checkbox" class="ot-barter-shipment-cb" data-exchange-id="${escapeHtml(ex.id)}"
+                ${ship ? 'checked' : ''} aria-label="${escapeHtml(label)} 선적 포함">
+              <button type="button" class="ot-barter-exchange-btn${on ? ' is-active' : ''}" data-exchange-id="${escapeHtml(ex.id)}"
+                role="radio" aria-checked="${on ? 'true' : 'false'}">${escapeHtml(label)}</button>
+            </div>`;
         }).join('');
+        syncShipmentSummary();
     }
 
     function onExchangePlanBtnClick(e) {
-        const btn = e.target.closest('[data-exchange-id]');
+        if (e.target.closest('.ot-barter-shipment-cb')) return;
+        const btn = e.target.closest('.ot-barter-exchange-btn[data-exchange-id]');
         const { exchangeBtns } = els();
         if (!btn || !exchangeBtns || !exchangeBtns.contains(btn)) return;
         const exchangeId = btn.dataset.exchangeId;
@@ -564,6 +720,15 @@
         if (selectedExchangeId === exchangeId) return;
         selectedExchangeId = exchangeId;
         onExchangeChange();
+    }
+
+    function onShipmentCheckboxChange(e) {
+        const cb = e.target.closest('.ot-barter-shipment-cb');
+        const { exchangeBtns } = els();
+        if (!cb || !exchangeBtns || !exchangeBtns.contains(cb)) return;
+        const exchangeId = cb.dataset.exchangeId;
+        if (!exchangeId || !getExchange(selectedVillageId, exchangeId)) return;
+        setShipmentIncluded(exchangeId, cb.checked);
     }
 
     function init() {
@@ -605,6 +770,7 @@
 
         villageSelect.addEventListener('change', onVillageChange);
         exchangeBtns.addEventListener('click', onExchangePlanBtnClick);
+        exchangeBtns.addEventListener('change', onShipmentCheckboxChange);
         if (multBtns) {
             multBtns.addEventListener('click', (e) => {
                 const btn = e.target.closest('[data-mult]');
@@ -659,6 +825,7 @@
         if (preferVillage) {
             selectedVillageId = preferVillage;
             villageSelect.value = preferVillage;
+            loadShipmentForVillage(preferVillage);
 
             const village = getVillage(preferVillage);
             const preferExchange = (savedExchange && getExchange(preferVillage, savedExchange))
@@ -707,6 +874,7 @@
         selectedVillageId = villageSelect.value || null;
         selectedExchangeId = null;
         clearMapFilterSelection(true);
+        loadShipmentForVillage(selectedVillageId);
         saveSelection();
 
         const village = currentVillage();
@@ -718,6 +886,7 @@
             showMatrixEmpty(selectedVillageId ? '교환목록을 선택하세요' : '마을을 선택하세요');
             renderResultButtons();
             syncIngredientFilterBtn();
+            syncShipmentSummary();
         }
     }
 
@@ -788,6 +957,7 @@
             else delete currentHave[name];
             saveCurrentHave();
             updateComputedRows();
+            syncShipmentSummary();
         }
     }
 
@@ -957,6 +1127,7 @@
                     : deltaCellHtml(null, 0);
             }
         }
+        syncShipmentSummary();
     }
 
     function showMatrixEmpty(message) {
@@ -972,11 +1143,13 @@
         if (!exchange) {
             lastGoals = [];
             showMatrixEmpty(selectedVillageId ? '교환목록을 선택하세요' : '마을을 선택하세요');
+            syncShipmentSummary();
             return;
         }
         if (!exchange.ingredients || !exchange.ingredients.length) {
             lastGoals = [];
             showMatrixEmpty('재료 비율 미등록');
+            syncShipmentSummary();
             return;
         }
 
@@ -1067,6 +1240,7 @@
               </tr>
             </tbody>
           </table>`;
+        syncShipmentSummary();
     }
 
     function ingredientNamesForExchange(exchange) {
