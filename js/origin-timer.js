@@ -50,7 +50,6 @@
     const settingsOverlay = $('#ot-settings-overlay');
     const settingsCloseBtn = $('#ot-settings-close');
     const settingsDriftInput = $('#ot-settings-drift-over');
-    const settingsDriftSaveBtn = $('#ot-settings-drift-save');
     const settingsDriftEnabled = $('#ot-settings-drift-enabled');
     const settingsDriftRow = $('#ot-settings-drift-row');
     const settingsDriftHistory = $('#ot-settings-drift-history');
@@ -61,6 +60,8 @@
     const settingsStatusEl = $('#ot-settings-status');
     /** 설정 오버레이: 패널 안 드래그 후 바깥에서 mouseup 시 닫힘 방지 */
     let settingsOverlayPointerDownOnBackdrop = false;
+    let settingsSaveInFlight = false;
+    let settingsSaveQueued = false;
 
     let ports = [];
     let selectedName = null;
@@ -1434,14 +1435,17 @@
             settingsOverlayPointerDownOnBackdrop = false;
         });
     }
-    if (settingsDriftSaveBtn) {
-        settingsDriftSaveBtn.addEventListener('click', () => { saveTimerSettings(); });
-    }
     if (settingsDriftEnabled) {
-        settingsDriftEnabled.addEventListener('change', syncSettingsFormEnabled);
+        settingsDriftEnabled.addEventListener('change', () => {
+            syncSettingsFormEnabled();
+            saveTimerSettings();
+        });
     }
     if (settingsOffsetEnabled) {
-        settingsOffsetEnabled.addEventListener('change', syncSettingsFormEnabled);
+        settingsOffsetEnabled.addEventListener('change', () => {
+            syncSettingsFormEnabled();
+            saveTimerSettings();
+        });
     }
     if (settingsDriftHistory) {
         settingsDriftHistory.addEventListener('click', (e) => {
@@ -1450,13 +1454,13 @@
             const v = parseInt(btn.dataset.driftHistory, 10);
             if (!Number.isFinite(v) || v < 60) return;
             settingsDriftInput.value = String(v);
-            renderDriftHistory(v);
+            saveTimerSettings();
         });
     }
     if (settingsOffsetBtns) {
         settingsOffsetBtns.addEventListener('click', (e) => {
             const btn = e.target.closest('[data-offset-delta], [data-offset-set]');
-            if (!btn || !settingsOffsetInput) return;
+            if (!btn || !settingsOffsetInput || settingsOffsetInput.disabled) return;
             let v = parseInt(settingsOffsetInput.value, 10);
             if (!Number.isFinite(v)) v = 0;
             if (btn.dataset.offsetSet != null) {
@@ -1467,6 +1471,7 @@
             if (v < OFFSET_SEC_MIN) v = OFFSET_SEC_MIN;
             if (v > OFFSET_SEC_MAX) v = OFFSET_SEC_MAX;
             settingsOffsetInput.value = String(v);
+            saveTimerSettings();
         });
     }
     if (settingsDriftInput) {
@@ -1476,6 +1481,7 @@
                 saveTimerSettings();
             }
         });
+        settingsDriftInput.addEventListener('blur', () => { saveTimerSettings(); });
     }
     if (settingsOffsetInput) {
         settingsOffsetInput.addEventListener('keydown', (e) => {
@@ -1484,6 +1490,7 @@
                 saveTimerSettings();
             }
         });
+        settingsOffsetInput.addEventListener('blur', () => { saveTimerSettings(); });
     }
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && settingsOverlay && !settingsOverlay.hidden) {
@@ -1795,19 +1802,20 @@
     }
 
     async function saveTimerSettings() {
+        if (settingsSaveInFlight) {
+            settingsSaveQueued = true;
+            return;
+        }
+        settingsSaveInFlight = true;
         const next = applyTimerSettings(readSettingsFromForm());
         pushDriftHistory(next.driftOverMin);
         renderDriftHistory(next.driftOverMin);
-        if (typeof window.originBarterSaveSettings === 'function') {
-            window.originBarterSaveSettings();
-        }
-        if (!window.originDb || typeof window.originDb.saveSettings !== 'function') {
-            refreshAll();
-            setSettingsStatus('로컬에만 반영했습니다.', 'warn');
-            return;
-        }
-        if (settingsDriftSaveBtn) settingsDriftSaveBtn.disabled = true;
         try {
+            if (!window.originDb || typeof window.originDb.saveSettings !== 'function') {
+                refreshAll();
+                setSettingsStatus('로컬에만 반영했습니다.', 'warn');
+                return;
+            }
             const saved = await window.originDb.saveSettings(next);
             applyTimerSettings(saved);
             pushDriftHistory(saved.driftOverMin);
@@ -1816,13 +1824,17 @@
             if (saved._fromLocal) {
                 setSettingsStatus('DB 테이블이 아직 API에 안 보입니다(404). 로컬에 저장했습니다. SQL 실행 후 스키마 Reload를 하세요.', 'warn');
             } else {
-                setSettingsStatus('저장했습니다. 보정값이 바로 적용됩니다.');
+                setSettingsStatus('적용했습니다.');
             }
         } catch (err) {
             console.error('[OriginTimer] 설정 저장 실패', err);
             setSettingsStatus('저장 실패: ' + (err.message || err), 'error');
         } finally {
-            if (settingsDriftSaveBtn) settingsDriftSaveBtn.disabled = false;
+            settingsSaveInFlight = false;
+            if (settingsSaveQueued) {
+                settingsSaveQueued = false;
+                saveTimerSettings();
+            }
         }
     }
 

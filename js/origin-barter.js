@@ -432,6 +432,18 @@
         window.originBarterFillSettings = fillSettingsCapacity;
         window.originBarterSaveSettings = saveSettingsCapacity;
 
+        const { settingsCapacity } = els();
+        if (settingsCapacity) {
+            settingsCapacity.addEventListener('keydown', (e) => {
+                if (e.key !== 'Enter') return;
+                e.preventDefault();
+                saveSettingsCapacity();
+            });
+            settingsCapacity.addEventListener('blur', () => {
+                saveSettingsCapacity();
+            });
+        }
+
         villageSelect.addEventListener('change', onVillageChange);
         exchangeBtns.addEventListener('click', onExchangePlanBtnClick);
         if (multBtns) {
