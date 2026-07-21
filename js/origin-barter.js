@@ -389,7 +389,7 @@
         exchangeBtns.innerHTML = exchanges.map((ex) => {
             const label = (ex.result && ex.result.name) || ex.name;
             const on = ex.id === selectedExchangeId;
-            return `<button type="button" class="ot-barter-exchange-btn${on ? ' is-active' : ''}" data-exchange-id="${escapeHtml(ex.id)}" role="radio" aria-checked="${on ? 'true' : 'false'}">${categoryBadgeHtml(ex.category)}${escapeHtml(label)}</button>`;
+            return `<button type="button" class="ot-barter-exchange-btn${on ? ' is-active' : ''}" data-exchange-id="${escapeHtml(ex.id)}" role="radio" aria-checked="${on ? 'true' : 'false'}">${escapeHtml(label)}</button>`;
         }).join('');
     }
 
@@ -988,7 +988,7 @@
         resultBtns.innerHTML = exchanges.map((ex) => {
             const label = (ex.result && ex.result.name) || ex.name;
             const on = !!selected[ex.id];
-            return `<button type="button" class="ot-barter-result-btn${on ? ' is-active' : ''}" data-exchange-id="${escapeHtml(ex.id)}" aria-pressed="${on ? 'true' : 'false'}">${escapeHtml(label)}</button>`;
+            return `<button type="button" class="ot-barter-result-btn${on ? ' is-active' : ''}" data-exchange-id="${escapeHtml(ex.id)}" aria-pressed="${on ? 'true' : 'false'}">${categoryBadgeHtml(ex.category)}${escapeHtml(label)}</button>`;
         }).join('');
     }
 
