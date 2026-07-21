@@ -359,8 +359,56 @@
         return v;
     }
 
-    function saveBatches() {
-        localStorage.setItem(LS_BATCHES, String(selectedBatches));
+    function readBatchStore() {
+        try {
+            const raw = localStorage.getItem(LS_BATCHES);
+            if (!raw) return {};
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed;
+        } catch { /* 구버전 단일 숫자 문자열 */ }
+        const legacy = parseInt(localStorage.getItem(LS_BATCHES) || '', 10);
+        if (Number.isFinite(legacy) && legacy > 0) {
+            return { __legacyDefault: clampBatches(legacy) };
+        }
+        return {};
+    }
+
+    function writeBatchStore(store) {
+        localStorage.setItem(LS_BATCHES, JSON.stringify(store || {}));
+    }
+
+    function pickBatchEntry(store, villageId, exchangeId) {
+        if (!store || !exchangeId) return null;
+        if (villageId) {
+            const compound = villageId + ':' + exchangeId;
+            if (store[compound] != null) return clampBatches(store[compound]);
+        }
+        if (store[exchangeId] != null) return clampBatches(store[exchangeId]);
+        const legacyColon = Object.keys(store).find(k => k.endsWith(':' + exchangeId));
+        if (legacyColon && store[legacyColon] != null) return clampBatches(store[legacyColon]);
+        return null;
+    }
+
+    function loadSavedBatches() {
+        const store = readBatchStore();
+        const saved = pickBatchEntry(store, selectedVillageId, selectedExchangeId);
+        if (saved != null) return saved;
+        if (store.__legacyDefault != null) return clampBatches(store.__legacyDefault);
+        return 1;
+    }
+
+    function saveCurrentBatches() {
+        const key = ratioKey();
+        if (!key) return;
+        const store = readBatchStore();
+        delete store.__legacyDefault;
+        store[key] = selectedBatches;
+        writeBatchStore(store);
+    }
+
+    function loadBatchesIntoState() {
+        selectedBatches = loadSavedBatches();
+        syncMultButtons();
     }
 
     function syncMultButtons() {
@@ -376,7 +424,54 @@
 
     function setBatches(n) {
         selectedBatches = clampBatches(n);
-        saveBatches();
+        saveCurrentBatches();
+        syncMultButtons();
+        refreshMatrix();
+    }
+
+    function deleteVillageStoreEntries(store, villageId) {
+        if (!store || !villageId) return store;
+        const village = getVillage(villageId);
+        const exchanges = (village && village.exchanges) || [];
+        if (!exchanges.length) return store;
+        const exchangeIds = new Set(exchanges.map((ex) => ex.id));
+        for (const ex of exchanges) {
+            delete store[villageId + ':' + ex.id];
+            delete store[ex.id];
+        }
+        for (const key of Object.keys(store)) {
+            const colon = key.lastIndexOf(':');
+            if (colon < 0) continue;
+            const exId = key.slice(colon + 1);
+            if (exchangeIds.has(exId) && key.startsWith(villageId + ':')) {
+                delete store[key];
+            }
+        }
+        return store;
+    }
+
+    function clearCurrentVillageProgress() {
+        const villageId = selectedVillageId;
+        if (!villageId) return;
+
+        let haveStore = {};
+        try {
+            const raw = localStorage.getItem(LS_HAVE);
+            haveStore = raw ? JSON.parse(raw) : {};
+            if (!haveStore || typeof haveStore !== 'object') haveStore = {};
+        } catch {
+            haveStore = {};
+        }
+        deleteVillageStoreEntries(haveStore, villageId);
+        localStorage.setItem(LS_HAVE, JSON.stringify(haveStore));
+        currentHave = {};
+
+        const batchStore = readBatchStore();
+        delete batchStore.__legacyDefault;
+        deleteVillageStoreEntries(batchStore, villageId);
+        writeBatchStore(batchStore);
+
+        selectedBatches = 1;
         syncMultButtons();
         refreshMatrix();
     }
@@ -485,9 +580,6 @@
             else selectedMonth = parseInt(localStorage.getItem('originBarterMonth') || String(selectedMonth), 10) || selectedMonth;
         }
 
-        selectedBatches = clampBatches(localStorage.getItem(LS_BATCHES) || '1');
-        syncMultButtons();
-
         fillVillageOptions();
         fillSettingsCapacity();
 
@@ -536,9 +628,7 @@
         }
         if (progressClearBtn) {
             progressClearBtn.addEventListener('click', () => {
-                currentHave = {};
-                saveCurrentHave();
-                refreshMatrix();
+                clearCurrentVillageProgress();
             });
         }
 
@@ -634,6 +724,7 @@
     function onExchangeChange() {
         saveSelection();
         loadRatiosIntoState();
+        loadBatchesIntoState();
         currentHave = loadSavedHave();
         refreshMatrix();
         syncIngredientFilterBtn();
