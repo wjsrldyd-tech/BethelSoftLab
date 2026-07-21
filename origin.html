@@ -1349,14 +1349,51 @@
       }
 
       .ot-barter-row-top {
-        grid-template-columns:
-          minmax(4.5rem, 0.7fr)
-          minmax(6.5rem, 1.15fr)
-          minmax(5.5rem, 1fr);
+        grid-template-columns: minmax(5.5rem, 7.5rem) minmax(0, 1fr);
+        align-items: start;
       }
 
-      .ot-barter-field-capacity .ot-barter-input {
-        font-variant-numeric: tabular-nums;
+      .ot-barter-field-exchanges {
+        min-width: 0;
+      }
+
+      .ot-barter-exchange-btns {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+      }
+
+      .ot-barter-exchange-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.28rem;
+        padding: 0.4rem 0.65rem;
+        border-radius: 7px;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        background: rgba(255, 255, 255, 0.05);
+        color: #e2e8f0;
+        font-size: 0.88rem;
+        font-weight: 650;
+        font-family: inherit;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+
+      .ot-barter-exchange-btn:hover {
+        border-color: rgba(14, 165, 233, 0.5);
+        color: #7dd3fc;
+        background: rgba(14, 165, 233, 0.1);
+      }
+
+      .ot-barter-exchange-btn.is-active {
+        border-color: rgba(14, 165, 233, 0.6);
+        background: rgba(14, 165, 233, 0.22);
+        color: #7dd3fc;
+        box-shadow: inset 0 0 0 1px rgba(125, 211, 252, 0.25);
+      }
+
+      .ot-barter-exchange-btn .ot-cat-badge {
+        flex-shrink: 0;
       }
 
       .ot-barter-field {
@@ -2292,6 +2329,17 @@
             </div>
             <p id="ot-settings-status" class="ot-settings-status" aria-live="polite"></p>
           </section>
+
+          <section class="ot-settings-section" aria-labelledby="ot-settings-barter-title">
+            <h3 id="ot-settings-barter-title" class="ot-settings-section-title">물물교환</h3>
+            <div class="ot-settings-row">
+              <div class="ot-settings-field">
+                <label class="ot-settings-label" for="ot-settings-capacity">함대 적재량</label>
+                <input type="number" id="ot-settings-capacity" class="ot-settings-input"
+                  min="1" step="1" value="5000" inputmode="numeric">
+              </div>
+            </div>
+          </section>
         </div>
       </div>
 
@@ -2371,25 +2419,15 @@
             <section id="ot-tool-barter" class="ot-side-tool-pane" data-tool-pane="barter" role="tabpanel" aria-label="물물교환" hidden>
               <div class="ot-barter-panel">
                 <div class="ot-barter-row ot-barter-row-top">
-                  <div class="ot-barter-field ot-barter-field-capacity">
-                    <label class="ot-barter-label" for="barter-capacity">함대 적재량</label>
-                    <input type="number" id="barter-capacity" class="ot-barter-input"
-                           value="5000" min="1" placeholder="적재량">
-                  </div>
-                  <div class="ot-barter-field">
+                  <div class="ot-barter-field ot-barter-field-village">
                     <label class="ot-barter-label" for="barter-village">마을</label>
                     <select id="barter-village" class="ot-barter-select">
                       <option value="">선택하세요</option>
                     </select>
                   </div>
-                  <div class="ot-barter-field">
-                    <label class="ot-barter-label" for="barter-exchange">교환목록</label>
-                    <div class="ot-barter-select-wrap">
-                      <span id="barter-exchange-badge" class="ot-cat-badge" hidden></span>
-                      <select id="barter-exchange" class="ot-barter-select">
-                        <option value="">선택하세요</option>
-                      </select>
-                    </div>
+                  <div class="ot-barter-field ot-barter-field-exchanges">
+                    <span class="ot-barter-label" id="barter-exchange-label">교환목록</span>
+                    <div id="barter-exchange-btns" class="ot-barter-exchange-btns" role="radiogroup" aria-labelledby="barter-exchange-label"></div>
                   </div>
                 </div>
 
@@ -2414,7 +2452,7 @@
                 </div>
 
                 <div class="ot-barter-actions">
-                  <div id="barter-result-btns" class="ot-barter-result-btns" role="group" aria-label="결과물"></div>
+                  <div id="barter-result-btns" class="ot-barter-result-btns" role="group" aria-label="맵 표시 결과물"></div>
                   <button type="button" id="barter-filter-map" class="ot-barter-filter-btn"
                     aria-pressed="false">
                     맵에 재료 항구 표시

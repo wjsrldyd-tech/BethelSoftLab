@@ -1747,6 +1747,9 @@
             globalOffsetSec,
             offsetEnabled,
         });
+        if (typeof window.originBarterFillSettings === 'function') {
+            window.originBarterFillSettings();
+        }
         setSettingsStatus('');
         settingsOverlay.hidden = false;
         if (settingsDriftEnabled) settingsDriftEnabled.focus();
@@ -1794,6 +1797,9 @@
         const next = applyTimerSettings(readSettingsFromForm());
         pushDriftHistory(next.driftOverMin);
         renderDriftHistory(next.driftOverMin);
+        if (typeof window.originBarterSaveSettings === 'function') {
+            window.originBarterSaveSettings();
+        }
         if (!window.originDb || typeof window.originDb.saveSettings !== 'function') {
             refreshAll();
             setSettingsStatus('로컬에만 반영했습니다.', 'warn');

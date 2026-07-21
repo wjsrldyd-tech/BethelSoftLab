@@ -164,15 +164,14 @@
 
     function els() {
         return {
-            capacityInput: document.getElementById('barter-capacity'),
             villageSelect: document.getElementById('barter-village'),
-            exchangeSelect: document.getElementById('barter-exchange'),
-            exchangeBadge: document.getElementById('barter-exchange-badge'),
+            exchangeBtns: document.getElementById('barter-exchange-btns'),
             matrixDiv: document.getElementById('barter-matrix'),
             multBtns: document.getElementById('barter-mult-btns'),
             progressClearBtn: document.getElementById('barter-progress-clear'),
             filterBtn: document.getElementById('barter-filter-map'),
             resultBtns: document.getElementById('barter-result-btns'),
+            settingsCapacity: document.getElementById('ot-settings-capacity'),
         };
     }
 
@@ -211,17 +210,12 @@
         return getExchange(selectedVillageId, selectedExchangeId);
     }
 
-    function renderExchangeBadge() {
-        const { exchangeBadge } = els();
-        if (!exchangeBadge) return;
-        const exchange = currentExchange();
-        const badge = exchange && typeof window.getOriginCategoryBadge === 'function'
-            ? window.getOriginCategoryBadge(exchange.category)
+    function categoryBadgeHtml(category) {
+        const badge = category && typeof window.getOriginCategoryBadge === 'function'
+            ? window.getOriginCategoryBadge(category)
             : null;
-        exchangeBadge.hidden = !badge;
-        exchangeBadge.textContent = badge ? badge.letter : '';
-        exchangeBadge.title = badge ? badge.label : '';
-        exchangeBadge.setAttribute('aria-label', badge ? badge.label : '');
+        if (!badge) return '';
+        return `<span class="ot-cat-badge" title="${escapeHtml(badge.label)}" aria-label="${escapeHtml(badge.label)}">${escapeHtml(badge.letter)}</span>`;
     }
 
     /** 저장키: 마을ID:교환ID (구버전 교환ID만 있던 키도 읽기) */
@@ -259,13 +253,36 @@
         localStorage.setItem(LS_RATIOS, JSON.stringify(store || {}));
     }
 
-    function saveCapacity() {
-        const { capacityInput } = els();
-        if (!capacityInput) return;
-        const n = parseInt(capacityInput.value, 10);
-        if (Number.isFinite(n) && n > 0) {
-            localStorage.setItem(LS_CAPACITY, String(n));
+    function saveCapacityValue(n) {
+        const v = parseInt(n, 10);
+        if (Number.isFinite(v) && v > 0) {
+            localStorage.setItem(LS_CAPACITY, String(v));
+            return v;
         }
+        return null;
+    }
+
+    function getCapacity() {
+        const n = parseInt(localStorage.getItem(LS_CAPACITY) || '', 10);
+        return (Number.isFinite(n) && n > 0) ? n : 5000;
+    }
+
+    function fillSettingsCapacity() {
+        const { settingsCapacity } = els();
+        if (!settingsCapacity) return;
+        settingsCapacity.value = String(getCapacity());
+    }
+
+    function saveSettingsCapacity() {
+        const { settingsCapacity } = els();
+        if (!settingsCapacity) return getCapacity();
+        const saved = saveCapacityValue(settingsCapacity.value);
+        if (saved == null) {
+            settingsCapacity.value = String(getCapacity());
+            return getCapacity();
+        }
+        refreshMatrix();
+        return saved;
     }
 
     function clampBatches(n) {
@@ -357,22 +374,39 @@
     }
 
     function fillExchangeOptions(villageId) {
-        const { exchangeSelect } = els();
-        if (!exchangeSelect) return;
-        exchangeSelect.innerHTML = '<option value="">선택하세요</option>';
+        renderExchangePlanButtons(villageId);
+    }
+
+    function renderExchangePlanButtons(villageId) {
+        const { exchangeBtns } = els();
+        if (!exchangeBtns) return;
         const village = getVillage(villageId);
-        if (!village || !village.exchanges) return;
-        village.exchanges.forEach(ex => {
-            const opt = document.createElement('option');
-            opt.value = ex.id;
-            opt.textContent = ex.name;
-            exchangeSelect.appendChild(opt);
-        });
+        const exchanges = (village && village.exchanges) || [];
+        if (!exchanges.length) {
+            exchangeBtns.innerHTML = '';
+            return;
+        }
+        exchangeBtns.innerHTML = exchanges.map((ex) => {
+            const label = (ex.result && ex.result.name) || ex.name;
+            const on = ex.id === selectedExchangeId;
+            return `<button type="button" class="ot-barter-exchange-btn${on ? ' is-active' : ''}" data-exchange-id="${escapeHtml(ex.id)}" role="radio" aria-checked="${on ? 'true' : 'false'}">${categoryBadgeHtml(ex.category)}${escapeHtml(label)}</button>`;
+        }).join('');
+    }
+
+    function onExchangePlanBtnClick(e) {
+        const btn = e.target.closest('[data-exchange-id]');
+        const { exchangeBtns } = els();
+        if (!btn || !exchangeBtns || !exchangeBtns.contains(btn)) return;
+        const exchangeId = btn.dataset.exchangeId;
+        if (!exchangeId || !getExchange(selectedVillageId, exchangeId)) return;
+        if (selectedExchangeId === exchangeId) return;
+        selectedExchangeId = exchangeId;
+        onExchangeChange();
     }
 
     function init() {
-        const { capacityInput, villageSelect, exchangeSelect, filterBtn, matrixDiv, progressClearBtn, multBtns } = els();
-        if (!capacityInput || !villageSelect || !exchangeSelect || inited) return;
+        const { villageSelect, exchangeBtns, filterBtn, matrixDiv, progressClearBtn, multBtns } = els();
+        if (!villageSelect || !exchangeBtns || inited) return;
         inited = true;
 
         const savedMonth = parseInt(localStorage.getItem('originBarterMonth') || '', 10);
@@ -384,28 +418,22 @@
             else selectedMonth = parseInt(localStorage.getItem('originBarterMonth') || String(selectedMonth), 10) || selectedMonth;
         }
 
-        const savedCapacity = parseInt(localStorage.getItem(LS_CAPACITY) || '', 10);
-        if (Number.isFinite(savedCapacity) && savedCapacity > 0) {
-            capacityInput.value = String(savedCapacity);
-        }
-
         selectedBatches = clampBatches(localStorage.getItem(LS_BATCHES) || '1');
         syncMultButtons();
 
         fillVillageOptions();
+        fillSettingsCapacity();
 
         window.originBarterOnMonthChange = function (month) {
             selectedMonth = parseInt(month, 10);
             if (!(selectedMonth >= 1 && selectedMonth <= 12)) selectedMonth = 1;
             refreshMatrix();
         };
+        window.originBarterFillSettings = fillSettingsCapacity;
+        window.originBarterSaveSettings = saveSettingsCapacity;
 
         villageSelect.addEventListener('change', onVillageChange);
-        exchangeSelect.addEventListener('change', onExchangeChange);
-        capacityInput.addEventListener('input', () => {
-            saveCapacity();
-            refreshMatrix();
-        });
+        exchangeBtns.addEventListener('click', onExchangePlanBtnClick);
         if (multBtns) {
             multBtns.addEventListener('click', (e) => {
                 const btn = e.target.closest('[data-mult]');
@@ -462,7 +490,6 @@
         if (preferVillage) {
             selectedVillageId = preferVillage;
             villageSelect.value = preferVillage;
-            fillExchangeOptions(preferVillage);
 
             const village = getVillage(preferVillage);
             const preferExchange = (savedExchange && getExchange(preferVillage, savedExchange))
@@ -471,11 +498,10 @@
 
             if (preferExchange) {
                 selectedExchangeId = preferExchange;
-                exchangeSelect.value = preferExchange;
                 onExchangeChange();
             } else {
                 selectedExchangeId = null;
-                renderExchangeBadge();
+                renderExchangePlanButtons(preferVillage);
                 showMatrixEmpty('교환목록을 선택하세요');
             }
         } else {
@@ -508,20 +534,18 @@
     }
 
     function onVillageChange() {
-        const { villageSelect, exchangeSelect } = els();
+        const { villageSelect } = els();
         selectedVillageId = villageSelect.value || null;
         selectedExchangeId = null;
         clearMapFilterSelection(true);
-        fillExchangeOptions(selectedVillageId);
-        renderExchangeBadge();
         saveSelection();
 
         const village = currentVillage();
         if (village && village.exchanges && village.exchanges.length) {
             selectedExchangeId = village.exchanges[0].id;
-            exchangeSelect.value = selectedExchangeId;
             onExchangeChange();
         } else {
+            renderExchangePlanButtons(selectedVillageId);
             showMatrixEmpty(selectedVillageId ? '교환목록을 선택하세요' : '마을을 선택하세요');
             renderResultButtons();
             syncIngredientFilterBtn();
@@ -529,14 +553,12 @@
     }
 
     function onExchangeChange() {
-        const { exchangeSelect } = els();
-        selectedExchangeId = exchangeSelect.value || null;
-        renderExchangeBadge();
         saveSelection();
         loadRatiosIntoState();
         currentHave = loadSavedHave();
         refreshMatrix();
         syncIngredientFilterBtn();
+        renderExchangePlanButtons(selectedVillageId);
         renderResultButtons();
         try {
             window.dispatchEvent(new CustomEvent('origin-barter-exchange-changed', {
@@ -597,11 +619,6 @@
             saveCurrentHave();
             updateComputedRows();
         }
-    }
-
-    function getCapacity() {
-        const { capacityInput } = els();
-        return parseInt(capacityInput && capacityInput.value, 10) || 0;
     }
 
     /**
