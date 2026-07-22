@@ -136,6 +136,11 @@
             '건기', '건기', '건기', '건기', '건기', '우기',
             '우기', '우기', '우기', '우기', '건기', '건기'
         ],
+        // 건기-1-우기-건기: 11~4 건기, 5~10 우기
+        'dry-1-rainy-dry': [
+            '건기', '건기', '건기', '건기', '우기', '우기',
+            '우기', '우기', '우기', '우기', '건기', '건기'
+        ],
         // 건기+1-우기-건기: 12~6 건기, 7~11 우기
         'dry+1-rainy-dry': [
             '건기', '건기', '건기', '건기', '건기', '건기',
@@ -2207,8 +2212,8 @@
      */
     function resolveSeasonType(portOrType) {
         if (!portOrType) return 'north-4seasons';
-        const types = ['north-4seasons', 'south-4seasons', 'dry-rainy-dry', 
-                      'dry+1-rainy-dry', 'rainy-dry-rainy', 'tropical', 'arctic'];
+        const types = ['north-4seasons', 'south-4seasons', 'dry-rainy-dry',
+                      'dry-1-rainy-dry', 'dry+1-rainy-dry', 'rainy-dry-rainy', 'tropical', 'arctic'];
         if (types.indexOf(portOrType) !== -1) return portOrType;
         // 항구명으로 간주
         if (typeof window.getOriginPortSeasonType === 'function') {
@@ -2254,6 +2259,9 @@
         },
         'dry-rainy-dry': {
             // 건기-우기 규칙
+        },
+        'dry-1-rainy-dry': {
+            // 건기-1-우기 규칙
         },
         'dry+1-rainy-dry': {
             // 건기+1-우기 규칙

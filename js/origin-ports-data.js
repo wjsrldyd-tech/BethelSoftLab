@@ -304,6 +304,7 @@
      * - north-4seasons: 북반구 사계절 (3~5 봄, 6~8 여름, 9~11 가을, 12~2 겨울)
      * - south-4seasons: 남반구 사계절 (9~11 봄, 12~2 여름, 3~5 가을, 6~8 겨울)
      * - dry-rainy-dry: 건기-우기-건기 (11~5 건기, 6~10 우기)
+     * - dry-1-rainy-dry: 건기-1-우기-건기 (11~4 건기, 5~10 우기)
      * - dry+1-rainy-dry: 건기+1-우기-건기 (12~6 건기, 7~11 우기)
      * - rainy-dry-rainy: 우기-건기-우기 (12~5 우기, 6~11 건기)
      * - tropical: 열대 (성수기 없음)
@@ -423,11 +424,10 @@
         '루안다': 'south-4seasons',
         '벵겔라': 'south-4seasons',
 
-        // 건기-우기-건기 (16개)
+        // 건기-우기-건기 (15개)
         '마닐라': 'dry-rainy-dry',
         '브루나이': 'dry-rainy-dry',
         '홀로': 'dry-rainy-dry',
-        '두알라': 'dry-rainy-dry',
         '베냉': 'dry-rainy-dry',
         '배서스트': 'dry-rainy-dry',
         '비사우': 'dry-rainy-dry',
@@ -440,6 +440,9 @@
         '디우': 'dry-rainy-dry',
         '캘리컷': 'dry-rainy-dry',
         '롭부리': 'dry-rainy-dry',
+
+        // 건기-1-우기-건기 (1개) — 11~4 건기, 5~10 우기
+        '두알라': 'dry-1-rainy-dry',
 
         // 건기+1-우기-건기 (19개)
         '마라카이보': 'dry+1-rainy-dry',
@@ -516,7 +519,7 @@
     /**
      * 항구의 계절 타입 조회 (7종)
      * @param {string} portName
-     * @returns {string} 'north-4seasons'|'south-4seasons'|'dry-rainy-dry'|'dry+1-rainy-dry'|'rainy-dry-rainy'|'tropical'|'arctic'
+     * @returns {string} 'north-4seasons'|'south-4seasons'|'dry-rainy-dry'|'dry-1-rainy-dry'|'dry+1-rainy-dry'|'rainy-dry-rainy'|'tropical'|'arctic'
      */
     window.getOriginPortSeasonType = function (portName) {
         if (!portName) return 'north-4seasons'; // 기본값
