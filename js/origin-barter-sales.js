@@ -1,11 +1,16 @@
 // =============== origin-barter-sales.js ===============
 // 물물교환 품목 판매 기록 (교환목록 결과품 + 맵 항구 + 시세 → 100% 단가)
+// 품목별 최고가(단가+항구) 요약 + 품목 클릭 시 최근 기록 필터
 
 (function () {
     'use strict';
 
+    const LIST_LIMIT = 200;
+    const RECENT_LIMIT = 50;
+
     let inited = false;
     let listCache = [];
+    let filterGoodName = '';
 
     function els() {
         return {
@@ -20,6 +25,9 @@
             saveBtn: document.getElementById('ot-sales-save'),
             statusEl: document.getElementById('ot-sales-status'),
             listEl: document.getElementById('ot-sales-list'),
+            bestListEl: document.getElementById('ot-sales-best-list'),
+            recentTitleEl: document.getElementById('ot-sales-recent-title'),
+            filterClearBtn: document.getElementById('ot-sales-filter-clear'),
         };
     }
 
@@ -104,14 +112,85 @@
         setReadonlyField(goodEl, selectedGoodName(), '교환목록을 선택하세요');
     }
 
+    /** 품목별 최고 단가(+항구). 동점이면 더 최근 soldAt 우선 */
+    function buildBestByGood(sales) {
+        const map = new Map();
+        for (const s of sales) {
+            const name = (s.goodName || '').trim();
+            if (!name) continue;
+            const unit = Number(s.unitPrice);
+            if (!Number.isFinite(unit) || unit <= 0) continue;
+            const prev = map.get(name);
+            if (!prev) {
+                map.set(name, s);
+                continue;
+            }
+            const prevUnit = Number(prev.unitPrice);
+            if (unit > prevUnit) {
+                map.set(name, s);
+            } else if (unit === prevUnit) {
+                const a = new Date(s.soldAt).getTime();
+                const b = new Date(prev.soldAt).getTime();
+                if (a > b) map.set(name, s);
+            }
+        }
+        return Array.from(map.values()).sort((a, b) => {
+            const du = Number(b.unitPrice) - Number(a.unitPrice);
+            if (du !== 0) return du;
+            return String(a.goodName).localeCompare(String(b.goodName), 'ko');
+        });
+    }
+
+    function updateRecentTitle() {
+        const { recentTitleEl, filterClearBtn } = els();
+        if (recentTitleEl) {
+            recentTitleEl.textContent = filterGoodName
+                ? `최근 기록 · ${filterGoodName}`
+                : '최근 기록';
+        }
+        if (filterClearBtn) {
+            filterClearBtn.hidden = !filterGoodName;
+        }
+    }
+
+    function renderBestList() {
+        const { bestListEl } = els();
+        if (!bestListEl) return;
+        const bests = buildBestByGood(listCache);
+        if (!bests.length) {
+            bestListEl.innerHTML = '<div class="ot-sales-empty">저장된 기록이 없습니다</div>';
+            return;
+        }
+        bestListEl.innerHTML = bests.map(s => {
+            const active = filterGoodName === s.goodName ? ' is-active' : '';
+            return `
+          <button type="button" class="ot-sales-best-item${active}" data-good="${escapeHtml(s.goodName)}">
+            <span class="ot-sales-best-good">${escapeHtml(s.goodName)}</span>
+            <span class="ot-sales-best-unit">${formatNum(s.unitPrice)}</span>
+            <span class="ot-sales-best-port">${escapeHtml(s.portName)}</span>
+          </button>`;
+        }).join('');
+    }
+
     function renderList() {
         const { listEl } = els();
         if (!listEl) return;
-        if (!listCache.length) {
-            listEl.innerHTML = '<div class="ot-sales-empty">저장된 기록이 없습니다</div>';
+        updateRecentTitle();
+
+        let rows = listCache;
+        if (filterGoodName) {
+            rows = listCache.filter(s => s.goodName === filterGoodName);
+        } else {
+            rows = listCache.slice(0, RECENT_LIMIT);
+        }
+
+        if (!rows.length) {
+            listEl.innerHTML = filterGoodName
+                ? '<div class="ot-sales-empty">이 품목의 기록이 없습니다</div>'
+                : '<div class="ot-sales-empty">저장된 기록이 없습니다</div>';
             return;
         }
-        listEl.innerHTML = listCache.map(s => `
+        listEl.innerHTML = rows.map(s => `
           <div class="ot-sales-item" data-id="${escapeHtml(s.id)}">
             <div class="ot-sales-item-good">${escapeHtml(s.goodName)}</div>
             <div class="ot-sales-item-port">${escapeHtml(s.portName)}</div>
@@ -124,15 +203,34 @@
         `).join('');
     }
 
+    function renderAll() {
+        renderBestList();
+        renderList();
+    }
+
+    function setFilterGood(goodName) {
+        const next = (goodName || '').trim();
+        filterGoodName = (filterGoodName && filterGoodName === next) ? '' : next;
+        renderAll();
+    }
+
+    function clearFilter() {
+        filterGoodName = '';
+        renderAll();
+    }
+
     async function loadList() {
         if (!window.originDb || typeof window.originDb.listBarterSales !== 'function') {
             listCache = [];
-            renderList();
+            renderAll();
             return;
         }
         try {
-            listCache = await window.originDb.listBarterSales({ limit: 50 });
-            renderList();
+            listCache = await window.originDb.listBarterSales({ limit: LIST_LIMIT });
+            if (filterGoodName && !listCache.some(s => s.goodName === filterGoodName)) {
+                filterGoodName = '';
+            }
+            renderAll();
         } catch (err) {
             console.error('[BarterSales] list', err);
             setStatus('목록 불러오기 실패: ' + (err.message || err), true);
@@ -211,7 +309,10 @@
     }
 
     function init() {
-        const { openBtn, overlay, closeBtn, marketInput, saleInput, saveBtn, listEl } = els();
+        const {
+            openBtn, overlay, closeBtn, marketInput, saleInput, saveBtn,
+            listEl, bestListEl, filterClearBtn,
+        } = els();
         if (!openBtn || !overlay || inited) return;
         inited = true;
 
@@ -232,6 +333,15 @@
         if (marketInput) marketInput.addEventListener('input', calcUnit);
         if (saleInput) saleInput.addEventListener('input', calcUnit);
         if (saveBtn) saveBtn.addEventListener('click', saveSale);
+        if (filterClearBtn) filterClearBtn.addEventListener('click', clearFilter);
+
+        if (bestListEl) {
+            bestListEl.addEventListener('click', (e) => {
+                const btn = e.target.closest('.ot-sales-best-item');
+                if (!btn) return;
+                setFilterGood(btn.dataset.good || '');
+            });
+        }
 
         if (listEl) {
             listEl.addEventListener('click', (e) => {
