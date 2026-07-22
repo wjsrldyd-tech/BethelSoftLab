@@ -112,6 +112,43 @@
         setReadonlyField(goodEl, selectedGoodName(), '교환목록을 선택하세요');
     }
 
+    function categoryForGoodName(goodName) {
+        const name = (goodName || '').trim();
+        if (!name) return '';
+        const exchanges = window.ORIGIN_BARTER_EXCHANGES || [];
+        for (let i = 0; i < exchanges.length; i++) {
+            const ex = exchanges[i];
+            const resultName = ex && ex.result && ex.result.name;
+            if (resultName === name || (ex && ex.name === name)) {
+                return ex.category || '';
+            }
+        }
+        const ports = window.ORIGIN_PORT_GOODS || {};
+        for (const list of Object.values(ports)) {
+            if (!Array.isArray(list)) continue;
+            const hit = list.find(g => g && g.name === name);
+            if (hit && hit.category) return hit.category;
+        }
+        return '';
+    }
+
+    function categoryBadgeHtml(category) {
+        if (typeof window.originCategoryBadgeHtml === 'function') {
+            return window.originCategoryBadgeHtml(category, { escapeHtml });
+        }
+        const badge = category && typeof window.getOriginCategoryBadge === 'function'
+            ? window.getOriginCategoryBadge(category)
+            : null;
+        if (!badge) return '';
+        return `<span class="ot-cat-badge" title="${escapeHtml(badge.label)}" aria-label="${escapeHtml(badge.label)}">${escapeHtml(badge.letter)}</span>`;
+    }
+
+    function goodLabelHtml(goodName) {
+        const name = (goodName || '').trim();
+        const badge = categoryBadgeHtml(categoryForGoodName(name));
+        return `${badge}<span class="ot-sales-best-good-name">${escapeHtml(name)}</span>`;
+    }
+
     /** 품목별 최고 단가(+항구). 동점이면 더 최근 soldAt 우선 */
     function buildBestByGood(sales) {
         const map = new Map();
@@ -165,7 +202,7 @@
             const active = filterGoodName === s.goodName ? ' is-active' : '';
             return `
           <button type="button" class="ot-sales-best-item${active}" data-good="${escapeHtml(s.goodName)}">
-            <span class="ot-sales-best-good">${escapeHtml(s.goodName)}</span>
+            <span class="ot-sales-best-good">${goodLabelHtml(s.goodName)}</span>
             <span class="ot-sales-best-unit">${formatNum(s.unitPrice)}</span>
             <span class="ot-sales-best-port">${escapeHtml(s.portName)}</span>
           </button>`;
