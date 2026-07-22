@@ -445,7 +445,7 @@
         // 건기-1-우기-건기 (1개) — 11~4 건기, 5~10 우기
         '두알라': 'dry-1-rainy-dry',
 
-        // 건기+1-우기-건기 (19개)
+        // 건기+1-우기-건기 (20개)
         '마라카이보': 'dry+1-rainy-dry',
         '윌렘스타트': 'dry+1-rainy-dry',
         '카라카스': 'dry+1-rainy-dry',
@@ -456,6 +456,7 @@
         '메리다': 'dry+1-rainy-dry',
         '베라크루스': 'dry+1-rainy-dry',
         '아카풀코': 'dry+1-rainy-dry',
+        '과테말라': 'dry+1-rainy-dry',
         '마실리파트남': 'dry+1-rainy-dry',
         '캘커타': 'dry+1-rainy-dry',
         '퐁디셰리': 'dry+1-rainy-dry',
