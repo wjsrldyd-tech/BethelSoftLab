@@ -424,7 +424,7 @@
         '루안다': 'south-4seasons',
         '벵겔라': 'south-4seasons',
 
-        // 건기-우기-건기 (15개)
+        // 건기-우기-건기 (16개)
         '마닐라': 'dry-rainy-dry',
         '브루나이': 'dry-rainy-dry',
         '홀로': 'dry-rainy-dry',
@@ -440,6 +440,7 @@
         '디우': 'dry-rainy-dry',
         '캘리컷': 'dry-rainy-dry',
         '롭부리': 'dry-rainy-dry',
+        '바이아': 'dry-rainy-dry',
 
         // 건기-1-우기-건기 (1개) — 11~4 건기, 5~10 우기
         '두알라': 'dry-1-rainy-dry',
@@ -465,8 +466,7 @@
         '하바나': 'dry+1-rainy-dry',
         '포트로열': 'dry+1-rainy-dry',
 
-        // 우기-건기-우기 (5개) — 12~5 우기, 6~11 건기
-        '바이아': 'rainy-dry-rainy',
+        // 우기-건기-우기 (4개) — 12~5 우기, 6~11 건기
         '페르남부쿠': 'rainy-dry-rainy',
         '소팔라': 'rainy-dry-rainy',
         '켈리마느': 'rainy-dry-rainy',
