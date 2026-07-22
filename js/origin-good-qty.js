@@ -166,28 +166,30 @@
         const raw = (inputEl.value || '').trim();
         const plain = raw === '' ? 0 : plainFromVisible(raw, mult);
 
+        // 로컬(메모리·화면) 먼저 반영 — DB 전송은 백그라운드에서 처리되므로 기다리지 않음
+        if (plain > 0) plainByGood[goodName] = plain;
+        else delete plainByGood[goodName];
+
+        // 입력값을 시즌 환산 표시 규격으로 맞추기 (포커스 중이 아닐 때만)
+        if (document.activeElement !== inputEl) {
+            inputEl.value = visibleFromPlain(plain, mult);
+        }
+        setStatus(plain > 0
+            ? `「${goodName}」평시 ${plain} 저장`
+            : `「${goodName}」삭제`);
+        if (typeof window.invalidateOriginGoodQtyCache === 'function') {
+            window.invalidateOriginGoodQtyCache();
+        }
+
         try {
             await window.originDb.saveGoodPlainQty({
                 portName: currentPort,
                 goodName,
                 plainQty: plain,
             });
-            if (plain > 0) plainByGood[goodName] = plain;
-            else delete plainByGood[goodName];
-
-            // 입력값을 시즌 환산 표시 규격으로 맞추기 (포커스 중이 아닐 때만)
-            if (document.activeElement !== inputEl) {
-                inputEl.value = visibleFromPlain(plain, mult);
-            }
-            setStatus(plain > 0
-                ? `「${goodName}」평시 ${plain} 저장`
-                : `「${goodName}」삭제`);
-            if (typeof window.invalidateOriginGoodQtyCache === 'function') {
-                window.invalidateOriginGoodQtyCache();
-            }
         } catch (err) {
             console.error('[OriginGoodQty] save', err);
-            setStatus('저장 실패: ' + (err.message || err), true);
+            setStatus('저장 실패(화면엔 반영됨): ' + (err.message || err), true);
         }
     }
 

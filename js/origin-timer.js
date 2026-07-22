@@ -678,7 +678,7 @@
                 await window.originDb.savePinOverrides(pinOverrides);
                 setStatus(window.originDb.isLocal
                     ? '핀 위치를 로컬에 저장했습니다.'
-                    : '핀 위치를 DB에 저장했습니다.');
+                    : '핀 위치를 저장했습니다.');
             } catch (err) {
                 console.error('[OriginTimer] 핀 저장 실패', err);
                 setStatus('핀 저장 실패: ' + (err.message || err) + ' — SQL 마이그레이션을 확인하세요.', true);
@@ -1130,6 +1130,30 @@
         }
     }
 
+    /** savePort()가 반환한 로컬 행을 메모리(ports)에 즉시 반영 — DB 재조회 없이 화면 갱신 */
+    function upsertPortInMemory(row) {
+        if (!row || !row.id) return row;
+        const normalized = {
+            ...row,
+            soldOut: !!row.soldOut,
+            soldOutAt: row.soldOutAt || null,
+            toolShopBought: !!row.toolShopBought,
+            toolShopBoughtAt: row.toolShopBoughtAt || null,
+            shipyardBought: !!row.shipyardBought,
+            shipyardBoughtAt: row.shipyardBoughtAt || null,
+            syncedAt: row.syncedAt || null,
+            syncedElapsedMin: row.syncedElapsedMin != null ? row.syncedElapsedMin : null,
+        };
+        const idx = ports.findIndex(p => p.id === row.id);
+        if (idx >= 0) ports[idx] = { ...ports[idx], ...normalized };
+        else ports.push(normalized);
+        return normalized;
+    }
+
+    function removePortInMemory(id) {
+        ports = ports.filter(p => p.id !== id);
+    }
+
     function tickAll() {
         syncGameMonthIfNeeded();
         flushExpiredSoldOut();
@@ -1145,7 +1169,7 @@
         const has = list.some(p => p.portName === DEFAULT_PORT);
         if (has) return list;
 
-        await window.originDb.savePort({
+        const row = await window.originDb.savePort({
             portName: DEFAULT_PORT,
             anchorAt: new Date().toISOString(),
             intervalMin: INTERVAL_MIN,
@@ -1158,13 +1182,15 @@
             shipyardBoughtAt: null,
         });
         setStatus(`「${DEFAULT_PORT}」항구를 추가했습니다.`);
-        return window.originDb.listPorts();
+        return list.concat([row]);
     }
 
-    /** DB에 남은 구버전 항구명 → 현행 지명 */
+    /** DB에 남은 구버전 항구명 → 현행 지명 (로컬 즉시 반영, 재조회 없이 목록만 갱신) */
     async function migratePortNames(list) {
         const rename = window.renameOriginPort || (n => n);
         let changed = false;
+        const deletedIds = new Set();
+        const updated = new Map();
         for (const port of list) {
             const neu = rename(port.portName);
             if (neu === port.portName) continue;
@@ -1172,17 +1198,21 @@
             if (clash) {
                 // 신이름이 이미 있으면 구 레코드만 삭제
                 await window.originDb.deletePort(port.id);
+                deletedIds.add(port.id);
             } else {
-                await window.originDb.savePort({
+                const row = await window.originDb.savePort({
                     ...port,
                     portName: neu,
                     intervalMin: INTERVAL_MIN,
                 });
+                updated.set(port.id, row);
             }
             changed = true;
         }
         if (!changed) return list;
-        return window.originDb.listPorts();
+        return list
+            .filter(p => !deletedIds.has(p.id))
+            .map(p => updated.get(p.id) || p);
     }
 
     async function reload(keepSelection) {
@@ -1516,7 +1546,7 @@
                 if (action === 'enter') {
                     if (!selectedName) return;
                     btn.disabled = true;
-                    await window.originDb.savePort({
+                    const row = await window.originDb.savePort({
                         portName: selectedName,
                         anchorAt: new Date().toISOString(),
                         intervalMin: INTERVAL_MIN,
@@ -1526,7 +1556,8 @@
                         toolShopBought: false,
                         toolShopBoughtAt: null,
                     });
-                    await reload(true);
+                    upsertPortInMemory(row);
+                    refreshAll();
                     setStatus(`「${selectedName}」지금 입장으로 등록했습니다.`);
                     return;
                 }
@@ -1553,13 +1584,14 @@
                 if (action === 'visit') {
                     btn.disabled = true;
                     const turnOn = !isSoldOut(tracked);
-                    await window.originDb.savePort({
+                    const row = await window.originDb.savePort({
                         ...tracked,
                         intervalMin: INTERVAL_MIN,
                         soldOut: turnOn,
                         soldOutAt: turnOn ? new Date().toISOString() : null,
                     });
-                    await reload(true);
+                    upsertPortInMemory(row);
+                    refreshAll();
                     setStatus(turnOn
                         ? `「${tracked.portName}」상점 구매를 표시했습니다.`
                         : `「${tracked.portName}」상점 구매를 취소했습니다.`);
@@ -1569,13 +1601,14 @@
                 if (action === 'tool-shop') {
                     btn.disabled = true;
                     const turnOn = !isToolShopBought(tracked);
-                    await window.originDb.savePort({
+                    const row = await window.originDb.savePort({
                         ...tracked,
                         intervalMin: INTERVAL_MIN,
                         toolShopBought: turnOn,
                         toolShopBoughtAt: turnOn ? new Date().toISOString() : null,
                     });
-                    await reload(true);
+                    upsertPortInMemory(row);
+                    refreshAll();
                     setStatus(turnOn
                         ? `「${tracked.portName}」도구점 구매를 표시했습니다.`
                         : `「${tracked.portName}」도구점 구매를 취소했습니다.`);
@@ -1585,13 +1618,14 @@
                 if (action === 'shipyard') {
                     btn.disabled = true;
                     const turnOn = !isShipyardBought(tracked);
-                    await window.originDb.savePort({
+                    const row = await window.originDb.savePort({
                         ...tracked,
                         intervalMin: INTERVAL_MIN,
                         shipyardBought: turnOn,
                         shipyardBoughtAt: turnOn ? new Date().toISOString() : null,
                     });
-                    await reload(true);
+                    upsertPortInMemory(row);
+                    refreshAll();
                     setStatus(turnOn
                         ? `「${tracked.portName}」조선소 구매를 표시했습니다.`
                         : `「${tracked.portName}」조선소 구매를 취소했습니다.`);
@@ -1611,8 +1645,9 @@
                     if (!confirm(`「${tracked.portName}」항구 타이머를 삭제할까요?`)) return;
                     btn.disabled = true;
                     await window.originDb.deletePort(tracked.id);
+                    removePortInMemory(tracked.id);
                     selectedName = tracked.portName; // 맵에는 남기고 미등록 상태로
-                    await reload(true);
+                    refreshAll();
                     setStatus(`「${tracked.portName}」타이머를 삭제했습니다.`);
                 }
             } catch (err) {

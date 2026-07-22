@@ -5,6 +5,12 @@
 // 앱 설정 ↔ Supabase origin_settings
 // 물물교환 판매 기록 ↔ Supabase origin_barter_sales
 // tenant_id: BETHEL_TENANT_ID (app_storage, d3_scripts와 공통)
+//
+// ── 저장 원칙: 로컬이 주(主), DB는 보조 ──────────────────────────────
+// 모든 쓰기는 localStorage에 즉시 반영하고 함수는 곧바로 반환한다.
+// 실제 Supabase 전송은 dirty 큐에 쌓아 디바운스(수백ms) 후 백그라운드로 flush.
+// 읽기(list/load)는 DB를 조회하되, 아직 flush되지 않은 로컬 변경(dirty)이
+// 있으면 그 값을 우선한다 — 화면·타이밍은 항상 로컬을 기준으로 맞는다.
 
 (function () {
     'use strict';
@@ -17,11 +23,16 @@
     const TBL_SETTINGS      = 'origin_settings';
     const TBL_SALES         = 'origin_barter_sales';
     const LS_KEY            = 'origin_trade_posts_v1';
+    const LS_PORTS_CACHE_KEY = 'origin_trade_posts_cache_v1';
     const LS_PIN_KEY        = 'origin_pin_overrides_v1';
     const LS_QTY_KEY        = 'origin_good_plain_qty_v1';
     const LS_SETTINGS_KEY   = 'origin_settings_v1';
     const LS_SALES_KEY      = 'origin_barter_sales_v1';
     const DEFAULT_DRIFT_OVER_MIN = 1200;
+
+    // 백그라운드 동기화 타이밍
+    const FLUSH_DEBOUNCE_MS = 900;
+    const FLUSH_SAFETY_INTERVAL_MS = 20000;
 
     function getTenantId() {
         let id = localStorage.getItem(TENANT_KEY);
@@ -46,6 +57,18 @@
         if (msg.indexOf('does not exist') !== -1 && msg.indexOf('schema cache') !== -1) return true;
         if (msg.indexOf('relation') !== -1 && msg.indexOf('does not exist') !== -1) return true;
         return false;
+    }
+
+    function toIsoOrNull(v) {
+        if (v == null || v === '') return null;
+        if (v instanceof Date) return v.toISOString();
+        return v;
+    }
+
+    function toIntOrNull(v) {
+        if (v == null || v === '') return null;
+        const n = Number(v);
+        return Number.isFinite(n) ? Math.trunc(n) : null;
     }
 
     const DEFAULT_GLOBAL_OFFSET_SEC = 0;
@@ -146,6 +169,8 @@
         return Math.round((sale * 100) / pct);
     }
 
+    // ─── localStorage 헬퍼 ──────────────────────────────────────────
+
     function readLocalSales() {
         try {
             const raw = localStorage.getItem(LS_SALES_KEY);
@@ -192,18 +217,6 @@
         }));
     }
 
-    function toIsoOrNull(v) {
-        if (v == null || v === '') return null;
-        if (v instanceof Date) return v.toISOString();
-        return v;
-    }
-
-    function toIntOrNull(v) {
-        if (v == null || v === '') return null;
-        const n = Number(v);
-        return Number.isFinite(n) ? Math.trunc(n) : null;
-    }
-
     function normalizePinData(raw) {
         if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
         return raw;
@@ -243,6 +256,98 @@
         localStorage.setItem(LS_QTY_KEY, JSON.stringify(data || {}));
     }
 
+    function qtyKey(portName, goodName) {
+        return portName + '\u0000' + goodName;
+    }
+
+    function listLocalQtys(portName) {
+        const all = readLocalQtys();
+        const out = [];
+        const ports = portName ? [portName] : Object.keys(all);
+        for (const p of ports) {
+            const goods = all[p] || {};
+            for (const g of Object.keys(goods)) {
+                out.push({ portName: p, goodName: g, plainQty: Number(goods[g]) || 0 });
+            }
+        }
+        out.sort((a, b) => a.goodName.localeCompare(b.goodName, 'ko'));
+        return out;
+    }
+
+    function readLocalPortsCache() {
+        try {
+            const raw = localStorage.getItem(LS_PORTS_CACHE_KEY);
+            const list = raw ? JSON.parse(raw) : [];
+            return Array.isArray(list) ? list : [];
+        } catch {
+            return [];
+        }
+    }
+
+    function writeLocalPortsCache(list) {
+        localStorage.setItem(LS_PORTS_CACHE_KEY, JSON.stringify(Array.isArray(list) ? list : []));
+    }
+
+    function upsertLocalPortsCache(row) {
+        const all = readLocalPortsCache();
+        const idx = all.findIndex(p => p.id === row.id);
+        if (idx >= 0) all[idx] = row;
+        else all.push(row);
+        writeLocalPortsCache(all);
+        return row;
+    }
+
+    function removeLocalPortsCache(id) {
+        writeLocalPortsCache(readLocalPortsCache().filter(p => p.id !== id));
+    }
+
+    function findLocalPortByName(name) {
+        return readLocalPortsCache().find(p => p.portName === name) || null;
+    }
+
+    /** 항구 로컬 행 빌더 — 신규 필드는 이전 값을 유지, camelCase(로컬)로 통일 */
+    function buildPortLocalRow(port, prev, tenantId) {
+        const portName = (port.portName || (prev && prev.portName) || '').trim();
+        const soldOut = port.soldOut != null ? !!port.soldOut : !!(prev && prev.soldOut);
+        const toolShopBought = port.toolShopBought != null ? !!port.toolShopBought : !!(prev && prev.toolShopBought);
+        const shipyardBought = port.shipyardBought != null ? !!port.shipyardBought : !!(prev && prev.shipyardBought);
+        return {
+            id: port.id,
+            tenantId: tenantId || getTenantId(),
+            portName,
+            anchorAt: port.anchorAt instanceof Date
+                ? port.anchorAt.toISOString()
+                : (port.anchorAt || (prev && prev.anchorAt) || new Date().toISOString()),
+            intervalMin: port.intervalMin ?? (prev && prev.intervalMin) ?? 30,
+            soldOut,
+            soldOutAt: soldOut
+                ? (port.soldOutAt instanceof Date
+                    ? port.soldOutAt.toISOString()
+                    : (port.soldOutAt || (prev && prev.soldOutAt) || new Date().toISOString()))
+                : null,
+            toolShopBought,
+            toolShopBoughtAt: toolShopBought
+                ? (port.toolShopBoughtAt instanceof Date
+                    ? port.toolShopBoughtAt.toISOString()
+                    : (port.toolShopBoughtAt || (prev && prev.toolShopBoughtAt) || new Date().toISOString()))
+                : null,
+            shipyardBought,
+            shipyardBoughtAt: shipyardBought
+                ? (port.shipyardBoughtAt instanceof Date
+                    ? port.shipyardBoughtAt.toISOString()
+                    : (port.shipyardBoughtAt || (prev && prev.shipyardBoughtAt) || new Date().toISOString()))
+                : null,
+            syncedAt: port.syncedAt !== undefined
+                ? toIsoOrNull(port.syncedAt)
+                : ((prev && prev.syncedAt) || null),
+            syncedElapsedMin: port.syncedElapsedMin !== undefined
+                ? toIntOrNull(port.syncedElapsedMin)
+                : ((prev && prev.syncedElapsedMin != null) ? prev.syncedElapsedMin : null),
+            updatedAt: new Date().toISOString(),
+            createdAt: (prev && prev.createdAt) || port.createdAt || new Date().toISOString(),
+        };
+    }
+
     const client = window.supabaseClient;
 
     if (!client) {
@@ -251,85 +356,311 @@
         return;
     }
 
-    async function listPorts() {
-        const { data, error } = await client
-            .from(TBL)
-            .select('*')
-            .eq('tenant_id', getTenantId())
-            .order('port_name', { ascending: true });
-        if (error) throw error;
-        return (data || []).map(rowToPort);
+    // ─── dirty 큐 (로컬 쓰기 완료, DB 미반영) ───────────────────────
+
+    const DIRTY_PORTS = new Map();          // id -> local row
+    const DIRTY_PORT_DELETES = new Set();   // id
+    const DIRTY_QTY = new Map();            // key -> { portName, goodName, plainQty, isDelete }
+    const DIRTY_SALES = new Map();          // id -> sale
+    const DIRTY_SALE_DELETES = new Set();   // id
+    let dirtySettings = null;               // normalized settings object | null
+    let dirtyPins = null;                   // normalized pin data | null
+
+    let flushTimer = null;
+    let flushInFlight = false;
+    let flushQueued = false;
+
+    function anyDirty() {
+        return DIRTY_PORTS.size > 0 || DIRTY_PORT_DELETES.size > 0
+            || DIRTY_QTY.size > 0
+            || DIRTY_SALES.size > 0 || DIRTY_SALE_DELETES.size > 0
+            || dirtySettings != null || dirtyPins != null;
     }
 
-    /** port.id가 없을 때 같은 port_name의 기존 행을 찾아 id를 재사용(중복 생성 방지) */
-    async function findExistingPortId(tenantId, portName) {
-        if (!portName) return null;
-        const { data, error } = await client
-            .from(TBL)
-            .select('id')
-            .eq('tenant_id', tenantId)
-            .eq('port_name', portName)
-            .limit(1)
-            .maybeSingle();
-        if (error) {
-            if (isMissingRelationError(error)) return null;
-            throw error;
+    function scheduleFlush(delayMs) {
+        if (flushTimer) clearTimeout(flushTimer);
+        flushTimer = setTimeout(() => {
+            flushTimer = null;
+            flushDirty();
+        }, delayMs != null ? delayMs : FLUSH_DEBOUNCE_MS);
+    }
+
+    async function flushPortsDirty() {
+        const entries = Array.from(DIRTY_PORTS.entries());
+        for (const [id, row] of entries) {
+            const dbRow = {
+                id,
+                tenant_id: row.tenantId || getTenantId(),
+                port_name: row.portName,
+                anchor_at: row.anchorAt,
+                interval_min: row.intervalMin ?? 30,
+                sold_out: !!row.soldOut,
+                sold_out_at: row.soldOutAt || null,
+                tool_shop_bought: !!row.toolShopBought,
+                tool_shop_bought_at: row.toolShopBoughtAt || null,
+                shipyard_bought: !!row.shipyardBought,
+                shipyard_bought_at: row.shipyardBoughtAt || null,
+                synced_at: toIsoOrNull(row.syncedAt),
+                synced_elapsed_min: toIntOrNull(row.syncedElapsedMin),
+                updated_at: row.updatedAt || new Date().toISOString(),
+            };
+            try {
+                const { error } = await client.from(TBL).upsert(dbRow, { onConflict: 'tenant_id,id' });
+                if (error) throw error;
+                if (DIRTY_PORTS.get(id) === row) DIRTY_PORTS.delete(id);
+            } catch (err) {
+                console.warn('[OriginDB] 항구 동기화 실패 — 다음 저장 때 재시도', id, err);
+            }
         }
-        return data ? data.id : null;
     }
 
+    async function flushPortDeletesDirty() {
+        const ids = Array.from(DIRTY_PORT_DELETES);
+        for (const id of ids) {
+            try {
+                const { error } = await client.from(TBL).delete()
+                    .eq('tenant_id', getTenantId()).eq('id', id);
+                if (error) throw error;
+                DIRTY_PORT_DELETES.delete(id);
+            } catch (err) {
+                console.warn('[OriginDB] 항구 삭제 동기화 실패', id, err);
+            }
+        }
+    }
+
+    async function flushQtyDirty() {
+        const entries = Array.from(DIRTY_QTY.entries());
+        for (const [key, item] of entries) {
+            try {
+                if (item.isDelete) {
+                    const { error } = await client.from(TBL_QTY).delete()
+                        .eq('tenant_id', getTenantId())
+                        .eq('port_name', item.portName)
+                        .eq('good_name', item.goodName);
+                    if (error) throw error;
+                } else {
+                    const row = {
+                        tenant_id: getTenantId(),
+                        port_name: item.portName,
+                        good_name: item.goodName,
+                        plain_qty: item.plainQty,
+                        updated_at: new Date().toISOString(),
+                    };
+                    const { error } = await client.from(TBL_QTY)
+                        .upsert(row, { onConflict: 'tenant_id,port_name,good_name' });
+                    if (error) throw error;
+                }
+                if (DIRTY_QTY.get(key) === item) DIRTY_QTY.delete(key);
+            } catch (err) {
+                console.warn('[OriginDB] 수량 동기화 실패 — 다음 저장 때 재시도', key, err);
+            }
+        }
+    }
+
+    async function flushSettingsDirty() {
+        if (!dirtySettings) return;
+        const snapshot = dirtySettings;
+        const row = {
+            tenant_id: getTenantId(),
+            data: snapshot,
+            updated_at: new Date().toISOString(),
+        };
+        try {
+            const { error } = await client.from(TBL_SETTINGS).upsert(row, { onConflict: 'tenant_id' });
+            if (error) throw error;
+            if (dirtySettings === snapshot) dirtySettings = null;
+        } catch (err) {
+            if (isMissingRelationError(err)) {
+                console.warn('[OriginDB] origin_settings 미반영(404) — 로컬만 유지', err);
+                if (dirtySettings === snapshot) dirtySettings = null;
+            } else {
+                console.warn('[OriginDB] 설정 동기화 실패 — 다음 저장 때 재시도', err);
+            }
+        }
+    }
+
+    async function flushPinsDirty() {
+        if (!dirtyPins) return;
+        const snapshot = dirtyPins;
+        const row = {
+            tenant_id: getTenantId(),
+            data: snapshot,
+            updated_at: new Date().toISOString(),
+        };
+        try {
+            const { error } = await client.from(TBL_PINS).upsert(row, { onConflict: 'tenant_id' });
+            if (error) throw error;
+            if (dirtyPins === snapshot) dirtyPins = null;
+        } catch (err) {
+            console.warn('[OriginDB] 핀 좌표 동기화 실패 — 다음 저장 때 재시도', err);
+        }
+    }
+
+    async function flushSalesDirty() {
+        const entries = Array.from(DIRTY_SALES.entries());
+        for (const [id, sale] of entries) {
+            const row = {
+                tenant_id: getTenantId(),
+                id,
+                good_name: sale.goodName,
+                port_name: sale.portName,
+                market_pct: sale.marketPct,
+                sale_price: sale.salePrice,
+                unit_price: sale.unitPrice,
+                sold_at: sale.soldAt,
+                updated_at: sale.updatedAt,
+            };
+            try {
+                const { error } = await client.from(TBL_SALES).upsert(row, { onConflict: 'tenant_id,id' });
+                if (error) throw error;
+                if (DIRTY_SALES.get(id) === sale) DIRTY_SALES.delete(id);
+            } catch (err) {
+                if (isMissingRelationError(err)) {
+                    console.warn('[OriginDB] origin_barter_sales 미반영(404) — 로컬만 유지', err);
+                    if (DIRTY_SALES.get(id) === sale) DIRTY_SALES.delete(id);
+                } else {
+                    console.warn('[OriginDB] 판매기록 동기화 실패 — 다음 저장 때 재시도', id, err);
+                }
+            }
+        }
+    }
+
+    async function flushSaleDeletesDirty() {
+        const ids = Array.from(DIRTY_SALE_DELETES);
+        for (const id of ids) {
+            try {
+                const { error } = await client.from(TBL_SALES).delete()
+                    .eq('tenant_id', getTenantId()).eq('id', id);
+                if (error) throw error;
+                DIRTY_SALE_DELETES.delete(id);
+            } catch (err) {
+                if (isMissingRelationError(err)) {
+                    DIRTY_SALE_DELETES.delete(id);
+                } else {
+                    console.warn('[OriginDB] 판매기록 삭제 동기화 실패', id, err);
+                }
+            }
+        }
+    }
+
+    async function flushDirty() {
+        if (flushInFlight) {
+            flushQueued = true;
+            return;
+        }
+        flushInFlight = true;
+        try {
+            await flushPortsDirty();
+            await flushPortDeletesDirty();
+            await flushQtyDirty();
+            await flushSettingsDirty();
+            await flushPinsDirty();
+            await flushSalesDirty();
+            await flushSaleDeletesDirty();
+        } catch (err) {
+            console.error('[OriginDB] flush 중 예기치 못한 오류', err);
+        } finally {
+            flushInFlight = false;
+            if (flushQueued) {
+                flushQueued = false;
+                scheduleFlush(50);
+            }
+        }
+    }
+
+    // 보험: 놓친 dirty 항목을 주기적으로 재시도 + 탭 숨김/이탈 시 즉시 시도
+    setInterval(() => {
+        if (anyDirty()) flushDirty();
+    }, FLUSH_SAFETY_INTERVAL_MS);
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden' && anyDirty()) flushDirty();
+    });
+    window.addEventListener('pagehide', () => {
+        if (anyDirty()) flushDirty();
+    });
+
+    // ─── 항구 타이머 ─────────────────────────────────────────────────
+
+    function mergePortsWithLocal(dbList) {
+        const localList = readLocalPortsCache();
+        const localById = new Map(localList.map(p => [p.id, p]));
+        const merged = [];
+        const seen = new Set();
+        for (const dbRow of dbList) {
+            if (DIRTY_PORT_DELETES.has(dbRow.id)) continue; // 로컬에서 삭제 대기 중
+            seen.add(dbRow.id);
+            const local = localById.get(dbRow.id);
+            if (DIRTY_PORTS.has(dbRow.id) && local) {
+                merged.push(local); // 미동기화 로컬 변경 우선
+                continue;
+            }
+            if (local && Date.parse(local.updatedAt || 0) > Date.parse(dbRow.updatedAt || 0)) {
+                merged.push(local);
+            } else {
+                merged.push(dbRow);
+            }
+        }
+        for (const local of localList) {
+            if (seen.has(local.id) || DIRTY_PORT_DELETES.has(local.id)) continue;
+            if (DIRTY_PORTS.has(local.id)) merged.push(local); // 아직 DB에 없는 신규 항목
+        }
+        merged.sort((a, b) => (a.portName || '').localeCompare(b.portName || '', 'ko'));
+        writeLocalPortsCache(merged);
+        return merged;
+    }
+
+    async function listPorts() {
+        let dbList = null;
+        try {
+            const { data, error } = await client
+                .from(TBL)
+                .select('*')
+                .eq('tenant_id', getTenantId())
+                .order('port_name', { ascending: true });
+            if (error) throw error;
+            dbList = (data || []).map(rowToPort);
+        } catch (err) {
+            console.warn('[OriginDB] listPorts DB 조회 실패 — 로컬 캐시 사용', err);
+        }
+        if (!dbList) {
+            return readLocalPortsCache().slice()
+                .filter(p => !DIRTY_PORT_DELETES.has(p.id))
+                .sort((a, b) => (a.portName || '').localeCompare(b.portName || '', 'ko'));
+        }
+        return mergePortsWithLocal(dbList);
+    }
+
+    /**
+     * 로컬에 즉시 반영 후 곧바로 반환 — DB 전송은 백그라운드(dirty 큐)에서 처리.
+     * @returns {Promise<object>} 로컬 저장 행 (camelCase)
+     */
     async function savePort(port) {
         const tenantId = getTenantId();
         const portName = (port.portName || '').trim();
-        const id = port.id || await findExistingPortId(tenantId, portName) || genId('op');
-        const row = {
-            id,
-            tenant_id:    tenantId,
-            port_name:    portName,
-            anchor_at:    port.anchorAt instanceof Date
-                ? port.anchorAt.toISOString()
-                : port.anchorAt,
-            interval_min: port.intervalMin ?? 30,
-            sold_out:     !!port.soldOut,
-            sold_out_at:  port.soldOut
-                ? (port.soldOutAt instanceof Date
-                    ? port.soldOutAt.toISOString()
-                    : (port.soldOutAt || new Date().toISOString()))
-                : null,
-            tool_shop_bought: !!port.toolShopBought,
-            tool_shop_bought_at: port.toolShopBought
-                ? (port.toolShopBoughtAt instanceof Date
-                    ? port.toolShopBoughtAt.toISOString()
-                    : (port.toolShopBoughtAt || new Date().toISOString()))
-                : null,
-            shipyard_bought: !!port.shipyardBought,
-            shipyard_bought_at: port.shipyardBought
-                ? (port.shipyardBoughtAt instanceof Date
-                    ? port.shipyardBoughtAt.toISOString()
-                    : (port.shipyardBoughtAt || new Date().toISOString()))
-                : null,
-            synced_at:    toIsoOrNull(port.syncedAt),
-            synced_elapsed_min: toIntOrNull(port.syncedElapsedMin),
-            updated_at:   new Date().toISOString(),
-        };
-        const { error } = await client
-            .from(TBL)
-            .upsert(row, { onConflict: 'tenant_id,id' });
-        if (error) throw error;
-        return row.id;
+        const existingByName = !port.id ? findLocalPortByName(portName) : null;
+        const id = port.id || (existingByName && existingByName.id) || genId('op');
+        const prev = readLocalPortsCache().find(p => p.id === id) || null;
+        const row = buildPortLocalRow({ ...port, id }, prev, tenantId);
+        upsertLocalPortsCache(row);
+        DIRTY_PORTS.set(id, row);
+        DIRTY_PORT_DELETES.delete(id);
+        scheduleFlush();
+        return row;
     }
 
     async function deletePort(id) {
-        const { error } = await client
-            .from(TBL)
-            .delete()
-            .eq('tenant_id', getTenantId())
-            .eq('id', id);
-        if (error) throw error;
+        removeLocalPortsCache(id);
+        DIRTY_PORTS.delete(id);
+        DIRTY_PORT_DELETES.add(id);
+        scheduleFlush();
     }
+
+    // ─── 핀 좌표 ─────────────────────────────────────────────────────
 
     /** @returns {Promise<Record<string, Record<string, {x:number,y:number}>>>} */
     async function loadPinOverrides() {
+        if (dirtyPins) return dirtyPins; // 아직 반영 안 된 로컬 변경 우선
         const tenantId = getTenantId();
         const { data, error } = await client
             .from(TBL_PINS)
@@ -342,7 +673,8 @@
         if (isEmptyPins(pins)) {
             const local = readLocalPins();
             if (!isEmptyPins(local)) {
-                await savePinOverrides(local);
+                dirtyPins = local;
+                scheduleFlush();
                 pins = local;
             }
         } else {
@@ -353,98 +685,114 @@
 
     /** @param {Record<string, Record<string, {x:number,y:number}>>} pinData */
     async function savePinOverrides(pinData) {
-        const tenantId = getTenantId();
         const normalized = normalizePinData(pinData);
         writeLocalPins(normalized);
-        const row = {
-            tenant_id:  tenantId,
-            data:       normalized,
-            updated_at: new Date().toISOString(),
-        };
-        const { error } = await client
-            .from(TBL_PINS)
-            .upsert(row, { onConflict: 'tenant_id' });
-        if (error) throw error;
+        dirtyPins = normalized;
+        scheduleFlush();
     }
+
+    // ─── 앱 설정 ─────────────────────────────────────────────────────
 
     /**
      * @returns {Promise<{ driftOverMin: number, driftEnabled: boolean, globalOffsetSec: number, offsetEnabled: boolean, _fromLocal?: boolean }>}
      */
     async function loadSettings() {
         const tenantId = getTenantId();
-        const { data, error } = await client
-            .from(TBL_SETTINGS)
-            .select('data')
-            .eq('tenant_id', tenantId)
-            .maybeSingle();
+        try {
+            const { data, error } = await client
+                .from(TBL_SETTINGS)
+                .select('data')
+                .eq('tenant_id', tenantId)
+                .maybeSingle();
+            if (error) throw error;
 
-        if (error) {
-            if (isMissingRelationError(error)) {
-                console.warn('[OriginDB] origin_settings 미반영(404) — localStorage 사용. SQL 마이그레이션/스키마 Reload를 확인하세요.', error);
+            const dbEmpty = !data || !data.data || Object.keys(data.data).length === 0;
+            const local = readLocalSettings();
+
+            if (dbEmpty) {
+                if (!isDefaultSettings(local)) {
+                    dirtySettings = local;
+                    scheduleFlush();
+                }
+                return local;
+            }
+
+            if (dirtySettings) return dirtySettings; // 아직 반영 안 된 로컬 변경 우선
+            const settings = normalizeSettings(data.data);
+            writeLocalSettings(settings);
+            return settings;
+        } catch (err) {
+            if (isMissingRelationError(err)) {
+                console.warn('[OriginDB] origin_settings 미반영(404) — localStorage 사용. SQL 마이그레이션/스키마 Reload를 확인하세요.', err);
                 return { ...readLocalSettings(), _fromLocal: true };
             }
-            throw error;
+            throw err;
         }
-
-        let settings = normalizeSettings(data && data.data);
-        const local = readLocalSettings();
-        const dbEmpty = !data || !data.data || Object.keys(data.data).length === 0;
-        if (dbEmpty && !isDefaultSettings(local)) {
-            try {
-                await saveSettings(local);
-                settings = local;
-            } catch (e) {
-                if (!isMissingRelationError(e)) throw e;
-                return { ...local, _fromLocal: true };
-            }
-        } else {
-            writeLocalSettings(settings);
-        }
-        return settings;
     }
 
     /**
      * @param {{ driftOverMin?: number, driftEnabled?: boolean, globalOffsetSec?: number, offsetEnabled?: boolean }} partial
-     * @returns {Promise<{ driftOverMin: number, driftEnabled: boolean, globalOffsetSec: number, offsetEnabled: boolean, _fromLocal?: boolean }>}
+     * @returns {Promise<{ driftOverMin: number, driftEnabled: boolean, globalOffsetSec: number, offsetEnabled: boolean }>}
      */
     async function saveSettings(partial) {
-        const tenantId = getTenantId();
         const merged = normalizeSettings({ ...readLocalSettings(), ...(partial || {}) });
         writeLocalSettings(merged);
-        const row = {
-            tenant_id:  tenantId,
-            data:       merged,
-            updated_at: new Date().toISOString(),
-        };
-        const { error } = await client
-            .from(TBL_SETTINGS)
-            .upsert(row, { onConflict: 'tenant_id' });
-        if (error) {
-            if (isMissingRelationError(error)) {
-                console.warn('[OriginDB] origin_settings 저장 실패(404) — 로컬만 유지', error);
-                return { ...merged, _fromLocal: true };
-            }
-            throw error;
-        }
+        dirtySettings = merged;
+        scheduleFlush();
         return merged;
     }
+
+    // ─── 교역품 평시 수량 ────────────────────────────────────────────
 
     /**
      * @param {string} [portName]
      * @returns {Promise<{ portName: string, goodName: string, plainQty: number, updatedAt?: string }[]>}
      */
     async function listGoodPlainQtys(portName) {
-        let q = client
-            .from(TBL_QTY)
-            .select('*')
-            .eq('tenant_id', getTenantId());
-        if (portName) q = q.eq('port_name', portName);
-        const { data, error } = await q.order('good_name', { ascending: true });
-        if (error) throw error;
-        return (data || []).map(rowToGoodQty);
+        let dbRows = null;
+        try {
+            let q = client
+                .from(TBL_QTY)
+                .select('*')
+                .eq('tenant_id', getTenantId());
+            if (portName) q = q.eq('port_name', portName);
+            const { data, error } = await q.order('good_name', { ascending: true });
+            if (error) throw error;
+            dbRows = (data || []).map(rowToGoodQty);
+        } catch (err) {
+            console.warn('[OriginDB] listGoodPlainQtys DB 조회 실패 — 로컬 캐시 사용', err);
+        }
+        if (!dbRows) return listLocalQtys(portName);
+
+        // dirty 오버레이: 아직 DB에 반영되지 않은 최신 로컬 값이 이긴다
+        const map = new Map();
+        for (const row of dbRows) map.set(qtyKey(row.portName, row.goodName), row);
+        for (const [key, item] of DIRTY_QTY.entries()) {
+            if (portName && item.portName !== portName) continue;
+            if (item.isDelete) map.delete(key);
+            else map.set(key, { portName: item.portName, goodName: item.goodName, plainQty: item.plainQty });
+        }
+        const result = Array.from(map.values()).sort((a, b) => a.goodName.localeCompare(b.goodName, 'ko'));
+
+        // 로컬 캐시를 DB 최신값으로 맞추되, 대상 범위에서 dirty 값은 유지됨(map에 이미 반영)
+        const local = readLocalQtys();
+        if (portName) {
+            local[portName] = {};
+            for (const row of result) local[portName][row.goodName] = row.plainQty;
+            if (!Object.keys(local[portName]).length) delete local[portName];
+        } else {
+            for (const key of Object.keys(local)) delete local[key];
+            for (const row of result) {
+                if (!local[row.portName]) local[row.portName] = {};
+                local[row.portName][row.goodName] = row.plainQty;
+            }
+        }
+        writeLocalQtys(local);
+        return result;
     }
 
     /**
+     * 로컬에 즉시 반영 후 곧바로 반환 — DB 전송은 백그라운드(dirty 큐)에서 처리.
      * @param {{ portName: string, goodName: string, plainQty: number }} item
      */
     async function saveGoodPlainQty(item) {
@@ -455,44 +803,38 @@
         if (!Number.isFinite(plainQty) || plainQty < 0) {
             throw new Error('수량이 올바르지 않습니다.');
         }
-        if (plainQty === 0) {
-            return deleteGoodPlainQty(portName, goodName);
-        }
-        const row = {
-            tenant_id:  getTenantId(),
-            port_name:  portName,
-            good_name:  goodName,
-            plain_qty:  plainQty,
-            updated_at: new Date().toISOString(),
-        };
-        const { error } = await client
-            .from(TBL_QTY)
-            .upsert(row, { onConflict: 'tenant_id,port_name,good_name' });
-        if (error) throw error;
-
+        const key = qtyKey(portName, goodName);
         const local = readLocalQtys();
-        if (!local[portName]) local[portName] = {};
-        local[portName][goodName] = plainQty;
-        writeLocalQtys(local);
+        if (plainQty === 0) {
+            if (local[portName]) {
+                delete local[portName][goodName];
+                if (!Object.keys(local[portName]).length) delete local[portName];
+            }
+            writeLocalQtys(local);
+            DIRTY_QTY.set(key, { portName, goodName, plainQty: 0, isDelete: true });
+        } else {
+            if (!local[portName]) local[portName] = {};
+            local[portName][goodName] = plainQty;
+            writeLocalQtys(local);
+            DIRTY_QTY.set(key, { portName, goodName, plainQty, isDelete: false });
+        }
+        scheduleFlush();
     }
 
     async function deleteGoodPlainQty(portName, goodName) {
         const p = (portName || '').trim();
         const g = (goodName || '').trim();
-        const { error } = await client
-            .from(TBL_QTY)
-            .delete()
-            .eq('tenant_id', getTenantId())
-            .eq('port_name', p)
-            .eq('good_name', g);
-        if (error) throw error;
         const local = readLocalQtys();
         if (local[p]) {
             delete local[p][g];
             if (!Object.keys(local[p]).length) delete local[p];
             writeLocalQtys(local);
         }
+        DIRTY_QTY.set(qtyKey(p, g), { portName: p, goodName: g, plainQty: 0, isDelete: true });
+        scheduleFlush();
     }
+
+    // ─── 물물교환 판매 기록 ──────────────────────────────────────────
 
     /**
      * @param {{ goodName?: string, portName?: string, limit?: number }} [opts]
@@ -521,7 +863,17 @@
             throw error;
         }
 
-        const rows = (data || []).map(rowToBarterSale);
+        const byId = new Map((data || []).map(rowToBarterSale).map(r => [r.id, r]));
+        for (const id of DIRTY_SALE_DELETES) byId.delete(id);
+        for (const [id, sale] of DIRTY_SALES) {
+            if (goodName && sale.goodName !== goodName) continue;
+            if (portName && sale.portName !== portName) continue;
+            byId.set(id, sale);
+        }
+        let rows = Array.from(byId.values());
+        rows.sort((a, b) => String(b.soldAt || '').localeCompare(String(a.soldAt || '')));
+        rows = rows.slice(0, limit);
+
         // 전체 목록 조회일 때만 로컬 캐시 동기화 (필터 조회 시 다른 기록 덮어쓰기 방지)
         if (!goodName && !portName) {
             writeLocalSales(rows.map(s => ({
@@ -539,6 +891,7 @@
     }
 
     /**
+     * 로컬에 즉시 반영 후 곧바로 반환 — DB 전송은 백그라운드(dirty 큐)에서 처리.
      * @param {{ id?: string, goodName: string, portName: string, marketPct: number, salePrice: number, soldAt?: string }} item
      */
     async function saveBarterSale(item) {
@@ -560,39 +913,12 @@
             ? (item.soldAt instanceof Date ? item.soldAt.toISOString() : String(item.soldAt))
             : new Date().toISOString();
         const updatedAt = new Date().toISOString();
-        const sale = {
-            id,
-            goodName,
-            portName,
-            marketPct,
-            salePrice,
-            unitPrice,
-            soldAt,
-            updatedAt,
-        };
-        upsertLocalSale(sale);
+        const sale = { id, goodName, portName, marketPct, salePrice, unitPrice, soldAt, updatedAt };
 
-        const row = {
-            tenant_id:   getTenantId(),
-            id,
-            good_name:   goodName,
-            port_name:   portName,
-            market_pct:  marketPct,
-            sale_price:  salePrice,
-            unit_price:  unitPrice,
-            sold_at:     soldAt,
-            updated_at:  updatedAt,
-        };
-        const { error } = await client
-            .from(TBL_SALES)
-            .upsert(row, { onConflict: 'tenant_id,id' });
-        if (error) {
-            if (isMissingRelationError(error)) {
-                console.warn('[OriginDB] origin_barter_sales 저장 실패(404) — 로컬만 유지', error);
-                return { ...sale, _fromLocal: true };
-            }
-            throw error;
-        }
+        upsertLocalSale(sale);
+        DIRTY_SALES.set(id, sale);
+        DIRTY_SALE_DELETES.delete(id);
+        scheduleFlush();
         return sale;
     }
 
@@ -600,19 +926,12 @@
         const saleId = (id || '').trim();
         if (!saleId) throw new Error('기록 ID가 필요합니다.');
         removeLocalSale(saleId);
-        const { error } = await client
-            .from(TBL_SALES)
-            .delete()
-            .eq('tenant_id', getTenantId())
-            .eq('id', saleId);
-        if (error) {
-            if (isMissingRelationError(error)) {
-                console.warn('[OriginDB] origin_barter_sales 삭제 실패(404) — 로컬만 반영', error);
-                return;
-            }
-            throw error;
-        }
+        DIRTY_SALES.delete(saleId);
+        DIRTY_SALE_DELETES.add(saleId);
+        scheduleFlush();
     }
+
+    // ─── 로컬 전용 모드 (Supabase 미연결) ────────────────────────────
 
     function makeLocalOnlyDb() {
         function loadAll() {
@@ -640,54 +959,13 @@
                     ? all.find(e => e.portName === portName)
                     : null;
                 const id = port.id || (existingByName && existingByName.id) || genId('op');
-                const prev = all.find(e => e.id === id);
-                const soldOut = port.soldOut != null ? !!port.soldOut : !!(prev && prev.soldOut);
-                const toolShopBought = port.toolShopBought != null
-                    ? !!port.toolShopBought
-                    : !!(prev && prev.toolShopBought);
-                const shipyardBought = port.shipyardBought != null
-                    ? !!port.shipyardBought
-                    : !!(prev && prev.shipyardBought);
-                const row = {
-                    id,
-                    tenantId: getTenantId(),
-                    portName,
-                    anchorAt: port.anchorAt instanceof Date
-                        ? port.anchorAt.toISOString()
-                        : port.anchorAt,
-                    intervalMin: port.intervalMin ?? 30,
-                    soldOut,
-                    soldOutAt: soldOut
-                        ? (port.soldOutAt instanceof Date
-                            ? port.soldOutAt.toISOString()
-                            : (port.soldOutAt || (prev && prev.soldOutAt) || new Date().toISOString()))
-                        : null,
-                    toolShopBought,
-                    toolShopBoughtAt: toolShopBought
-                        ? (port.toolShopBoughtAt instanceof Date
-                            ? port.toolShopBoughtAt.toISOString()
-                            : (port.toolShopBoughtAt || (prev && prev.toolShopBoughtAt) || new Date().toISOString()))
-                        : null,
-                    shipyardBought,
-                    shipyardBoughtAt: shipyardBought
-                        ? (port.shipyardBoughtAt instanceof Date
-                            ? port.shipyardBoughtAt.toISOString()
-                            : (port.shipyardBoughtAt || (prev && prev.shipyardBoughtAt) || new Date().toISOString()))
-                        : null,
-                    syncedAt: port.syncedAt !== undefined
-                        ? toIsoOrNull(port.syncedAt)
-                        : ((prev && prev.syncedAt) || null),
-                    syncedElapsedMin: port.syncedElapsedMin !== undefined
-                        ? toIntOrNull(port.syncedElapsedMin)
-                        : ((prev && prev.syncedElapsedMin != null) ? prev.syncedElapsedMin : null),
-                    updatedAt: new Date().toISOString(),
-                    createdAt: (prev && prev.createdAt) || port.createdAt || new Date().toISOString(),
-                };
+                const prev = all.find(e => e.id === id) || null;
+                const row = buildPortLocalRow({ ...port, id }, prev, getTenantId());
                 const idx = all.findIndex(e => e.id === id);
-                if (idx >= 0) all[idx] = { ...all[idx], ...row };
+                if (idx >= 0) all[idx] = row;
                 else all.push(row);
                 saveAll(all);
-                return id;
+                return row;
             },
             deletePort: async (id) => {
                 saveAll(loadAll().filter(e => e.id !== id));
@@ -702,23 +980,7 @@
                 writeLocalSettings(merged);
                 return merged;
             },
-            listGoodPlainQtys: async (portName) => {
-                const all = readLocalQtys();
-                const out = [];
-                const ports = portName ? [portName] : Object.keys(all);
-                for (const p of ports) {
-                    const goods = all[p] || {};
-                    for (const g of Object.keys(goods)) {
-                        out.push({
-                            portName: p,
-                            goodName: g,
-                            plainQty: Number(goods[g]) || 0,
-                        });
-                    }
-                }
-                out.sort((a, b) => a.goodName.localeCompare(b.goodName, 'ko'));
-                return out;
-            },
+            listGoodPlainQtys: async (portName) => listLocalQtys(portName),
             saveGoodPlainQty: async (item) => {
                 const portName = (item.portName || '').trim();
                 const goodName = (item.goodName || '').trim();
@@ -782,6 +1044,8 @@
                 removeLocalSale((id || '').trim());
             },
             calcBarterUnitPrice,
+            hasPendingWrites: () => false,
+            flushPendingWrites: async () => {},
         };
     }
 
@@ -802,6 +1066,8 @@
         saveBarterSale,
         deleteBarterSale,
         calcBarterUnitPrice,
+        hasPendingWrites: anyDirty,
+        flushPendingWrites: flushDirty,
     };
 
     console.log('[OriginDB] 초기화 완료 — tenant_id:', getTenantId());
