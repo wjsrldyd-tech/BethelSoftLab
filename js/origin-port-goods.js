@@ -657,7 +657,7 @@
             { name: '콩크 진주', category: '보석', specialty: true, lock: 'monopoly', peak: ['여름', '우기'], off: ['겨울', '건기'] },
         ],
         사우스사이드: [
-            { name: '오팔', category: '보석', specialty: true },
+            { name: '오팔', category: '보석', specialty: true, peak: ['여름', '우기'], off: ['겨울', '건기'] },
             { name: '테킬라', category: '주류', specialty: true, peak: ['겨울', '건기'], off: ['여름', '우기'] },
             { name: '파인애플', category: '기호품', specialty: true, peak: ['가을', '건기'], off: ['봄', '우기'] },
             { name: '땅콩', category: '기호품', specialty: true, peak: ['가을', '건기'], off: ['봄', '우기'] },
