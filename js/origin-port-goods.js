@@ -1589,7 +1589,7 @@
             { name: '아라크', category: '주류', specialty: true, lock: 'monopoly', peak: ['겨울', '건기'], off: ['여름', '우기'] },
         ],
         마사와: [
-            { name: '청금석', category: '보석', specialty: true },
+            { name: '청금석', category: '보석', specialty: true, peak: ['여름', '우기'], off: ['겨울', '건기'] },
             { name: '팥', category: '식료품', specialty: false, peak: ['가을', '건기'], off: ['봄'] },
             { name: '커민', category: '향신료', specialty: false, peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '숨마끄', category: '향신료', specialty: true, lock: 'vassal', peak: ['봄', '건기'], off: ['가을', '우기'] },
