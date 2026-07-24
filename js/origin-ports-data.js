@@ -405,7 +405,7 @@
         '바스라': 'north-4seasons',
         '호르무즈': 'north-4seasons',
 
-        // 남반구-사계절 (16개)
+        // 남반구-사계절 (20개)
         '리마': 'south-4seasons',
         '리우데자네이루': 'south-4seasons',
         '발파라이소': 'south-4seasons',
@@ -423,6 +423,10 @@
         '잔지바르': 'south-4seasons',
         '루안다': 'south-4seasons',
         '벵겔라': 'south-4seasons',
+        '핀자라': 'south-4seasons',
+        '포트피리': 'south-4seasons',
+        '호바트': 'south-4seasons',
+        '가리': 'south-4seasons',
 
         // 건기-우기-건기 (16개)
         '마닐라': 'dry-rainy-dry',
