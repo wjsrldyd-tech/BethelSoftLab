@@ -667,7 +667,7 @@
             { name: '콩크 진주', category: '보석', specialty: true, lock: 'monopoly', peak: ['여름', '우기'], off: ['겨울', '건기'] },
         ],
         하바나: [
-            { name: '마노', category: '보석', specialty: false },
+            { name: '마노', category: '보석', specialty: false, peak: ['여름', '우기'], off: ['겨울', '건기'] },
             { name: '은세공', category: '공예품', specialty: false },
             { name: '테킬라', category: '주류', specialty: true, peak: ['겨울', '건기'], off: ['여름', '우기'] },
             { name: '럼', category: '주류', specialty: false, peak: ['겨울', '건기'], off: ['여름', '우기'] },
