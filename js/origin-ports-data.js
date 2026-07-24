@@ -471,13 +471,14 @@
         '하바나': 'dry+1-rainy-dry',
         '포트로열': 'dry+1-rainy-dry',
 
-        // 우기-건기-우기 (4개) — 12~5 우기, 6~11 건기
+        // 우기-건기-우기 (5개) — 12~5 우기, 6~11 건기
         '페르남부쿠': 'rainy-dry-rainy',
         '소팔라': 'rainy-dry-rainy',
         '켈리마느': 'rainy-dry-rainy',
         '모잠비크': 'rainy-dry-rainy',
+        '카카투와': 'rainy-dry-rainy', // 7월 건기
 
-        // 열대 (24개)
+        // 열대 (25개)
         '카옌': 'tropical',
         '타마타브': 'tropical',
         '다바오': 'tropical',
@@ -502,6 +503,7 @@
         '산토도밍고': 'tropical',
         '수바': 'tropical',
         '사마라이': 'tropical',
+        '괌': 'tropical',
 
         // 한대 (4개)
         '우수아이아': 'arctic',
