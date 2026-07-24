@@ -210,6 +210,73 @@
                 },
             ],
         },
+        {
+            id: 'berber',
+            name: '베르베르인',
+            exchanges: [
+                {
+                    id: 'argan_oil',
+                    name: '아르간 기름',
+                    category: '조미료',
+                    result: { name: '아르간 기름', defaultRatio: 616 },
+                    ingredients: [
+                        { name: '몰약', defaultRatio: 66 },
+                        { name: '양고기', defaultRatio: 132 },
+                        { name: '아몬드', defaultRatio: 132 },
+                    ],
+                },
+                {
+                    id: 'unkakka',
+                    name: '은카카',
+                    category: '향신료',
+                    result: { name: '은카카', defaultRatio: 616 },
+                    ingredients: [
+                        { name: '담배', defaultRatio: 132 },
+                        { name: '땅콩', defaultRatio: 66 },
+                        { name: '치클', defaultRatio: 132 },
+                    ],
+                },
+            ],
+        },
+        {
+            id: 'yoruba',
+            name: '요루바족',
+            exchanges: [
+                {
+                    id: 'yoruba_argan_oil',
+                    name: '아르간 기름',
+                    category: '조미료',
+                    result: { name: '아르간 기름', defaultRatio: 658 },
+                    ingredients: [
+                        { name: '몰약', defaultRatio: 76 },
+                        { name: '양고기', defaultRatio: 172 },
+                        { name: '아몬드', defaultRatio: 192 },
+                    ],
+                },
+                {
+                    id: 'yoruba_unkakka',
+                    name: '은카카',
+                    category: '향신료',
+                    result: { name: '은카카', defaultRatio: 658 },
+                    ingredients: [
+                        { name: '담배', defaultRatio: 192 },
+                        { name: '땅콩', defaultRatio: 96 },
+                        { name: '치클', defaultRatio: 192 },
+                    ],
+                },
+                {
+                    id: 'yoruba_diamond',
+                    name: '다이아몬드',
+                    category: '보석',
+                    result: { name: '다이아몬드', defaultRatio: 284 },
+                    ingredients: [
+                        { name: '비단', defaultRatio: 35 },
+                        { name: '레이스', defaultRatio: 35 },
+                        { name: '동판', defaultRatio: 69 },
+                    ],
+                },
+            ],
+        },
     ];
 
     let selectedVillageId = null;
