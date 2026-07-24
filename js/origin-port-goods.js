@@ -693,7 +693,7 @@
             { name: '에키네시아', category: '의약품', specialty: true, lock: 'monopoly', peak: ['봄', '우기'], off: ['가을'] },
         ],
         베라크루스: [
-            { name: '은', category: '귀금속', specialty: false },
+            { name: '은', category: '귀금속', specialty: false, peak: ['겨울', '건기'], off: ['여름', '우기'] },
             { name: '은세공', category: '공예품', specialty: false },
             { name: '치클', category: '기호품', specialty: true, peak: ['가을', '건기'], off: ['봄', '우기'] },
             { name: '감자', category: '식료품', specialty: false, peak: ['가을', '건기'], off: ['봄'] },
