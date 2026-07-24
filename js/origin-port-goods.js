@@ -1765,7 +1765,7 @@
             { name: '무이라푸아마', category: '의약품', specialty: true, lock: 'monopoly', peak: ['봄', '우기'], off: ['가을'] },
         ],
         코하셋: [
-            { name: '마노', category: '보석', specialty: false },
+            { name: '마노', category: '보석', specialty: false, peak: ['여름', '우기'], off: ['겨울', '건기'] },
             { name: '크랜베리', category: '기호품', specialty: true, peak: ['가을', '건기'], off: ['봄', '우기'] },
             { name: '칠면조', category: '가축', specialty: false, peak: ['겨울', '건기'], off: ['여름'] },
             { name: '은 광석', category: '광석', specialty: true, lock: 'vassal', peak: ['봄', '건기'], off: ['가을', '우기'] },
