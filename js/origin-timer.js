@@ -856,7 +856,7 @@
         if (selectedGoodCategories.length) renderMap();
     }
 
-    function portNameHeadingHtml(portName) {
+    function portNameHeadingHtml(portName, shipyardBought) {
         const month = getSelectedMonth();
         const info = (typeof window.getOriginSeasonForMonth === 'function')
             ? window.getOriginSeasonForMonth(month, portName)
@@ -874,7 +874,7 @@
               <select class="ot-month-select" data-role="month" aria-label="현재 월">${options}</select>
             </label>
             <span class="ot-month-sep" aria-hidden="true">|</span>
-            <span class="ot-port-title">${escapeHtml(portName)}</span>
+            <span class="ot-port-title">${escapeHtml(portName)}</span>${shipyardBadgeHtml(portName, shipyardBought)}
             ${seasonHtml}
           </h2>`;
     }
@@ -936,7 +936,7 @@
 
         panelEl.innerHTML = `
           <div class="ot-card-head">
-            ${portNameHeadingHtml(untracked ? selectedName : tracked.portName)}
+            ${portNameHeadingHtml(untracked ? selectedName : tracked.portName, shipyard)}
             ${headActions}
           </div>
 
