@@ -156,6 +156,9 @@
         { name: '코피아포', region: '남미' },
         { name: '툼베스', region: '남미' },
         { name: '페르남부쿠', region: '남미' },
+        { name: '아투오나', region: '남미' },
+        { name: '하와이', region: '남미' },
+        { name: '마히나', region: '남미' },
 
         // 남대서양
         { name: '소다섬', region: '남대서양' },
@@ -268,14 +271,11 @@
         { name: '에조', region: '극동남아시아' },
 
         // 태평양
-        { name: '마히나', region: '태평양' },
         { name: '사마라이', region: '태평양' },
         { name: '수바', region: '태평양' },
-        { name: '아투오나', region: '태평양' },
         { name: '어널래스카', region: '태평양' },
         { name: '율도', region: '태평양' },
         { name: '괌', region: '태평양' },
-        { name: '하와이', region: '태평양' },
 
         // 호주
         { name: '가리', region: '호주' },
@@ -428,7 +428,7 @@
         '호바트': 'south-4seasons',
         '가리': 'south-4seasons',
 
-        // 건기-우기-건기 (14개)
+        // 건기-우기-건기 (15개)
         '마닐라': 'dry-rainy-dry',
         '브루나이': 'dry-rainy-dry',
         '홀로': 'dry-rainy-dry',
@@ -445,6 +445,7 @@
         '캘리컷': 'dry-rainy-dry',
         '롭부리': 'dry-rainy-dry',
         '말레': 'dry-rainy-dry', // 8월 우기
+        '하와이': 'dry-rainy-dry', // 8월 우기
 
         // 건기-1-우기-건기 (1개) — 11~4 건기, 5~10 우기
         '두알라': 'dry-1-rainy-dry',
@@ -479,7 +480,7 @@
         '카카투와': 'rainy-dry-rainy', // 7월 건기
         '바이아': 'rainy-dry-rainy', // 8월 건기
 
-        // 열대 (25개)
+        // 열대 (27개)
         '카옌': 'tropical',
         '타마타브': 'tropical',
         '다바오': 'tropical',
@@ -505,6 +506,8 @@
         '수바': 'tropical',
         '사마라이': 'tropical',
         '괌': 'tropical',
+        '아투오나': 'tropical',
+        '마히나': 'tropical',
 
         // 한대 (4개)
         '우수아이아': 'arctic',
