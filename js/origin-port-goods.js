@@ -1793,7 +1793,7 @@
             { name: '레드우드', category: '공업품', specialty: true, lock: 'monopoly' },
         ],
         오론: [
-            { name: '사금', category: '귀금속', specialty: false },
+            { name: '사금', category: '귀금속', specialty: false, peak: ['겨울', '건기'], off: ['여름', '우기'] },
             { name: '푸에블로 도자기', category: '공예품', specialty: true },
             { name: '메이플시럽', category: '조미료', specialty: true, peak: ['여름', '건기'], off: ['겨울'] },
             { name: '블루베리', category: '기호품', specialty: true, peak: ['가을', '건기'], off: ['봄', '우기'] },
