@@ -1537,8 +1537,8 @@
             { name: '물소', category: '가축', specialty: true, lock: 'monopoly', peak: ['겨울', '건기'], off: ['여름'] },
         ],
         말레: [
-            { name: '루비', category: '보석', specialty: true },
-            { name: '사파이어', category: '보석', specialty: true },
+            { name: '루비', category: '보석', specialty: true, peak: ['여름', '우기'], off: ['겨울', '건기'] },
+            { name: '사파이어', category: '보석', specialty: true, peak: ['여름', '우기'], off: ['겨울', '건기'] },
             { name: '가다랑어', category: '식료품', specialty: false },
             { name: '산호', category: '보석', specialty: false, peak: ['여름', '우기'], off: ['겨울', '건기'] },
         ],

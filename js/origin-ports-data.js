@@ -428,7 +428,7 @@
         '호바트': 'south-4seasons',
         '가리': 'south-4seasons',
 
-        // 건기-우기-건기 (13개)
+        // 건기-우기-건기 (14개)
         '마닐라': 'dry-rainy-dry',
         '브루나이': 'dry-rainy-dry',
         '홀로': 'dry-rainy-dry',
@@ -444,6 +444,7 @@
         '디우': 'dry-rainy-dry',
         '캘리컷': 'dry-rainy-dry',
         '롭부리': 'dry-rainy-dry',
+        '말레': 'dry-rainy-dry', // 8월 우기
 
         // 건기-1-우기-건기 (1개) — 11~4 건기, 5~10 우기
         '두알라': 'dry-1-rainy-dry',
