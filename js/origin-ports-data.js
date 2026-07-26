@@ -54,6 +54,7 @@
         { name: '덴헬데르', region: '북해' },
         { name: '도버', region: '북해' },
         { name: '그로닝겐', region: '북해' },
+        { name: '쾰른', region: '북해' },
 
         // 스칸디나비아반도
         { name: '상트페테르부르크', region: '스칸디나비아반도' },
@@ -328,6 +329,7 @@
         '앤트워프': 'north-4seasons',
         '암스테르담': 'north-4seasons',
         '그로닝겐': 'north-4seasons',
+        '쾰른': 'north-4seasons',
         '아조레스': 'north-4seasons',
         '마데이라': 'north-4seasons',
         '뤼베크': 'north-4seasons',

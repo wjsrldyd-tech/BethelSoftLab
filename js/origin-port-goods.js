@@ -919,6 +919,13 @@
             { name: '카모마일', category: '의약품', specialty: false, peak: ['봄', '우기'], off: ['가을'] },
             { name: '철재', category: '공업품', specialty: false },
         ],
+        쾰른: [
+            { name: '유리세공', category: '공예품', specialty: false },
+            { name: '맥주', category: '주류', specialty: false, peak: ['겨울', '건기'], off: ['여름', '우기'] },
+            { name: '강철', category: '공업품', specialty: true },
+            { name: '양손검', category: '무기류', specialty: true },
+            { name: '은세공', category: '공예품', specialty: false },
+        ],
         앤트워프: [
             { name: '태피스트리', category: '미술품', specialty: true },
             { name: '우유', category: '식료품', specialty: false, peak: ['가을', '건기'], off: ['봄'] },
