@@ -1117,6 +1117,9 @@
         if (typeof window.refreshOriginGoodQty === 'function') {
             window.refreshOriginGoodQty(name);
         }
+        if (typeof window.setOriginSideTool === 'function') {
+            window.setOriginSideTool('qty');
+        }
         try {
             window.dispatchEvent(new CustomEvent('origin-port-selected', { detail: { portName: name } }));
         } catch (_) { /* ignore */ }

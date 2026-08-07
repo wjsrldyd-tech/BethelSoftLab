@@ -914,24 +914,29 @@
         renderResultButtons();
     }
 
+    function setSideTool(tool) {
+        if (!tool) return;
+        const tabs = document.querySelectorAll('.ot-side-tool-tab');
+        if (!tabs.length) return;
+
+        tabs.forEach(t => {
+            const on = t.dataset.tool === tool;
+            t.classList.toggle('is-active', on);
+            t.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+
+        document.querySelectorAll('[data-tool-pane]').forEach(pane => {
+            pane.hidden = pane.dataset.toolPane !== tool;
+        });
+    }
+
     function initSideToolTabs() {
         const tabs = document.querySelectorAll('.ot-side-tool-tab');
         if (!tabs.length) return;
 
         tabs.forEach(tab => {
             tab.addEventListener('click', () => {
-                const tool = tab.dataset.tool;
-                if (!tool) return;
-
-                tabs.forEach(t => {
-                    const on = t === tab;
-                    t.classList.toggle('is-active', on);
-                    t.setAttribute('aria-selected', on ? 'true' : 'false');
-                });
-
-                document.querySelectorAll('[data-tool-pane]').forEach(pane => {
-                    pane.hidden = pane.dataset.toolPane !== tool;
-                });
+                setSideTool(tab.dataset.tool);
             });
         });
     }
@@ -1460,6 +1465,7 @@
     }
 
     window.originBarterInit = init;
+    window.setOriginSideTool = setSideTool;
 
     window.getOriginBarterResultName = function () {
         const exchange = currentExchange();
