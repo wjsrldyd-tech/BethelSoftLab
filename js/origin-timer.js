@@ -324,6 +324,11 @@
         return kstMondayWeekKey(at) === kstMondayWeekKey(now);
     }
 
+    /** 종업원 의뢰 완료 — 리셋 없음, 수동 토글만 */
+    function isEmployeeQuestDone(port) {
+        return !!(port && port.employeeQuestDone);
+    }
+
     /** 다음 월요일 KST 00:00까지 남은 시간 문구 */
     window.getOriginShipyardResetLabel = function (now = Date.now()) {
         const weekKey = kstMondayWeekKey(now);
@@ -551,8 +556,17 @@
             + ` aria-label="${on ? '조선소 구매함' : '조선소 재료'}">조</span>`;
     }
 
-    function pinNameHtml(portName, shipyardBought) {
-        return `<span class="ot-pin-name">${escapeHtml(portName)}${shipyardBadgeHtml(portName, shipyardBought)}</span>`;
+    /** 종업원 의뢰 완료 뱃지 — 완료한 항구만 표시 */
+    function employeeQuestBadgeHtml(done) {
+        if (!done) return '';
+        return `<span class="ot-pin-badge ot-pin-badge-emp" data-pin-emp`
+            + ` title="종업원 의뢰 완료" aria-label="종업원 의뢰 완료">종</span>`;
+    }
+
+    function pinNameHtml(portName, shipyardBought, employeeDone) {
+        return `<span class="ot-pin-name">${escapeHtml(portName)}`
+            + `${shipyardBadgeHtml(portName, shipyardBought)}`
+            + `${employeeQuestBadgeHtml(employeeDone)}</span>`;
     }
 
     function renderMap() {
@@ -582,6 +596,7 @@
             const sold = tracked && isSoldOut(tracked, now);
             const toolShop = tracked && isToolShopBought(tracked, now);
             const shipyard = tracked && isShipyardBought(tracked, now);
+            const employeeDone = tracked && isEmployeeQuestDone(tracked);
             const active = selectedName === loc.name;
             const classes = [
                 'ot-pin',
@@ -611,7 +626,7 @@
                 }
             }
 
-            const nameHtml = pinNameHtml(loc.name, shipyard);
+            const nameHtml = pinNameHtml(loc.name, shipyard, employeeDone);
             const labelHtml = filterOn
                 ? `<span class="ot-pin-head">
                     ${nameHtml}
@@ -856,7 +871,7 @@
         if (selectedGoodCategories.length) renderMap();
     }
 
-    function portNameHeadingHtml(portName, shipyardBought) {
+    function portNameHeadingHtml(portName, shipyardBought, employeeDone) {
         const month = getSelectedMonth();
         const info = (typeof window.getOriginSeasonForMonth === 'function')
             ? window.getOriginSeasonForMonth(month, portName)
@@ -874,7 +889,7 @@
               <select class="ot-month-select" data-role="month" aria-label="현재 월">${options}</select>
             </label>
             <span class="ot-month-sep" aria-hidden="true">|</span>
-            <span class="ot-port-title">${escapeHtml(portName)}</span>${shipyardBadgeHtml(portName, shipyardBought)}
+            <span class="ot-port-title">${escapeHtml(portName)}</span>${shipyardBadgeHtml(portName, shipyardBought)}${employeeQuestBadgeHtml(employeeDone)}
             ${seasonHtml}
           </h2>`;
     }
@@ -897,6 +912,7 @@
         const sold = untracked ? false : isSoldOut(tracked, now);
         const toolShop = untracked ? false : isToolShopBought(tracked, now);
         const shipyard = untracked ? false : isShipyardBought(tracked, now);
+        const employeeDone = untracked ? false : isEmployeeQuestDone(tracked);
         const ready = !untracked && rem <= 1000;
         const remVal = untracked ? '--:--' : formatCountdown(rem);
         const syncLine = untracked
@@ -926,17 +942,20 @@
                 <button type="button" class="ot-btn ot-btn-tool${toolShop ? ' is-on' : ''}"
                   data-action="tool-shop"
                   aria-pressed="${toolShop ? 'true' : 'false'}">${toolShop ? '도구점 구매 취소' : '도구점 구매'}</button>
-                <button type="button" class="ot-btn ot-btn-shipyard${shipyard ? ' is-on' : ''}"
-                  data-action="shipyard"
-                  aria-pressed="${shipyard ? 'true' : 'false'}">${shipyard ? '조선소 구매 취소' : '조선소 구매'}</button>
                 <button type="button" class="ot-btn ot-btn-visit${sold ? ' is-on' : ''}"
                   data-action="visit"
                   aria-pressed="${sold ? 'true' : 'false'}">${sold ? '상점 구매 취소' : '상점 구매'}</button>
+                <button type="button" class="ot-btn ot-btn-shipyard${shipyard ? ' is-on' : ''}"
+                  data-action="shipyard"
+                  aria-pressed="${shipyard ? 'true' : 'false'}">${shipyard ? '조선소 구매 취소' : '조선소 구매'}</button>
+                <button type="button" class="ot-btn ot-btn-employee${employeeDone ? ' is-on' : ''}"
+                  data-action="employee-quest"
+                  aria-pressed="${employeeDone ? 'true' : 'false'}">${employeeDone ? '종업원 완료 취소' : '종업원 완료'}</button>
               </div>`;
 
         panelEl.innerHTML = `
           <div class="ot-card-head">
-            ${portNameHeadingHtml(untracked ? selectedName : tracked.portName, shipyard)}
+            ${portNameHeadingHtml(untracked ? selectedName : tracked.portName, shipyard, employeeDone)}
             ${headActions}
           </div>
 
@@ -1075,6 +1094,7 @@
         const sold = isSoldOut(tracked, now);
         const toolShop = isToolShopBought(tracked, now);
         const shipyard = isShipyardBought(tracked, now);
+        const employeeDone = isEmployeeQuestDone(tracked);
         const ready = rem <= 1000;
 
         panelEl.classList.toggle('is-ready', ready && !sold);
@@ -1084,6 +1104,7 @@
         const visitBtn = panelEl.querySelector('[data-action="visit"]');
         const toolBtn = panelEl.querySelector('[data-action="tool-shop"]');
         const shipyardBtn = panelEl.querySelector('[data-action="shipyard"]');
+        const employeeBtn = panelEl.querySelector('[data-action="employee-quest"]');
 
         if (cd) cd.textContent = formatCountdown(rem);
         if (visitBtn) {
@@ -1100,6 +1121,11 @@
             shipyardBtn.classList.toggle('is-on', shipyard);
             shipyardBtn.setAttribute('aria-pressed', shipyard ? 'true' : 'false');
             shipyardBtn.textContent = shipyard ? '조선소 구매 취소' : '조선소 구매';
+        }
+        if (employeeBtn) {
+            employeeBtn.classList.toggle('is-on', employeeDone);
+            employeeBtn.setAttribute('aria-pressed', employeeDone ? 'true' : 'false');
+            employeeBtn.textContent = employeeDone ? '종업원 완료 취소' : '종업원 완료';
         }
 
         // 분 선택 중이면 덮어쓰지 않음
@@ -1144,6 +1170,8 @@
             toolShopBoughtAt: row.toolShopBoughtAt || null,
             shipyardBought: !!row.shipyardBought,
             shipyardBoughtAt: row.shipyardBoughtAt || null,
+            employeeQuestDone: !!row.employeeQuestDone,
+            employeeQuestDoneAt: row.employeeQuestDoneAt || null,
             syncedAt: row.syncedAt || null,
             syncedElapsedMin: row.syncedElapsedMin != null ? row.syncedElapsedMin : null,
         };
@@ -1183,6 +1211,8 @@
             toolShopBoughtAt: null,
             shipyardBought: false,
             shipyardBoughtAt: null,
+            employeeQuestDone: false,
+            employeeQuestDoneAt: null,
         });
         setStatus(`「${DEFAULT_PORT}」항구를 추가했습니다.`);
         return list.concat([row]);
@@ -1232,6 +1262,8 @@
                 toolShopBoughtAt: p.toolShopBoughtAt || null,
                 shipyardBought: !!p.shipyardBought,
                 shipyardBoughtAt: p.shipyardBoughtAt || null,
+                employeeQuestDone: !!p.employeeQuestDone,
+                employeeQuestDoneAt: p.employeeQuestDoneAt || null,
                 syncedAt: p.syncedAt || null,
                 syncedElapsedMin: p.syncedElapsedMin != null ? p.syncedElapsedMin : null,
             }));
@@ -1632,6 +1664,23 @@
                     setStatus(turnOn
                         ? `「${tracked.portName}」조선소 구매를 표시했습니다.`
                         : `「${tracked.portName}」조선소 구매를 취소했습니다.`);
+                    return;
+                }
+
+                if (action === 'employee-quest') {
+                    btn.disabled = true;
+                    const turnOn = !isEmployeeQuestDone(tracked);
+                    const row = await window.originDb.savePort({
+                        ...tracked,
+                        intervalMin: INTERVAL_MIN,
+                        employeeQuestDone: turnOn,
+                        employeeQuestDoneAt: turnOn ? new Date().toISOString() : null,
+                    });
+                    upsertPortInMemory(row);
+                    refreshAll();
+                    setStatus(turnOn
+                        ? `「${tracked.portName}」종업원 의뢰 완료를 표시했습니다.`
+                        : `「${tracked.portName}」종업원 의뢰 완료를 취소했습니다.`);
                     return;
                 }
 

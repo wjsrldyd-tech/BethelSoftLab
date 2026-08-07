@@ -127,6 +127,8 @@
             toolShopBoughtAt: row.tool_shop_bought_at || null,
             shipyardBought: !!row.shipyard_bought,
             shipyardBoughtAt: row.shipyard_bought_at || null,
+            employeeQuestDone: !!row.employee_quest_done,
+            employeeQuestDoneAt: row.employee_quest_done_at || null,
             syncedAt:    row.synced_at || null,
             syncedElapsedMin: row.synced_elapsed_min != null
                 ? Number(row.synced_elapsed_min)
@@ -311,6 +313,9 @@
         const soldOut = port.soldOut != null ? !!port.soldOut : !!(prev && prev.soldOut);
         const toolShopBought = port.toolShopBought != null ? !!port.toolShopBought : !!(prev && prev.toolShopBought);
         const shipyardBought = port.shipyardBought != null ? !!port.shipyardBought : !!(prev && prev.shipyardBought);
+        const employeeQuestDone = port.employeeQuestDone != null
+            ? !!port.employeeQuestDone
+            : !!(prev && prev.employeeQuestDone);
         return {
             id: port.id,
             tenantId: tenantId || getTenantId(),
@@ -336,6 +341,12 @@
                 ? (port.shipyardBoughtAt instanceof Date
                     ? port.shipyardBoughtAt.toISOString()
                     : (port.shipyardBoughtAt || (prev && prev.shipyardBoughtAt) || new Date().toISOString()))
+                : null,
+            employeeQuestDone,
+            employeeQuestDoneAt: employeeQuestDone
+                ? (port.employeeQuestDoneAt instanceof Date
+                    ? port.employeeQuestDoneAt.toISOString()
+                    : (port.employeeQuestDoneAt || (prev && prev.employeeQuestDoneAt) || new Date().toISOString()))
                 : null,
             syncedAt: port.syncedAt !== undefined
                 ? toIsoOrNull(port.syncedAt)
@@ -400,6 +411,8 @@
                 tool_shop_bought_at: row.toolShopBoughtAt || null,
                 shipyard_bought: !!row.shipyardBought,
                 shipyard_bought_at: row.shipyardBoughtAt || null,
+                employee_quest_done: !!row.employeeQuestDone,
+                employee_quest_done_at: row.employeeQuestDoneAt || null,
                 synced_at: toIsoOrNull(row.syncedAt),
                 synced_elapsed_min: toIntOrNull(row.syncedElapsedMin),
                 updated_at: row.updatedAt || new Date().toISOString(),
