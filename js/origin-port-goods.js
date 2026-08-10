@@ -1464,6 +1464,7 @@
             { name: '콩', category: '식료품', specialty: false, peak: ['가을', '건기'], off: ['봄'] },
             { name: '비단', category: '직물', specialty: false, peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '월장석', category: '보석', specialty: false, peak: ['여름', '우기'], off: ['겨울', '건기'] },
+            { name: '다카 모슬린', category: '직물', specialty: true, lock: 'monopoly', peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '옥 공예품', category: '공예품', specialty: true, lock: 'monopoly' },
         ],
         프레이노코르: [
@@ -1554,6 +1555,7 @@
             { name: '계피', category: '향신료', specialty: true, peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '재스민', category: '향료', specialty: true, peak: ['가을', '우기'], off: ['봄', '건기'] },
             { name: '강황', category: '염료', specialty: false, peak: ['여름', '우기'], off: ['겨울', '건기'] },
+            { name: '다카 모슬린', category: '직물', specialty: true, lock: 'monopoly', peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '물소', category: '가축', specialty: true, lock: 'monopoly', peak: ['겨울', '건기'], off: ['여름'] },
         ],
         마실리파트남: [
@@ -1564,6 +1566,7 @@
             { name: '생사', category: '섬유', specialty: false, peak: ['겨울', '우기'], off: ['여름'] },
             { name: '마살라', category: '향신료', specialty: false, peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '인도 편사', category: '직물', specialty: true, peak: ['봄', '건기'], off: ['가을', '우기'] },
+            { name: '다카 모슬린', category: '직물', specialty: true, lock: 'monopoly', peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '헤나', category: '염료', specialty: true, lock: 'vassal', peak: ['여름', '우기'], off: ['겨울', '건기'] },
             { name: '물소', category: '가축', specialty: true, lock: 'monopoly', peak: ['겨울', '건기'], off: ['여름'] },
         ],
@@ -1575,6 +1578,7 @@
             { name: '마살라', category: '향신료', specialty: false, peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '카다멈', category: '향신료', specialty: false, peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '인도 편사', category: '직물', specialty: true, peak: ['봄', '건기'], off: ['가을', '우기'] },
+            { name: '다카 모슬린', category: '직물', specialty: true, lock: 'monopoly', peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '헤나', category: '염료', specialty: true, lock: 'vassal', peak: ['여름', '우기'], off: ['겨울', '건기'] },
             { name: '물소', category: '가축', specialty: true, lock: 'monopoly', peak: ['겨울', '건기'], off: ['여름'] },
         ],

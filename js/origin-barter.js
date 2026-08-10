@@ -328,6 +328,54 @@
                 },
             ],
         },
+        {
+            id: 'melanesian',
+            name: '멜라네시아인',
+            exchanges: [
+                {
+                    id: 'melanesian_nutmeg_box',
+                    name: '육두구 상자',
+                    category: '향신료',
+                    result: { name: '육두구 상자', defaultRatio: 572 },
+                    ingredients: [
+                        { name: '흑단', defaultRatio: 106 },
+                        { name: '산호', defaultRatio: 183 },
+                        { name: '면직물', defaultRatio: 183 },
+                    ],
+                },
+                {
+                    id: 'melanesian_sago',
+                    name: '사고',
+                    category: '식료품',
+                    result: { name: '사고', defaultRatio: 858 },
+                    ingredients: [
+                        { name: '양손검', defaultRatio: 76 },
+                        { name: '활', defaultRatio: 76 },
+                    ],
+                },
+                {
+                    id: 'melanesian_cassowary',
+                    name: '화식조',
+                    category: '가축',
+                    result: { name: '화식조', defaultRatio: 572 },
+                    ingredients: [
+                        { name: '유리구슬', defaultRatio: 76 },
+                        { name: '양초', defaultRatio: 66 },
+                    ],
+                },
+                {
+                    id: 'melanesian_pink_diamond',
+                    name: '핑크 다이아몬드',
+                    category: '보석',
+                    result: { name: '핑크 다이아몬드', defaultRatio: 143 },
+                    ingredients: [
+                        { name: '금 식기', defaultRatio: 31 },
+                        { name: '수은', defaultRatio: 27 },
+                        { name: '진주', defaultRatio: 31 },
+                    ],
+                },
+            ],
+        },
     ];
 
     let selectedVillageId = null;
