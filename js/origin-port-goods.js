@@ -1712,11 +1712,11 @@
             { name: '마노', category: '보석', specialty: false, peak: ['여름', '우기'], off: ['겨울', '건기'] },
         ],
         바이아: [
-            { name: '은', category: '귀금속', specialty: false, peak: ['겨울', '건기'], off: ['여름', '우기'] },
-            { name: '아보카도', category: '기호품', specialty: true, peak: ['가을', '건기'], off: ['봄', '우기'] },
-            { name: '카사바', category: '식료품', specialty: false, peak: ['가을', '건기'], off: ['봄'] },
-            { name: '크롬 광석', category: '광석', specialty: false, peak: ['봄', '건기'], off: ['가을', '우기'] },
-            { name: '무이라푸아마', category: '의약품', specialty: true, lock: 'monopoly', peak: ['봄', '우기'], off: ['가을'] },
+            { name: '은', category: '귀금속', specialty: false, peak: ['겨울'], off: ['여름'] },
+            { name: '아보카도', category: '기호품', specialty: true, peak: ['가을'], off: ['봄'] },
+            { name: '카사바', category: '식료품', specialty: false, peak: ['가을'], off: ['봄'] },
+            { name: '크롬 광석', category: '광석', specialty: false, peak: ['봄'], off: ['가을'] },
+            { name: '무이라푸아마', category: '의약품', specialty: true, lock: 'monopoly', peak: ['봄'], off: ['가을'] },
         ],
         페르남부쿠: [
             { name: '크롬 광석', category: '광석', specialty: false, peak: ['봄', '건기'], off: ['가을', '우기'] },
