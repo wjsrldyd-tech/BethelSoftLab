@@ -1046,7 +1046,7 @@
         } catch (_) { /* ignore */ }
     }
 
-    function selectGoodCategory(category) {
+    async function selectGoodCategory(category) {
         if (!category) return;
 
         filterByName = false;
@@ -1073,6 +1073,9 @@
 
         renderGoodsCategories();
         renderViewTabs();
+        if (selectedGoodCategories.length) {
+            await loadGoodQtyCache();
+        }
         renderMap();
         const label = selectedCategoriesLabel();
         setStatus(label

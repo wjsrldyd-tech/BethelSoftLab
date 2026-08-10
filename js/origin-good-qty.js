@@ -177,9 +177,6 @@
         setStatus(plain > 0
             ? `「${goodName}」평시 ${plain} 저장`
             : `「${goodName}」삭제`);
-        if (typeof window.invalidateOriginGoodQtyCache === 'function') {
-            window.invalidateOriginGoodQtyCache();
-        }
 
         try {
             await window.originDb.saveGoodPlainQty({
@@ -187,6 +184,9 @@
                 goodName,
                 plainQty: plain,
             });
+            if (typeof window.invalidateOriginGoodQtyCache === 'function') {
+                await window.invalidateOriginGoodQtyCache();
+            }
         } catch (err) {
             console.error('[OriginGoodQty] save', err);
             setStatus('저장 실패(화면엔 반영됨): ' + (err.message || err), true);

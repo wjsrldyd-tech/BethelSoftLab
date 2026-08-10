@@ -762,16 +762,30 @@
      * @returns {Promise<{ portName: string, goodName: string, plainQty: number, updatedAt?: string }[]>}
      */
     async function listGoodPlainQtys(portName) {
+        const PAGE = 1000;
         let dbRows = null;
         try {
-            let q = client
-                .from(TBL_QTY)
-                .select('*')
-                .eq('tenant_id', getTenantId());
-            if (portName) q = q.eq('port_name', portName);
-            const { data, error } = await q.order('good_name', { ascending: true });
-            if (error) throw error;
-            dbRows = (data || []).map(rowToGoodQty);
+            const raw = [];
+            let from = 0;
+            for (;;) {
+                let q = client
+                    .from(TBL_QTY)
+                    .select('*')
+                    .eq('tenant_id', getTenantId());
+                if (portName) q = q.eq('port_name', portName);
+                // port+good 정렬로 range 페이지가 안정적으로 이어지게 함
+                q = q
+                    .order('port_name', { ascending: true })
+                    .order('good_name', { ascending: true })
+                    .range(from, from + PAGE - 1);
+                const { data, error } = await q;
+                if (error) throw error;
+                const batch = data || [];
+                raw.push.apply(raw, batch);
+                if (batch.length < PAGE) break;
+                from += PAGE;
+            }
+            dbRows = raw.map(rowToGoodQty);
         } catch (err) {
             console.warn('[OriginDB] listGoodPlainQtys DB 조회 실패 — 로컬 캐시 사용', err);
         }
