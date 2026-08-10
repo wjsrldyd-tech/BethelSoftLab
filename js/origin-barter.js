@@ -277,6 +277,57 @@
                 },
             ],
         },
+        {
+            id: 'malay',
+            name: '말레이족',
+            exchanges: [
+                {
+                    id: 'malay_nutmeg_box',
+                    name: '육두구 상자',
+                    category: '향신료',
+                    result: { name: '육두구 상자', defaultRatio: 227 },
+                    ingredients: [
+                        { name: '흑단', defaultRatio: 47 },
+                        { name: '산호', defaultRatio: 70 },
+                        { name: '다카 모슬린', defaultRatio: 54 },
+                    ],
+                },
+                {
+                    id: 'malay_gamboge',
+                    name: '자황',
+                    category: '염료',
+                    result: { name: '자황', defaultRatio: 560 },
+                    ingredients: [
+                        { name: '비도', defaultRatio: 132 },
+                        { name: '용연향', defaultRatio: 76 },
+                        { name: '진주 공예품', defaultRatio: 76 },
+                    ],
+                },
+                {
+                    id: 'malay_carambola',
+                    name: '카람볼라',
+                    category: '기호품',
+                    result: { name: '카람볼라', defaultRatio: 560 },
+                    ingredients: [
+                        { name: '토마토', defaultRatio: 152 },
+                        { name: '옥수수기름', defaultRatio: 66 },
+                        { name: '은', defaultRatio: 66 },
+                    ],
+                },
+                {
+                    id: 'malay_tenun',
+                    name: '테눈',
+                    category: '직물',
+                    result: { name: '테눈', defaultRatio: 650 },
+                    ingredients: [
+                        { name: '마닐라삼', defaultRatio: 132 },
+                        { name: '망고스틴', defaultRatio: 66 },
+                        { name: '다목', defaultRatio: 66 },
+                        { name: '자근', defaultRatio: 66 },
+                    ],
+                },
+            ],
+        },
     ];
 
     let selectedVillageId = null;
