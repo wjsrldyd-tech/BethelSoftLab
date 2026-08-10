@@ -735,7 +735,7 @@
             { name: '크롬 광석', category: '광석', specialty: false, peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '무이라푸아마', category: '의약품', specialty: true, lock: 'monopoly', peak: ['봄', '우기'], off: ['가을'] },
         ],
-        윌렘스타트: [
+        빌렘스타트: [
             { name: '금', category: '귀금속', specialty: false, peak: ['겨울', '건기'], off: ['여름', '우기'] },
             { name: '올스파이스', category: '향신료', specialty: true, peak: ['봄', '건기'], off: ['가을', '우기'] },
             { name: '로그우드', category: '염료', specialty: true },
