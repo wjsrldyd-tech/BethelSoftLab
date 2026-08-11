@@ -376,6 +376,56 @@
                 },
             ],
         },
+        {
+            id: 'witoto',
+            name: '위토토족',
+            exchanges: [
+                {
+                    id: 'witoto_azul_maya',
+                    name: '아줄 마야',
+                    category: '염료',
+                    result: { name: '아줄 마야', defaultRatio: 975 },
+                    ingredients: [
+                        { name: '인디고', defaultRatio: 152 },
+                        { name: '옥수수', defaultRatio: 152 },
+                        { name: '럼', defaultRatio: 76 },
+                    ],
+                },
+                {
+                    id: 'witoto_mahogany',
+                    name: '마호가니',
+                    category: '공업품',
+                    result: { name: '마호가니', defaultRatio: 1154 },
+                    ingredients: [
+                        { name: '통나무', defaultRatio: 146 },
+                        { name: '흑요석 곤봉', defaultRatio: 146 },
+                        { name: '테킬라', defaultRatio: 84 },
+                    ],
+                },
+                {
+                    id: 'witoto_guarana',
+                    name: '과라나',
+                    category: '기호품',
+                    result: { name: '과라나', defaultRatio: 875 },
+                    ingredients: [
+                        { name: '노니', defaultRatio: 152 },
+                        { name: '안식향', defaultRatio: 152 },
+                        { name: '망고스틴', defaultRatio: 76 },
+                    ],
+                },
+                {
+                    id: 'witoto_suma',
+                    name: '수마',
+                    category: '의약품',
+                    result: { name: '수마', defaultRatio: 812 },
+                    ingredients: [
+                        { name: '인삼', defaultRatio: 76 },
+                        { name: '차', defaultRatio: 198 },
+                        { name: '순백자', defaultRatio: 76 },
+                    ],
+                },
+            ],
+        },
     ];
 
     let selectedVillageId = null;
