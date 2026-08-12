@@ -89,7 +89,7 @@
         list.innerHTML = '<div class="ot-qty-empty">불러오는 중…</div>';
 
         const goods = (typeof window.getOriginPortGoods === 'function')
-            ? window.getOriginPortGoods(portName, null, { includeLocked: false })
+            ? window.getOriginPortGoods(portName, null, { includeLocked: true })
             : [];
 
         if (!goods.length) {
