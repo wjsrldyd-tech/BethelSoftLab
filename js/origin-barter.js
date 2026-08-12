@@ -467,6 +467,54 @@
                 },
             ],
         },
+        {
+            id: 'buan',
+            name: '부안',
+            exchanges: [
+                {
+                    id: 'buan_gochujang',
+                    name: '고추장',
+                    category: '조미료',
+                    result: { name: '고추장', defaultRatio: 858 },
+                    ingredients: [
+                        { name: '고추', defaultRatio: 225 },
+                        { name: '된장', defaultRatio: 150 },
+                        { name: '대나무', defaultRatio: 85 },
+                    ],
+                },
+                {
+                    id: 'buan_norigae',
+                    name: '노리개',
+                    category: '공예품',
+                    result: { name: '노리개', defaultRatio: 858 },
+                    ingredients: [
+                        { name: '비취', defaultRatio: 113 },
+                        { name: '생사', defaultRatio: 225 },
+                        { name: '진주', defaultRatio: 113 },
+                    ],
+                },
+                {
+                    id: 'buan_iganggo',
+                    name: '이강고',
+                    category: '주류',
+                    result: { name: '이강고', defaultRatio: 572 },
+                    ingredients: [
+                        { name: '생강', defaultRatio: 150 },
+                        { name: '구리 광석', defaultRatio: 225 },
+                    ],
+                },
+                {
+                    id: 'buan_red_ginseng',
+                    name: '홍삼',
+                    category: '의약품',
+                    result: { name: '홍삼', defaultRatio: 572 },
+                    ingredients: [
+                        { name: '인삼', defaultRatio: 188 },
+                        { name: '은', defaultRatio: 65 },
+                    ],
+                },
+            ],
+        },
     ];
 
     let selectedVillageId = null;
