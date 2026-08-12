@@ -126,6 +126,26 @@
         };
     }
 
+    function villageOverrideKey(villageId) {
+        return '__v:' + villageId;
+    }
+
+    /** 기본 마을 좌표 + 핀 오버라이드 */
+    function displayVillagePins() {
+        if (typeof window.getOriginBarterVillagesOnMap !== 'function') return [];
+        const show = editMode
+            || (typeof window.isOriginBarterVillagePinsVisible === 'function'
+                && window.isOriginBarterVillagePinsVisible());
+        if (!show) return [];
+        const villages = window.getOriginBarterVillagesOnMap(selectedViewId) || [];
+        const ov = activeOverrides()[selectedViewId] || {};
+        return villages.map((v) => {
+            const o = ov[villageOverrideKey(v.id)];
+            if (!o) return v;
+            return { ...v, x: o.x, y: o.y };
+        });
+    }
+
     function currentView() {
         if (typeof window.getOriginMapView === 'function') {
             return window.getOriginMapView(selectedViewId);
@@ -644,6 +664,27 @@
               </button>`;
         }).join('');
 
+        let villagePins = '';
+        const villages = displayVillagePins();
+        if (villages.length) {
+            const emoji = window.ORIGIN_BARTER_VILLAGE_EMOJI || '🏕️';
+            const selectedVillageId = (typeof window.getOriginBarterSelectedVillageId === 'function')
+                ? window.getOriginBarterSelectedVillageId()
+                : null;
+            villagePins = villages.map((v) => {
+                const active = selectedVillageId && selectedVillageId === v.id;
+                const classes = ['ot-pin', 'is-village', active ? 'is-active' : ''].filter(Boolean).join(' ');
+                return `
+              <button type="button" class="${classes}"
+                style="left:${v.x}%; top:${v.y}%;"
+                data-village-id="${escapeAttr(v.id)}"
+                aria-label="${escapeAttr(v.name + ' 마을')}">
+                <span class="ot-pin-village-emoji" aria-hidden="true">${emoji}</span>
+                <span class="ot-pin-name">${escapeHtml(v.name)}</span>
+              </button>`;
+            }).join('');
+        }
+
         const canvasStyle = [];
         if (hasImage) {
             const ar = view.imageAspect || (16 / 9);
@@ -655,7 +696,7 @@
         mapEl.classList.toggle('is-edit-mode', editMode);
         mapEl.classList.toggle('is-goods-filter', filterOn);
         mapEl.innerHTML = `
-          <div class="ot-map-canvas" style="${canvasStyle.join(';')}">${pins}</div>
+          <div class="ot-map-canvas" style="${canvasStyle.join(';')}">${pins}${villagePins}</div>
         `;
         if (mapPaneEl) mapPaneEl.classList.toggle('is-edit-mode', editMode);
     }
@@ -679,7 +720,7 @@
         editDraft = cloneOverrides(pinOverrides);
         updateEditChrome();
         renderMap();
-        setStatus('위치 수정 모드 — 핀을 드래그한 뒤 저장하세요.');
+        setStatus('위치 수정 모드 — 항구·마을 핀을 드래그한 뒤 저장하세요.');
     }
 
     async function exitEditMode(save) {
@@ -1367,6 +1408,19 @@
                 e.preventDefault();
                 return;
             }
+            const villagePin = e.target.closest('.ot-pin.is-village');
+            if (villagePin) {
+                if (editMode) return;
+                const villageId = villagePin.dataset.villageId;
+                if (villageId && typeof window.selectOriginBarterVillage === 'function') {
+                    window.selectOriginBarterVillage(villageId);
+                    const nameEl = villagePin.querySelector('.ot-pin-name');
+                    const label = nameEl ? nameEl.textContent : villageId;
+                    renderMap();
+                    setStatus(`「${label}」마을 선택`);
+                }
+                return;
+            }
             const pin = e.target.closest('.ot-pin');
             if (!pin) return;
             selectPort(pin.dataset.portName);
@@ -1381,10 +1435,12 @@
                 e.preventDefault();
                 const canvas = mapCanvasEl();
                 const rect = canvas.getBoundingClientRect();
+                const isVillage = pin.classList.contains('is-village');
                 dragState = {
                     pin,
                     pointerId: e.pointerId,
-                    name: pin.dataset.portName,
+                    kind: isVillage ? 'village' : 'port',
+                    name: isVillage ? pin.dataset.villageId : pin.dataset.portName,
                     startX: e.clientX,
                     startY: e.clientY,
                     moved: false,
@@ -1404,7 +1460,7 @@
                 startX: e.clientX,
                 startY: e.clientY,
                 moved: false,
-                pinName: pin ? pin.dataset.portName : null,
+                pinName: pin && !pin.classList.contains('is-village') ? pin.dataset.portName : null,
             };
         });
 
@@ -1423,7 +1479,10 @@
                 const clampedY = Math.min(98, Math.max(2, y));
                 dragState.pin.style.left = clampedX + '%';
                 dragState.pin.style.top = clampedY + '%';
-                setPinOverride(selectedViewId, dragState.name, clampedX, clampedY);
+                const overrideName = dragState.kind === 'village'
+                    ? villageOverrideKey(dragState.name)
+                    : dragState.name;
+                setPinOverride(selectedViewId, overrideName, clampedX, clampedY);
                 return;
             }
 
@@ -1439,14 +1498,19 @@
         function endDrag(e) {
             if (editMode) {
                 if (!dragState || e.pointerId !== dragState.pointerId) return;
-                const { pin, moved, name } = dragState;
+                const { pin, moved, name, kind } = dragState;
                 pin.classList.remove('is-dragging');
                 try { pin.releasePointerCapture(e.pointerId); } catch (_) { /* ignore */ }
                 dragState = null;
                 if (moved) {
                     suppressPinClick = true;
-                    selectPort(name);
-                    setStatus(`「${name}」위치 이동 — 저장을 누르면 반영됩니다.`);
+                    if (kind === 'village') {
+                        const label = (pin.querySelector('.ot-pin-name') || {}).textContent || name;
+                        setStatus(`「${label}」마을 위치 이동 — 저장을 누르면 반영됩니다.`);
+                    } else {
+                        selectPort(name);
+                        setStatus(`「${name}」위치 이동 — 저장을 누르면 반영됩니다.`);
+                    }
                 }
                 return;
             }
@@ -1486,6 +1550,11 @@
     if (editCancelBtn) {
         editCancelBtn.addEventListener('click', () => { exitEditMode(false); });
     }
+
+    window.addEventListener('origin-barter-village-pins-changed', () => {
+        renderMap();
+    });
+
     if (settingsToggleBtn) {
         settingsToggleBtn.addEventListener('click', () => openSettings());
     }

@@ -12,6 +12,8 @@
     const LS_BATCHES = 'originBarterBatches';
     const LS_SHIPMENT = 'originBarterShipment';
     const LS_RECIPE_LEGACY = 'originBarterRecipe';
+    const LS_VILLAGE_PINS = 'originBarterVillagePins';
+    const VILLAGE_PIN_EMOJI = '🏕️';
     const MAX_BATCHES = 8;
 
     /**
@@ -23,6 +25,9 @@
         {
             id: 'turk',
             name: '튀르크',
+            mapId: 'eastmed',
+            x: 74,
+            y: 40,
             exchanges: [
                 {
                     id: 'mastic',
@@ -62,6 +67,9 @@
         {
             id: 'apache',
             name: '아파치',
+            mapId: 'northamerica',
+            x: 30,
+            y: 70,
             exchanges: [
                 {
                     id: 'camas',
@@ -98,6 +106,9 @@
         {
             id: 'west_island',
             name: '신대륙, 서쪽의 섬',
+            mapId: 'southamerica',
+            x: 10,
+            y: 28,
             exchanges: [
                 {
                     id: 'west_island_bombilla',
@@ -126,6 +137,9 @@
         {
             id: 'quechua',
             name: '케추아족',
+            mapId: 'southamerica',
+            x: 22,
+            y: 28,
             exchanges: [
                 {
                     id: 'quechua_bombilla',
@@ -165,6 +179,9 @@
         {
             id: 'svear',
             name: '스비아인',
+            mapId: 'northsea',
+            x: 74,
+            y: 24,
             exchanges: [
                 {
                     id: 'birch',
@@ -213,6 +230,9 @@
         {
             id: 'berber',
             name: '베르베르인',
+            mapId: 'wafrica',
+            x: 32,
+            y: 12,
             exchanges: [
                 {
                     id: 'argan_oil',
@@ -241,6 +261,9 @@
         {
             id: 'yoruba',
             name: '요루바족',
+            mapId: 'wafrica',
+            x: 56,
+            y: 50,
             exchanges: [
                 {
                     id: 'yoruba_argan_oil',
@@ -280,6 +303,9 @@
         {
             id: 'malay',
             name: '말레이족',
+            mapId: 'seasia',
+            x: 36,
+            y: 46,
             exchanges: [
                 {
                     id: 'malay_nutmeg_box',
@@ -331,6 +357,9 @@
         {
             id: 'melanesian',
             name: '멜라네시아인',
+            mapId: 'australia',
+            x: 72,
+            y: 18,
             exchanges: [
                 {
                     id: 'melanesian_nutmeg_box',
@@ -379,6 +408,9 @@
         {
             id: 'witoto',
             name: '위토토족',
+            mapId: 'southamerica',
+            x: 42,
+            y: 22,
             exchanges: [
                 {
                     id: 'witoto_azul_maya',
@@ -429,6 +461,9 @@
         {
             id: 'comanche',
             name: '코만치족',
+            mapId: 'caribbean',
+            x: 32,
+            y: 32,
             exchanges: [
                 {
                     id: 'comanche_nutria',
@@ -470,6 +505,9 @@
         {
             id: 'buan',
             name: '부안',
+            mapId: 'eastasia',
+            x: 64,
+            y: 36,
             exchanges: [
                 {
                     id: 'buan_gochujang',
@@ -549,6 +587,7 @@
             filterBtn: document.getElementById('barter-filter-map'),
             resultBtns: document.getElementById('barter-result-btns'),
             settingsCapacity: document.getElementById('ot-settings-capacity'),
+            villagePinsBtn: document.getElementById('barter-village-pins'),
         };
     }
 
@@ -558,6 +597,51 @@
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;');
+    }
+
+    function isVillagePinsVisible() {
+        return localStorage.getItem(LS_VILLAGE_PINS) === '1';
+    }
+
+    function setVillagePinsVisible(on) {
+        localStorage.setItem(LS_VILLAGE_PINS, on ? '1' : '0');
+        syncVillagePinsBtn();
+        try {
+            window.dispatchEvent(new CustomEvent('origin-barter-village-pins-changed', {
+                detail: { visible: !!on },
+            }));
+        } catch (_) { /* ignore */ }
+    }
+
+    function syncVillagePinsBtn() {
+        const { villagePinsBtn } = els();
+        if (!villagePinsBtn) return;
+        const on = isVillagePinsVisible();
+        villagePinsBtn.classList.toggle('is-active', on);
+        villagePinsBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        villagePinsBtn.textContent = on ? '맵 마을 표시 해제' : '맵에 마을 표시';
+    }
+
+    function villagesOnMap(mapId) {
+        if (!mapId) return [];
+        return BARTER_VILLAGES.filter((v) => v.mapId === mapId && Number.isFinite(v.x) && Number.isFinite(v.y));
+    }
+
+    function selectVillageById(villageId) {
+        const village = getVillage(villageId);
+        if (!village) return false;
+        const { villageSelect } = els();
+        setSideTool('barter');
+        selectedVillageId = villageId;
+        if (villageSelect) villageSelect.value = village.id;
+        onVillageChange();
+        // 마을 핀 활성 표시 갱신
+        try {
+            window.dispatchEvent(new CustomEvent('origin-barter-village-pins-changed', {
+                detail: { visible: isVillagePinsVisible() },
+            }));
+        } catch (_) { /* ignore */ }
+        return true;
     }
 
     function getVillage(villageId) {
@@ -1096,6 +1180,14 @@
             });
             settingsCapacity.addEventListener('blur', () => {
                 saveSettingsCapacity();
+            });
+        }
+
+        const { villagePinsBtn } = els();
+        syncVillagePinsBtn();
+        if (villagePinsBtn) {
+            villagePinsBtn.addEventListener('click', () => {
+                setVillagePinsVisible(!isVillagePinsVisible());
             });
         }
 
@@ -1730,6 +1822,11 @@
 
     window.originBarterInit = init;
     window.setOriginSideTool = setSideTool;
+    window.selectOriginBarterVillage = selectVillageById;
+    window.isOriginBarterVillagePinsVisible = isVillagePinsVisible;
+    window.getOriginBarterVillagesOnMap = villagesOnMap;
+    window.getOriginBarterSelectedVillageId = function () { return selectedVillageId; };
+    window.ORIGIN_BARTER_VILLAGE_EMOJI = VILLAGE_PIN_EMOJI;
 
     window.getOriginBarterResultName = function () {
         const exchange = currentExchange();

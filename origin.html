@@ -801,6 +801,22 @@
         box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.5);
       }
 
+      .ot-pin.is-village {
+        z-index: 4;
+      }
+
+      .ot-pin.is-village.is-active .ot-pin-name {
+        border-color: #fbbf24;
+        color: #fff;
+      }
+
+      .ot-pin-village-emoji {
+        font-size: 1.35rem;
+        line-height: 1;
+        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.55));
+        user-select: none;
+      }
+
       .ot-pin-name {
         margin-top: 3px;
         font-size: 0.95rem;
@@ -1743,6 +1759,17 @@
         margin-top: 0.65rem;
       }
 
+      .ot-barter-map-toggles {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+      }
+
+      .ot-barter-map-toggles .ot-barter-filter-btn {
+        flex: 1 1 0;
+        min-width: 0;
+      }
+
       .ot-barter-result-btns {
         display: flex;
         flex-wrap: wrap;
@@ -2664,10 +2691,16 @@
 
                 <div class="ot-barter-actions">
                   <div id="barter-result-btns" class="ot-barter-result-btns" role="group" aria-label="맵 표시 결과물"></div>
-                  <button type="button" id="barter-filter-map" class="ot-barter-filter-btn"
-                    aria-pressed="false">
-                    맵에 재료 항구 표시
-                  </button>
+                  <div class="ot-barter-map-toggles" role="group" aria-label="맵 표시">
+                    <button type="button" id="barter-village-pins" class="ot-barter-filter-btn"
+                      aria-pressed="false">
+                      맵에 마을 표시
+                    </button>
+                    <button type="button" id="barter-filter-map" class="ot-barter-filter-btn"
+                      aria-pressed="false">
+                      맵에 재료 항구 표시
+                    </button>
+                  </div>
                   <button type="button" id="barter-sales-open" class="ot-barter-filter-btn ot-barter-sales-btn">
                     판매 기록
                   </button>
