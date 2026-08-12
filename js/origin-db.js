@@ -28,7 +28,10 @@
     const LS_QTY_KEY        = 'origin_good_plain_qty_v1';
     const LS_SETTINGS_KEY   = 'origin_settings_v1';
     const LS_SALES_KEY      = 'origin_barter_sales_v1';
+    const LS_BARTER_CAPACITY_LEGACY = 'originBarterCapacity';
+    const LS_BARTER_HAVE_LEGACY = 'originBarterHave';
     const DEFAULT_DRIFT_OVER_MIN = 1200;
+    const DEFAULT_BARTER_CAPACITY = 5000;
 
     // 백그라운드 동기화 타이밍
     const FLUSH_DEBOUNCE_MS = 900;
@@ -75,6 +78,46 @@
     const OFFSET_SEC_MIN = -120;
     const OFFSET_SEC_MAX = 120;
 
+    function normalizeBarterCapacity(v) {
+        const n = parseInt(v, 10);
+        if (Number.isFinite(n) && n > 0) return n;
+        return null;
+    }
+
+    function normalizeBarterHave(raw) {
+        if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+        const out = {};
+        for (const key of Object.keys(raw)) {
+            const entry = raw[key];
+            if (!key || !entry || typeof entry !== 'object' || Array.isArray(entry)) continue;
+            const goods = {};
+            for (const goodName of Object.keys(entry)) {
+                const n = parseInt(entry[goodName], 10);
+                if (Number.isFinite(n) && n >= 0) goods[goodName] = n;
+            }
+            out[key] = goods;
+        }
+        return out;
+    }
+
+    function readLegacyBarterCapacity() {
+        try {
+            return normalizeBarterCapacity(localStorage.getItem(LS_BARTER_CAPACITY_LEGACY));
+        } catch {
+            return null;
+        }
+    }
+
+    function readLegacyBarterHave() {
+        try {
+            const raw = localStorage.getItem(LS_BARTER_HAVE_LEGACY);
+            if (!raw) return {};
+            return normalizeBarterHave(JSON.parse(raw));
+        } catch {
+            return {};
+        }
+    }
+
     function normalizeSettings(raw) {
         const out = {};
         const src = (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw : {};
@@ -89,6 +132,16 @@
         if (offset > OFFSET_SEC_MAX) offset = OFFSET_SEC_MAX;
         out.globalOffsetSec = offset;
         out.offsetEnabled = src.offsetEnabled !== false && src.offsetEnabled !== 0 && src.offsetEnabled !== '0';
+
+        let capacity = normalizeBarterCapacity(src.barterCapacity);
+        if (capacity == null) capacity = readLegacyBarterCapacity();
+        out.barterCapacity = capacity != null ? capacity : DEFAULT_BARTER_CAPACITY;
+
+        if (src.barterHave != null) {
+            out.barterHave = normalizeBarterHave(src.barterHave);
+        } else {
+            out.barterHave = readLegacyBarterHave();
+        }
         return out;
     }
 
@@ -97,7 +150,9 @@
             && s.driftOverMin === DEFAULT_DRIFT_OVER_MIN
             && s.driftEnabled === true
             && s.globalOffsetSec === DEFAULT_GLOBAL_OFFSET_SEC
-            && s.offsetEnabled === true;
+            && s.offsetEnabled === true
+            && s.barterCapacity === DEFAULT_BARTER_CAPACITY
+            && Object.keys(s.barterHave || {}).length === 0;
     }
 
     function readLocalSettings() {
@@ -111,7 +166,13 @@
     }
 
     function writeLocalSettings(data) {
-        localStorage.setItem(LS_SETTINGS_KEY, JSON.stringify(normalizeSettings(data)));
+        const normalized = normalizeSettings(data);
+        localStorage.setItem(LS_SETTINGS_KEY, JSON.stringify(normalized));
+        try {
+            localStorage.setItem(LS_BARTER_CAPACITY_LEGACY, String(normalized.barterCapacity));
+            localStorage.setItem(LS_BARTER_HAVE_LEGACY, JSON.stringify(normalized.barterHave || {}));
+        } catch { /* ignore quota */ }
+        return normalized;
     }
 
     function rowToPort(row) {
@@ -707,7 +768,7 @@
     // ─── 앱 설정 ─────────────────────────────────────────────────────
 
     /**
-     * @returns {Promise<{ driftOverMin: number, driftEnabled: boolean, globalOffsetSec: number, offsetEnabled: boolean, _fromLocal?: boolean }>}
+     * @returns {Promise<{ driftOverMin: number, driftEnabled: boolean, globalOffsetSec: number, offsetEnabled: boolean, barterCapacity: number, barterHave: Object, _fromLocal?: boolean }>}
      */
     async function loadSettings() {
         const tenantId = getTenantId();
@@ -731,8 +792,14 @@
             }
 
             if (dirtySettings) return dirtySettings; // 아직 반영 안 된 로컬 변경 우선
-            const settings = normalizeSettings(data.data);
+            const rawData = data.data || {};
+            const settings = normalizeSettings(rawData);
             writeLocalSettings(settings);
+            // DB에 물물교환 필드가 없으면 레거시/정규화 값을 한 번 올려 둠
+            if (rawData.barterCapacity == null || rawData.barterHave == null) {
+                dirtySettings = settings;
+                scheduleFlush();
+            }
             return settings;
         } catch (err) {
             if (isMissingRelationError(err)) {
@@ -744,12 +811,11 @@
     }
 
     /**
-     * @param {{ driftOverMin?: number, driftEnabled?: boolean, globalOffsetSec?: number, offsetEnabled?: boolean }} partial
-     * @returns {Promise<{ driftOverMin: number, driftEnabled: boolean, globalOffsetSec: number, offsetEnabled: boolean }>}
+     * @param {{ driftOverMin?: number, driftEnabled?: boolean, globalOffsetSec?: number, offsetEnabled?: boolean, barterCapacity?: number, barterHave?: Object }} partial
+     * @returns {Promise<{ driftOverMin: number, driftEnabled: boolean, globalOffsetSec: number, offsetEnabled: boolean, barterCapacity: number, barterHave: Object }>}
      */
     async function saveSettings(partial) {
-        const merged = normalizeSettings({ ...readLocalSettings(), ...(partial || {}) });
-        writeLocalSettings(merged);
+        const merged = writeLocalSettings({ ...readLocalSettings(), ...(partial || {}) });
         dirtySettings = merged;
         scheduleFlush();
         return merged;
@@ -1003,8 +1069,7 @@
             },
             loadSettings: async () => readLocalSettings(),
             saveSettings: async (partial) => {
-                const merged = normalizeSettings({ ...readLocalSettings(), ...(partial || {}) });
-                writeLocalSettings(merged);
+                const merged = writeLocalSettings({ ...readLocalSettings(), ...(partial || {}) });
                 return merged;
             },
             listGoodPlainQtys: async (portName) => listLocalQtys(portName),

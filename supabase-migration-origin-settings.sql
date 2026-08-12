@@ -3,7 +3,10 @@
 -- BethelSoftLab / Supabase SQL Editor에서 실행
 -- ============================================================
 -- data 예:
---   { "driftOverMin": 1200 }   -- N분당 3초 보정 (기본 1200 → 약 400분마다 -1초)
+--   { "driftOverMin": 1200, "barterCapacity": 5000, "barterHave": { "village:exchange": { "재료": 100 } } }
+--     driftOverMin — N분당 3초 보정 (기본 1200 → 약 400분마다 -1초)
+--     barterCapacity — 함대 총적재량
+--     barterHave — 물물교환 재료 적재 현황
 --
 -- ※ 신규 테이블 직후 PostgREST가 404(PGRST205)를 내는 경우가 있음.
 --   → 아래 NOTIFY 로 스키마 캐시를 갱신한다.
@@ -19,10 +22,10 @@ create table if not exists public.origin_settings (
 );
 
 comment on table public.origin_settings is
-    '대항오 헬퍼 테넌트 설정(JSON). driftOverMin 등';
+    '대항오 헬퍼 테넌트 설정(JSON). driftOverMin, barterCapacity, barterHave 등';
 
 comment on column public.origin_settings.data is
-    '예: {"driftOverMin":1200}';
+    '예: {"driftOverMin":1200,"barterCapacity":5000,"barterHave":{}}';
 
 -- set_updated_at() 은 supabase-migration-support.sql / origin 마이그레이션에서 생성됨
 drop trigger if exists trg_origin_settings_updated_at on public.origin_settings;
@@ -59,7 +62,7 @@ notify pgrst, 'reload schema';
 
 -- 캐시가 안 풀릴 때 대비: 메타만 살짝 건드림 (재실행 안전)
 comment on table public.origin_settings is
-    '대항오 헬퍼 테넌트 설정(JSON). driftOverMin 등';
+    '대항오 헬퍼 테넌트 설정(JSON). driftOverMin, barterCapacity, barterHave 등';
 
 notify pgrst, 'reload schema';
 

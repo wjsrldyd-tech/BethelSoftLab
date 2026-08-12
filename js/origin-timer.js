@@ -1872,6 +1872,9 @@
         try {
             const s = await window.originDb.loadSettings();
             applyTimerSettings(s);
+            if (typeof window.originBarterApplySettings === 'function') {
+                window.originBarterApplySettings(s);
+            }
             if (!readDriftHistory().length && s && s.driftOverMin != null) {
                 pushDriftHistory(s.driftOverMin);
                 renderDriftHistory(driftOverMin);

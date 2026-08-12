@@ -584,14 +584,20 @@
 
     function saveCapacityValue(n) {
         const v = parseInt(n, 10);
-        if (Number.isFinite(v) && v > 0) {
-            localStorage.setItem(LS_CAPACITY, String(v));
-            return v;
-        }
-        return null;
+        if (!(Number.isFinite(v) && v > 0)) return null;
+        localStorage.setItem(LS_CAPACITY, String(v));
+        return v;
     }
 
     function getCapacity() {
+        try {
+            const raw = localStorage.getItem('origin_settings_v1');
+            if (raw) {
+                const s = JSON.parse(raw);
+                const fromSettings = parseInt(s && s.barterCapacity, 10);
+                if (Number.isFinite(fromSettings) && fromSettings > 0) return fromSettings;
+            }
+        } catch { /* ignore */ }
         const n = parseInt(localStorage.getItem(LS_CAPACITY) || '', 10);
         return (Number.isFinite(n) && n > 0) ? n : 5000;
     }
@@ -602,6 +608,29 @@
         settingsCapacity.value = String(getCapacity());
     }
 
+    function persistBarterSettings(partial) {
+        if (window.originDb && typeof window.originDb.saveSettings === 'function') {
+            return window.originDb.saveSettings(partial || {});
+        }
+        return Promise.resolve(null);
+    }
+
+    function readHaveStore() {
+        try {
+            const raw = localStorage.getItem(LS_HAVE);
+            const store = raw ? JSON.parse(raw) : {};
+            return (store && typeof store === 'object' && !Array.isArray(store)) ? store : {};
+        } catch {
+            return {};
+        }
+    }
+
+    function writeHaveStore(store) {
+        const next = (store && typeof store === 'object' && !Array.isArray(store)) ? store : {};
+        localStorage.setItem(LS_HAVE, JSON.stringify(next));
+        return next;
+    }
+
     function saveSettingsCapacity() {
         const { settingsCapacity } = els();
         if (!settingsCapacity) return getCapacity();
@@ -610,8 +639,24 @@
             settingsCapacity.value = String(getCapacity());
             return getCapacity();
         }
+        persistBarterSettings({ barterCapacity: saved });
         refreshMatrix();
         return saved;
+    }
+
+    function applySettingsFromDb(settings) {
+        const src = settings || {};
+        if (src.barterCapacity != null) {
+            saveCapacityValue(src.barterCapacity);
+        }
+        if (src.barterHave != null && typeof src.barterHave === 'object') {
+            writeHaveStore(src.barterHave);
+        }
+        fillSettingsCapacity();
+        if (selectedExchangeId) {
+            currentHave = loadSavedHave();
+            refreshMatrix();
+        }
     }
 
     function clampBatches(n) {
@@ -716,17 +761,11 @@
         const villageId = selectedVillageId;
         if (!villageId) return;
 
-        let haveStore = {};
-        try {
-            const raw = localStorage.getItem(LS_HAVE);
-            haveStore = raw ? JSON.parse(raw) : {};
-            if (!haveStore || typeof haveStore !== 'object') haveStore = {};
-        } catch {
-            haveStore = {};
-        }
+        let haveStore = readHaveStore();
         deleteVillageStoreEntries(haveStore, villageId);
-        localStorage.setItem(LS_HAVE, JSON.stringify(haveStore));
+        writeHaveStore(haveStore);
         currentHave = {};
+        persistBarterSettings({ barterHave: haveStore });
 
         const batchStore = readBatchStore();
         delete batchStore.__legacyDefault;
@@ -766,37 +805,23 @@
     }
 
     function loadSavedHave() {
-        try {
-            const raw = localStorage.getItem(LS_HAVE);
-            const store = raw ? JSON.parse(raw) : {};
-            const entry = pickStoreEntry(store, selectedVillageId, selectedExchangeId);
-            if (entry) return { ...entry };
-        } catch { /* ignore */ }
+        const entry = pickStoreEntry(readHaveStore(), selectedVillageId, selectedExchangeId);
+        if (entry) return { ...entry };
         return {};
     }
 
     function saveCurrentHave() {
         const key = ratioKey();
         if (!key) return;
-        let store = {};
-        try {
-            const raw = localStorage.getItem(LS_HAVE);
-            store = raw ? JSON.parse(raw) : {};
-            if (!store || typeof store !== 'object') store = {};
-        } catch {
-            store = {};
-        }
+        const store = readHaveStore();
         store[key] = { ...currentHave };
-        localStorage.setItem(LS_HAVE, JSON.stringify(store));
+        writeHaveStore(store);
+        persistBarterSettings({ barterHave: store });
     }
 
     function loadHaveForExchange(villageId, exchangeId) {
-        try {
-            const raw = localStorage.getItem(LS_HAVE);
-            const store = raw ? JSON.parse(raw) : {};
-            const entry = pickStoreEntry(store, villageId, exchangeId);
-            if (entry) return { ...entry };
-        } catch { /* ignore */ }
+        const entry = pickStoreEntry(readHaveStore(), villageId, exchangeId);
+        if (entry) return { ...entry };
         return {};
     }
 
@@ -1012,6 +1037,7 @@
         };
         window.originBarterFillSettings = fillSettingsCapacity;
         window.originBarterSaveSettings = saveSettingsCapacity;
+        window.originBarterApplySettings = applySettingsFromDb;
 
         const { settingsCapacity } = els();
         if (settingsCapacity) {
