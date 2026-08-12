@@ -426,6 +426,47 @@
                 },
             ],
         },
+        {
+            id: 'comanche',
+            name: '코만치족',
+            exchanges: [
+                {
+                    id: 'comanche_nutria',
+                    name: '후티아',
+                    category: '가축',
+                    result: { name: '후티아', defaultRatio: 839 },
+                    ingredients: [
+                        { name: '양마', defaultRatio: 130 },
+                        { name: '석재', defaultRatio: 130 },
+                        { name: '통나무', defaultRatio: 130 },
+                    ],
+                },
+                {
+                    id: 'comanche_sofrito',
+                    name: '소프리토',
+                    category: '조미료',
+                    result: { name: '소프리토', defaultRatio: 840 },
+                    ingredients: [
+                        { name: '양파', defaultRatio: 98 },
+                        { name: '당근', defaultRatio: 98 },
+                        { name: '마늘', defaultRatio: 98 },
+                        { name: '올리브기름', defaultRatio: 98 },
+                    ],
+                },
+                {
+                    id: 'comanche_xocolatl',
+                    name: '쇼콜라틀',
+                    category: '기호품',
+                    result: { name: '쇼콜라틀', defaultRatio: 700 },
+                    ingredients: [
+                        { name: '카카오', defaultRatio: 65 },
+                        { name: '계피', defaultRatio: 65 },
+                        { name: '칠면조', defaultRatio: 65 },
+                        { name: '설탕봉', defaultRatio: 65 },
+                    ],
+                },
+            ],
+        },
     ];
 
     let selectedVillageId = null;
