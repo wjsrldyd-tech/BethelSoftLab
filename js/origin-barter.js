@@ -635,7 +635,17 @@
         selectedVillageId = villageId;
         if (villageSelect) villageSelect.value = village.id;
         onVillageChange();
-        // 마을 핀 활성 표시 갱신
+
+        // 맵 핀으로 들어온 경우: 해당 마을 전체 교환 재료 항구만 표시
+        const ids = allVillageExchangeIds();
+        if (ids.length) {
+            mapFilterExchangeIds = ids.slice();
+            const names = ingredientNamesForMapFilter();
+            applyMapIngredientFilter(names);
+            syncIngredientFilterBtn();
+            renderResultButtons();
+        }
+
         try {
             window.dispatchEvent(new CustomEvent('origin-barter-village-pins-changed', {
                 detail: { visible: isVillagePinsVisible() },
