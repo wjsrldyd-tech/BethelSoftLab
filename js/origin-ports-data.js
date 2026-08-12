@@ -247,6 +247,7 @@
         { name: '타이난', region: '동남아시아' },
         { name: '테르나테', region: '동남아시아' },
         { name: '홀로', region: '동남아시아' },
+        { name: '괌', region: '동남아시아' },
 
         // 동아시아
         { name: '북경', region: '동아시아' },
@@ -276,7 +277,6 @@
         { name: '수바', region: '태평양' },
         { name: '어널래스카', region: '태평양' },
         { name: '율도', region: '태평양' },
-        { name: '괌', region: '태평양' },
 
         // 호주
         { name: '가리', region: '호주' },
