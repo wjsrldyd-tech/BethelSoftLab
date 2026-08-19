@@ -553,6 +553,67 @@
                 },
             ],
         },
+        {
+            id: 'kyushu',
+            name: '규슈의 마을',
+            mapId: 'eastasia',
+            x: 80,
+            y: 52,
+            exchanges: [
+                {
+                    id: 'kyushu_cormorant',
+                    name: '가마우지',
+                    category: '가축',
+                    result: { name: '가마우지', defaultRatio: 544 },
+                    ingredients: [
+                        { name: '어육', defaultRatio: 249 },
+                        { name: '금', defaultRatio: 110 },
+                    ],
+                },
+                {
+                    id: 'kyushu_red_copper',
+                    name: '적동',
+                    category: '공업품',
+                    result: { name: '적동', defaultRatio: 484 },
+                    ingredients: [
+                        { name: '구리 광석', defaultRatio: 292 },
+                        { name: '금', defaultRatio: 59 },
+                    ],
+                },
+            ],
+        },
+        {
+            id: 'ami',
+            name: '아미족의 마을',
+            mapId: 'eastasia',
+            x: 68,
+            y: 68,
+            exchanges: [
+                {
+                    id: 'ami_dangwa',
+                    name: '당과',
+                    category: '기호품',
+                    result: { name: '당과', defaultRatio: 530 },
+                    ingredients: [
+                        { name: '망고', defaultRatio: 110 },
+                        { name: '오렌지', defaultRatio: 125 },
+                        { name: '바나나', defaultRatio: 110 },
+                        { name: '설탕봉', defaultRatio: 95 },
+                    ],
+                },
+                {
+                    id: 'ami_deer',
+                    name: '네눈사슴',
+                    category: '가축',
+                    result: { name: '네눈사슴', defaultRatio: 634 },
+                    ingredients: [
+                        { name: '돼지', defaultRatio: 63 },
+                        { name: '거위', defaultRatio: 126 },
+                        { name: '닭', defaultRatio: 126 },
+                    ],
+                },
+            ],
+        },
     ];
 
     let selectedVillageId = null;
