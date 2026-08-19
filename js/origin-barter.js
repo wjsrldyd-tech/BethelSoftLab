@@ -614,6 +614,79 @@
                 },
             ],
         },
+        {
+            id: 'tujia',
+            name: '장강, 투자족의 마을',
+            mapId: 'eastasia',
+            x: 32,
+            y: 46,
+            exchanges: [
+                {
+                    id: 'tujia_cornus',
+                    name: '산수유',
+                    category: '의약품',
+                    result: { name: '산수유', defaultRatio: 818 },
+                    ingredients: [
+                        { name: '수레', defaultRatio: 332 },
+                        { name: '삼', defaultRatio: 332 },
+                    ],
+                },
+                {
+                    id: 'tujia_osmanthus',
+                    name: '은목서',
+                    category: '향료',
+                    result: { name: '은목서', defaultRatio: 707 },
+                    ingredients: [
+                        { name: '꿀', defaultRatio: 117 },
+                        { name: '정향', defaultRatio: 59 },
+                        { name: '팔각', defaultRatio: 59 },
+                        { name: '후추', defaultRatio: 59 },
+                    ],
+                },
+            ],
+        },
+        {
+            id: 'han',
+            name: '황허, 한족의 마을',
+            mapId: 'eastasia',
+            x: 36,
+            y: 26,
+            exchanges: [
+                {
+                    id: 'han_cornus',
+                    name: '산수유',
+                    category: '의약품',
+                    result: { name: '산수유', defaultRatio: 634 },
+                    ingredients: [
+                        { name: '수레', defaultRatio: 292 },
+                        { name: '삼', defaultRatio: 252 },
+                    ],
+                },
+                {
+                    id: 'han_osmanthus',
+                    name: '은목서',
+                    category: '향료',
+                    result: { name: '은목서', defaultRatio: 507 },
+                    ingredients: [
+                        { name: '꿀', defaultRatio: 101 },
+                        { name: '정향', defaultRatio: 51 },
+                        { name: '팔각', defaultRatio: 51 },
+                        { name: '후추', defaultRatio: 51 },
+                    ],
+                },
+                {
+                    id: 'han_history_book',
+                    name: '역사서',
+                    category: '잡화',
+                    result: { name: '역사서', defaultRatio: 471 },
+                    ingredients: [
+                        { name: '한지', defaultRatio: 146 },
+                        { name: '솔먹', defaultRatio: 110 },
+                        { name: '호필', defaultRatio: 73 },
+                    ],
+                },
+            ],
+        },
     ];
 
     let selectedVillageId = null;
