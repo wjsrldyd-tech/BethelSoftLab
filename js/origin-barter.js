@@ -771,6 +771,77 @@
                 },
             ],
         },
+        {
+            id: 'gyeongheung',
+            name: '경흥의 마을',
+            mapId: 'eastasia',
+            x: 74,
+            y: 18,
+            exchanges: [
+                {
+                    id: 'gyeongheung_gochujang',
+                    name: '고추장',
+                    category: '조미료',
+                    result: { name: '고추장', defaultRatio: 666 },
+                    ingredients: [
+                        { name: '고추', defaultRatio: 279 },
+                        { name: '된장', defaultRatio: 186 },
+                        { name: '대나무', defaultRatio: 93 },
+                    ],
+                },
+                {
+                    id: 'gyeongheung_norigae',
+                    name: '노리개',
+                    category: '공예품',
+                    result: { name: '노리개', defaultRatio: 666 },
+                    ingredients: [
+                        { name: '비취', defaultRatio: 140 },
+                        { name: '생사', defaultRatio: 279 },
+                        { name: '진주', defaultRatio: 140 },
+                    ],
+                },
+                {
+                    id: 'gyeongheung_red_ginseng',
+                    name: '홍삼',
+                    category: '의약품',
+                    result: { name: '홍삼', defaultRatio: 484 },
+                    ingredients: [
+                        { name: '인삼', defaultRatio: 208 },
+                        { name: '은', defaultRatio: 83 },
+                    ],
+                },
+            ],
+        },
+        {
+            id: 'qashqai',
+            name: '카슈카이족의 마을',
+            mapId: 'southindian',
+            x: 48,
+            y: 36,
+            exchanges: [
+                {
+                    id: 'qashqai_silver_myrtle',
+                    name: '은매화',
+                    category: '향료',
+                    result: { name: '은매화', defaultRatio: 762 },
+                    ingredients: [
+                        { name: '유칼립투스', defaultRatio: 166 },
+                        { name: '마누카', defaultRatio: 412 },
+                    ],
+                },
+                {
+                    id: 'qashqai_weld',
+                    name: '웰드',
+                    category: '염료',
+                    result: { name: '웰드', defaultRatio: 636 },
+                    ingredients: [
+                        { name: '면직물', defaultRatio: 206 },
+                        { name: '인디고', defaultRatio: 206 },
+                        { name: '강황', defaultRatio: 206 },
+                    ],
+                },
+            ],
+        },
     ];
 
     let selectedVillageId = null;
