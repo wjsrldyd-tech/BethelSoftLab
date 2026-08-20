@@ -687,6 +687,90 @@
                 },
             ],
         },
+        {
+            id: 'yawuru',
+            name: '야우루족의 마을',
+            mapId: 'australia',
+            x: 30,
+            y: 52,
+            exchanges: [
+                {
+                    id: 'yawuru_kakadu_plum',
+                    name: '카카두플럼',
+                    category: '기호품',
+                    result: { name: '카카두플럼', defaultRatio: 687 },
+                    ingredients: [
+                        { name: '게', defaultRatio: 83 },
+                        { name: '칠면조', defaultRatio: 83 },
+                        { name: '크랜베리', defaultRatio: 73 },
+                    ],
+                },
+                {
+                    id: 'yawuru_bark_painting',
+                    name: '목피화',
+                    category: '미술품',
+                    result: { name: '목피화', defaultRatio: 508 },
+                    ingredients: [
+                        { name: '목재', defaultRatio: 83 },
+                        { name: '크리스', defaultRatio: 83 },
+                        { name: '금', defaultRatio: 73 },
+                    ],
+                },
+                {
+                    id: 'yawuru_emu',
+                    name: '에뮤',
+                    category: '가축',
+                    result: { name: '에뮤', defaultRatio: 571 },
+                    ingredients: [
+                        { name: '곡도', defaultRatio: 125 },
+                        { name: '말', defaultRatio: 125 },
+                        { name: '화승총', defaultRatio: 125 },
+                    ],
+                },
+            ],
+        },
+        {
+            id: 'nauo',
+            name: '나우오족의 마을',
+            mapId: 'australia',
+            x: 42,
+            y: 63,
+            exchanges: [
+                {
+                    id: 'nauo_kakadu_plum',
+                    name: '카카두플럼',
+                    category: '기호품',
+                    result: { name: '카카두플럼', defaultRatio: 881 },
+                    ingredients: [
+                        { name: '게', defaultRatio: 73 },
+                        { name: '칠면조', defaultRatio: 63 },
+                        { name: '크랜베리', defaultRatio: 63 },
+                    ],
+                },
+                {
+                    id: 'nauo_bark_painting',
+                    name: '목피화',
+                    category: '미술품',
+                    result: { name: '목피화', defaultRatio: 705 },
+                    ingredients: [
+                        { name: '목재', defaultRatio: 63 },
+                        { name: '크리스', defaultRatio: 63 },
+                        { name: '금', defaultRatio: 63 },
+                    ],
+                },
+                {
+                    id: 'nauo_emu',
+                    name: '에뮤',
+                    category: '가축',
+                    result: { name: '에뮤', defaultRatio: 793 },
+                    ingredients: [
+                        { name: '곡도', defaultRatio: 95 },
+                        { name: '말', defaultRatio: 95 },
+                        { name: '화승총', defaultRatio: 110 },
+                    ],
+                },
+            ],
+        },
     ];
 
     let selectedVillageId = null;
