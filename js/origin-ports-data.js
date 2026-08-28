@@ -453,11 +453,11 @@
         '두알라': 'dry-1-rainy-dry',
 
         // 건기+1-우기-건기 (20개)
-        '마라카이보': 'dry+1-rainy-dry',
-        '빌렘스타트': 'dry+1-rainy-dry',
-        '카라카스': 'dry+1-rainy-dry',
-        '카르타헤나': 'dry+1-rainy-dry',
-        '포를라마르': 'dry+1-rainy-dry',
+        '마라카이보': 'dry-rainy-dry',
+        '빌렘스타트': 'dry-rainy-dry',
+        '카라카스': 'dry-rainy-dry',
+        '카르타헤나': 'dry-rainy-dry',
+        '포를라마르': 'dry-rainy-dry',
         '딜리': 'dry+1-rainy-dry',
         '수라바야': 'dry+1-rainy-dry',
         '메리다': 'dry+1-rainy-dry',
