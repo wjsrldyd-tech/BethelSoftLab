@@ -464,9 +464,9 @@
         '베라크루스': 'dry+1-rainy-dry',
         '아카풀코': 'dry+1-rainy-dry',
         '과테말라': 'dry+1-rainy-dry', // 5월 건기 (12~6 건기, 7~11 우기)
-        '마실리파트남': 'dry+1-rainy-dry',
-        '캘커타': 'dry+1-rainy-dry',
-        '퐁디셰리': 'dry+1-rainy-dry',
+        '마실리파트남': 'dry-rainy-dry',
+        '캘커타': 'dry-rainy-dry',
+        '퐁디셰리': 'dry-rainy-dry',
         '나사우': 'dry+1-rainy-dry',
         '사우스사이드': 'dry+1-rainy-dry',
         '산티아고': 'dry+1-rainy-dry',
